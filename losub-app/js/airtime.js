@@ -110,29 +110,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("summaryTotal").textContent = fmt(total);
   }
 
-  // ---------- Buy ----------
-  document.getElementById("buyBtn").addEventListener("click", () => {
-    const messageBox = document.getElementById("airtimeMessage");
-    const phone = document.getElementById("phoneNumber").value.trim();
 
-    if (!phone || phone.length < 10) {
-      messageBox.textContent = "Enter a valid phone number.";
-      messageBox.className = "airtime-message airtime-message--error";
-      messageBox.hidden = false;
-      return;
-    }
-    if (currentType === "airtime" && !selectedAmount) {
-      messageBox.textContent = "Enter or select an amount.";
-      messageBox.className = "airtime-message airtime-message--error";
-      messageBox.hidden = false;
-      return;
-    }
-    if (currentType === "data" && !selectedDataPlan) {
-      messageBox.textContent = "Select a data plan.";
-      messageBox.className = "airtime-message airtime-message--error";
-      messageBox.hidden = false;
-      return;
-    }
 
     // TODO: replace with a real airtime/data provider API call (e.g. VTpass, Reloadly)
     console.log("Airtime/data purchase requested (front-end only, no backend yet):", {
@@ -144,4 +122,3 @@ document.addEventListener("DOMContentLoaded", () => {
     messageBox.className = "airtime-message airtime-message--success";
     messageBox.hidden = false;
   });
-});

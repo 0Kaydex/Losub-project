@@ -12,6 +12,34 @@
   font-size: 14px;
 }
 
+.savings-section { margin-bottom: 20px; }
+
+.savings-section__total {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.savings-breakdown {
+  display: flex;
+  flex-direction: column;
+}
+
+.savings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.savings-row:last-child { border-bottom: none; }
+
+.savings-row__plan { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
+.savings-row__dot { width: 8px; height: 8px; border-radius: 50%; }
+.savings-row__detail { color: var(--ink-soft); }
+.savings-row__saved { color: #1f5c3f; font-weight: 700; }
 .dash__greeting { margin-bottom: 24px; }
 
 .stat-grid {

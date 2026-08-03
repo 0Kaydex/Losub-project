@@ -34,11 +34,11 @@
         <a href="browse.html" class="sidebar__link" data-page="browse">
           <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
         </a>
-        <a href="savings.html" class="sidebar__link" data-page="savings">
+        <!-- <a href="savings.html" class="sidebar__link" data-page="savings">
           <span class="sidebar__icon"> <img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span> <span class="sidebar__label">Savings</span>
-        </a>
-        <a href="payment-history.html" class="sidebar__link" data-page="payment-history">
-          <span class="sidebar__icon"><img src="../images/icons/payment history.png" alt="" class="sidebar__icon" /> </span><span class="sidebar__label">Payment history</span>
+        </a> -->
+        <a href="wallet.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon"><img src="../images/icons/savings.png" alt="" class="sidebar__icon" /> </span><span class="sidebar__label">Wallet</span>
         </a>
         <a href="airtime.html" class="sidebar__link" data-page="airtime">
           <span class="sidebar__icon"><img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Airtime/data</span>
@@ -109,7 +109,17 @@
             </div>
           </article>
         </section>
+        <!-- ============ TOTAL SAVINGS ============ -->
+<section class="panel savings-section">
+  <div class="section-header">
+    <h2>Total savings</h2>
+    <span class="savings-section__total" id="savingsTotal">—</span>
+  </div>
+  <div class="savings-breakdown" id="savingsBreakdown"></div>
+  <p class="empty-state" id="savingsEmpty" hidden>Join a plan to start saving.</p>
+</section>
 
+                    
         <!-- ============ QUICK ACTIONS ============ -->
         <section class="quick-actions">
           <a href="browse.html" class="quick-action">
