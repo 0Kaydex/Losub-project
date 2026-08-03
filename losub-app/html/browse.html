@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Browse Plans — Losub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/browse.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar"><img src="../images/icons/sidebar collapse btn.png" alt="" class="sidebar__icon" /></button>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon"><img src="../images/icons/home icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="savings.html" class="sidebar__link" data-page="savings">
+          <span class="sidebar__icon"><img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Savings</span>
+        </a>
+        <a href="payment-history.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon"><img src="../images/icons/payment history.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Payment history</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon"><img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Airtime/data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon"><img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Browse plans</h1>
+        <!-- <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div> -->
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+
+        <!-- <button type="button" class="back-btn" onclick="history.back()">
+          <span class="back-btn__arrow">&larr;</span> Back
+        </button> -->
+
+        <section class="page__header">
+          <h2>Find a plan to join</h2>
+          <p>Save on subscriptions by sharing the cost with others.</p>
+        </section>
+
+        <div class="browse-search">
+          <input type="search" id="planSearch" placeholder="Search Spotify, Netflix, Capcut…" />
+        </div>
+
+        <!-- ============ CATEGORIES ============ -->
+        <section class="browse-section">
+          <h2>Categories</h2>
+          <div class="category-grid" id="categoryGrid">
+            <button type="button" class="category-chip" data-cat="all" style="background: var(--pastel-sand);">
+              <span class="category-chip__icon">✨</span>
+              <span>All</span>
+            </button>
+            <button type="button" class="category-chip" data-cat="video" style="background: var(--pastel-lilac);">
+              <span class="category-chip__icon">🎬</span>
+              <span>Movies & Series</span>
+            </button>
+            <button type="button" class="category-chip" data-cat="music" style="background: var(--pastel-sky);">
+              <span class="category-chip__icon">🎧</span>
+              <span>Music</span>
+            </button>
+            <button type="button" class="category-chip" data-cat="productivity" style="background: var(--pastel-mint);">
+              <span class="category-chip__icon">🗂</span>
+              <span>Productivity</span>
+            </button>
+            <button type="button" class="category-chip" data-cat="security" style="background: var(--pastel-peach);">
+              <span class="category-chip__icon">🔒</span>
+              <span>Security & VPN</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ============ TOP PLANS ============ -->
+        <section class="browse-section">
+          <h2>Top plans</h2>
+          <div class="plan-row" id="newOffersRow"></div>
+        </section>
+
+        <!-- ============ BECOME MANAGER BANNER ============ -->
+        <section class="manager-banner">
+          <div class="manager-banner__text">
+            <h2>Become account manager</h2>
+            <p>Start a new group and pay less for managing it.</p>
+            <a href="#allPlans" class="manager-banner__cta">See full plans</a>
+          </div>
+          <div class="manager-banner__art" aria-hidden="true">
+            <span class="manager-banner__circle"></span>
+            <span class="manager-banner__circle manager-banner__circle--2"></span>
+          </div>
+        </section>
+
+        <!-- ============ ALL PLANS ============ -->
+        <section class="browse-section" id="allPlans">
+          <h2>All plans</h2>
+          <div class="plan-grid" id="planGrid"></div>
+          <p class="empty-state" id="planEmpty" hidden>No plans match your search.</p>
+        </section>
+
+        <!-- ============ FAQ ============ -->
+        <section class="browse-faq">
+          <h2>Questions &amp; answers</h2>
+          <div class="faq__list">
+            <div class="faq-item">
+              <button class="faq-item__question" aria-expanded="false">
+                Why are subscriptions so affordable?
+                <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+              </button>
+              <div class="faq-item__answer">
+                <p>Sharing an eligible seat splits the subscription's cost among every co-subscriber, so each person only pays their share instead of the full price.</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-item__question" aria-expanded="false">
+                Can I cancel or stop sharing a subscription?
+                <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+              </button>
+              <div class="faq-item__answer">
+                <p>Yes, you can leave or stop sharing a subscription at any time from your account settings.</p>
+              </div>
+            </div>
+            <div class="faq-item">
+              <button class="faq-item__question" aria-expanded="false">
+                Is Losub affiliated with the services listed?
+                <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+              </button>
+              <div class="faq-item__answer">
+                <p>No — Losub isn't affiliated with or endorsed by any of the services shown. We simply help groups of people share the cost of a family or multi-seat plan.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ MANAGER OFFER MODAL ============ -->
+  <div class="modal-overlay" id="managerModalOverlay" hidden>
+    <div class="modal">
+      <button type="button" class="modal__close" id="modalClose" aria-label="Close">&times;</button>
+      <h2>This plan is full</h2>
+      <p class="modal__sub">
+        Be the first to start a new <span id="modalPlanName">plan</span> group and pay
+        <strong id="modalManagerPrice">less</strong> as manager.
+      </p>
+      <ul class="modal__terms">
+        <li>You'll add and remove members whenever Losub instructs.</li>
+        <li>You must stay active — inactivity may lead to reassignment.</li>
+        <li>Losub handles all billing; you never collect payments.</li>
+      </ul>
+      <div class="modal__actions">
+        <button type="button" class="auth-submit" id="acceptManagerOffer">Accept and continue</button>
+        <button type="button" class="link-btn" id="declineManagerOffer">Join the waitlist instead</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/browse.js"></script>
+</body>
+</html>

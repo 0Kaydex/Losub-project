@@ -1,0 +1,400 @@
+/* ===========================
+   HERO SECTION
+=========================== */
+
+.hero{
+    position: relative;
+    overflow: hidden;
+
+    background: #fffaf7;
+
+    padding: 110px 0 90px;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.hero::before{
+    content:"";
+    position:absolute;
+    inset:0;
+    z-index:1;
+
+    background:
+        radial-gradient(
+            circle at center,
+            rgba(255,255,255,.82) 100%,
+            rgba(255,255,255,.68) 100%,
+            rgba(255,255,255,.35) 100%,
+            rgba(255,255,255,.15) 100%
+        );
+
+    pointer-events:none;
+}
+
+/* Background Image */
+
+.hero-bg{
+    position: absolute;
+    inset: 0;
+
+    width: 100%;
+    height: 100%;
+
+    object-fit: cover;
+
+    /* Move illustration slightly down */
+    object-position: center 60%;
+
+    pointer-events: none;
+    user-select: none;
+
+    z-index: 0;
+}
+
+/* Light overlay for readability */
+
+.hero::after{
+    content: "";
+    position: absolute;
+    inset: 0;
+
+    background: rgba(255,255,255,.18);
+
+    z-index: 1;
+}
+
+/* ===========================
+   HERO CONTENT
+=========================== */
+
+.hero__inner{
+
+    position: relative;
+    z-index: 2;
+
+    width: 100%;
+    max-width: 900px;
+
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+}
+
+/* ===========================
+   TITLE
+=========================== */
+
+.hero__title{
+
+    margin: 20px 0 20px;
+
+    font-size: clamp(42px,5vw,68px);
+
+    font-weight: 700;
+
+    line-height: 1.08;
+
+    max-width: 760px;
+
+    color: var(--ink);
+}
+
+.hero__rotator{
+
+    display: inline-block;
+
+    color: var(--chip-blue);
+
+    transition: opacity .18s ease,
+                transform .18s ease;
+}
+
+.hero__rotator.is-swapping{
+
+    opacity:0;
+
+    transform:translateY(8px);
+}
+
+/* ===========================
+   SUBTITLE
+=========================== */
+
+.hero__subtitle{
+
+    margin-top: 8px;
+
+    max-width: 520px;
+
+    font-size: 18px;
+
+    line-height: 1.7;
+
+    color: var(--ink-soft);
+}
+
+/* ===========================
+   AVATARS
+=========================== */
+
+.hero__network{
+
+    position: relative;
+
+    margin-top: 36px;
+
+    width: 500px;
+
+    height: 100px;
+}
+
+.hero__thread{
+
+    position:absolute;
+
+    top:0;
+    left:0;
+
+    width:100%;
+    height:40px;
+}
+
+.avatar-stack{
+
+    position:absolute;
+
+    bottom:0;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    display:flex;
+}
+
+.avatar{
+
+    width:84px;
+    height:84px;
+
+    border-radius:50%;
+
+    border:5px solid var(--paper);
+
+    overflow:hidden;
+
+    margin-left:-12px;
+
+    box-shadow:var(--shadow-soft);
+
+    animation:pop .45s ease backwards;
+}
+
+.avatar:first-child{
+
+    margin-left:0;
+}
+
+.avatar__img{
+
+    width:100%;
+    height:100%;
+
+    object-fit:cover;
+}
+
+@keyframes pop{
+
+    from{
+
+        opacity:0;
+
+        transform:translateY(8px) scale(.92);
+    }
+
+    to{
+
+        opacity:1;
+
+        transform:translateY(0) scale(1);
+    }
+}
+
+/* ===========================
+   CTA
+=========================== */
+
+.hero__cta{
+
+    margin-top:36px;
+
+    display:inline-flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:16px 30px;
+
+    background:var(--ink);
+
+    color:var(--paper);
+
+    border-radius:999px;
+
+    font-size:16px;
+
+    font-weight:600;
+
+    transition:.25s ease;
+}
+
+.hero__cta:hover{
+
+    background:var(--chip-blue);
+
+    transform:translateY(-3px);
+}
+
+.hero__cta-arrow{
+
+    transition:.25s;
+}
+
+.hero__cta:hover .hero__cta-arrow{
+
+    transform:translateX(4px);
+}
+
+/* ===========================
+   TRUST
+=========================== */
+
+.hero__trust{
+
+    margin-top:20px;
+
+    display:flex;
+
+    align-items:center;
+
+    gap:8px;
+
+    color:var(--ink-soft);
+
+    font-size:14px;
+}
+
+.hero__stars{
+
+    color:var(--chip-yellow-deep);
+
+    letter-spacing:1px;
+}
+
+/* ===========================
+   APP STORE
+=========================== */
+
+.hero__stores{
+
+    margin-top:40px;
+
+    display:flex;
+
+    gap:14px;
+}
+
+.store-badge{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    padding:10px 18px;
+
+    background:var(--ink);
+
+    color:white;
+
+    border-radius:12px;
+
+    transition:.25s;
+}
+
+.store-badge:hover{
+
+    transform:translateY(-3px);
+}
+
+.store-badge__text small{
+
+    display:block;
+
+    color:#ccc;
+
+    font-size:10px;
+}
+
+.store-badge__icon{
+
+    width:18px;
+
+    height:18px;
+
+    border-radius:4px;
+
+    background:white;
+}
+
+/* ===========================
+   MOBILE
+=========================== */
+
+@media(max-width:768px){
+
+.hero{
+
+    padding:90px 20px 70px;
+}
+
+.hero__title{
+
+    font-size:clamp(34px,8vw,50px);
+}
+
+.hero__subtitle{
+
+    font-size:16px;
+}
+
+.hero__network{
+
+    width:100%;
+    height:90px;
+}
+
+.avatar{
+
+    width:64px;
+    height:64px;
+}
+
+.hero__stores{
+
+    flex-direction:column;
+
+    align-items:center;
+}
+
+.hero-bg{
+
+    object-position:center;
+}
+
+}

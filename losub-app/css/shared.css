@@ -1,0 +1,119 @@
+/* Common page shell */
+.page {
+  padding-top: calc(var(--header-h) + 32px);
+  padding-bottom: 80px;
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.page__header h1 {
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+   border: 2px solid yellow;
+}
+
+.page__header p {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 16px;
+   border: 2px solid red;
+  
+}
+/* Back button */
+/* .back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+  padding: 4px 0;
+}
+.back-btn:hover { color: var(--ink); }
+.back-btn__arrow { font-size: 16px; line-height: 1; } */
+
+/* Panels */
+.panel {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.section-header h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.link-btn {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  border: none;
+  background: none;
+}
+.link-btn:hover { color: var(--ink); }
+
+/* Status pills (reused across group/payments/browse) */
+.status-pill {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  white-space: nowrap;
+}
+.status-pill--paid,
+.status-pill--open { background: var(--pastel-mint); color: #1f5c3f; }
+.status-pill--pending,
+.status-pill--filling { background: var(--pastel-sand); color: #7a5a12; }
+.status-pill--defaulted,
+.status-pill--failed { background: var(--pastel-pink); color: #8c2a3f; }
+.status-pill--full { background: var(--pastel-lilac); color: #4a3b6b; }
+
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+/* Simple tab bar (used on notifications + payment history) */
+.tab-bar {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.tab-bar__btn {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-soft);
+}
+
+.tab-bar__btn.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  border-color: var(--ink);
+}
+
+@media (max-width: 720px) {
+  .page { padding-top: calc(var(--header-h) + 20px); }
+}

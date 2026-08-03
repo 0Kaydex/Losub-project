@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Account — Losub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+  
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/account.css" />
+</head>
+<body class=" app-shell-page">
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar"><img src="../images/icons/sidebar collapse btn.png" alt="" class="sidebar__icon" /></button>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon"><img src="../images/icons/home icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="savings.html" class="sidebar__link" data-page="savings">
+          <span class="sidebar__icon"><img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Savings</span>
+        </a>
+        <a href="payment-history.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon"><img src="../images/icons/payment history.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Payment history</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon"><img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Airtime & data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon"><img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">My account</h1>
+        <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div>
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          🔔<span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+        <div class="wrap--narrow">
+
+          <button type="button" class="back-btn" onclick="history.back()">
+            <span class="back-btn__arrow">&larr;</span> Back
+          </button>
+
+          <section class="page__header">
+            <h2>My account</h2>
+            <p>Manage your profile and security settings.</p>
+          </section>
+
+          <section class="panel">
+            <div class="section-header"><h2>Profile</h2></div>
+            <form id="profileForm" novalidate>
+              <label class="auth-field">
+                <span>Full name</span>
+                <input type="text" name="fullname" id="fullname" required />
+              </label>
+              <label class="auth-field">
+                <span>Email</span>
+                <input type="email" name="email" id="email" required />
+              </label>
+              <button type="submit" class="auth-submit">Save changes</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="section-header"><h2>Change password</h2></div>
+            <form id="passwordForm" novalidate>
+              <label class="auth-field">
+                <span>Current password</span>
+                <input type="password" name="current" placeholder="••••••••" required />
+              </label>
+              <label class="auth-field">
+                <span>New password</span>
+                <input type="password" name="newpass" placeholder="At least 8 characters" required />
+              </label>
+              <button type="submit" class="auth-submit">Update password</button>
+            </form>
+          </section>
+
+          <section class="panel">
+            <div class="section-header"><h2>Account roles</h2></div>
+            <div id="roleSummary" class="role-summary"></div>
+          </section>
+
+          <button type="button" class="logout-btn" id="logoutBtn">Log out</button>
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/account.js"></script>
+</body>
+</html>

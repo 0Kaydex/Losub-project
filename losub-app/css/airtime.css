@@ -1,0 +1,177 @@
+.airtime-tag {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  background: var(--pastel-mint);
+  color: #1f5c3f;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  margin-bottom: 8px;
+}
+
+.page__header h2 { font-size: 22px; font-weight: 700; color: var(--ink); }
+.page__header p { margin-top: 4px; color: var(--ink-soft); font-size: 14px; }
+
+.airtime-layout {
+  display: grid;
+  grid-template-columns: 1fr 280px;
+  gap: 20px;
+  margin-top: 24px;
+  align-items: start;
+}
+
+.panel {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 22px;
+}
+
+.airtime-type-toggle {
+  display: flex;
+  background: var(--paper);
+  border-radius: var(--r-pill);
+  padding: 4px;
+  margin-bottom: 20px;
+}
+
+.airtime-type-toggle__btn {
+  flex: 1;
+  padding: 9px 0;
+  border: none;
+  background: none;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-soft);
+  border-radius: var(--r-pill);
+}
+
+.airtime-type-toggle__btn.is-active {
+  background: var(--surface);
+  color: var(--ink);
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.airtime-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.airtime-field input {
+  font-size: 14px;
+  font-weight: 400;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  color: var(--ink);
+}
+.airtime-field input:focus {
+  outline: 2px solid var(--chip-green);
+  outline-offset: 1px;
+}
+
+.network-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.network-chip {
+  padding: 12px 8px;
+  border: 2px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+
+.network-chip.is-active {
+  border-color: var(--chip-color, var(--ink));
+  color: var(--ink);
+  background: color-mix(in srgb, var(--chip-color, var(--ink)) 12%, var(--paper));
+}
+
+.amount-quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.amount-chip {
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.amount-chip.is-active {
+  border-color: var(--ink);
+  background: var(--pastel-sky);
+}
+
+.data-plan-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+
+.data-plan-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  background: var(--paper);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.data-plan-item.is-active {
+  border-color: var(--ink);
+  background: var(--pastel-sky);
+}
+
+.data-plan-item__name { font-weight: 700; color: var(--ink); }
+.data-plan-item__validity { font-size: 11px; color: var(--ink-soft); display: block; }
+.data-plan-item__price { font-weight: 700; color: var(--ink); }
+
+.airtime-message {
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: 13px;
+  margin-bottom: 16px;
+}
+.airtime-message--error { background: var(--pastel-pink); color: #8c2a3f; }
+.airtime-message--success { background: var(--pastel-mint); color: #1f5c3f; }
+
+.airtime-summary h3 { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 14px; }
+
+.summary-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+.summary-row:last-child { border-bottom: none; }
+.summary-row span:last-child { color: var(--ink); font-weight: 600; }
+
+.summary-row--total span:last-child { font-size: 17px; font-weight: 700; }
+
+@media (max-width: 900px) {
+  .airtime-layout { grid-template-columns: 1fr; }
+}

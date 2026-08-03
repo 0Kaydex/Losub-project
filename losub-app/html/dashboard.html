@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard — Losub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/dashboard.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell">
+
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar"><img src="../images/icons/sidebar collapse btn.png" alt="" class="sidebar__icon" /> </button>
+      </div>
+
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon"><img src="../images/icons/home icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="savings.html" class="sidebar__link" data-page="savings">
+          <span class="sidebar__icon"> <img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span> <span class="sidebar__label">Savings</span>
+        </a>
+        <a href="payment-history.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon"><img src="../images/icons/payment history.png" alt="" class="sidebar__icon" /> </span><span class="sidebar__label">Payment history</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon"><img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Airtime/data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon"><img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Dashboard</h1>
+        <!-- <div class="topbar__search">
+          <input type="search" placeholder="Search plans, groups…" />
+        </div> -->
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+
+        <section class="dash__greeting">
+          <div>
+            <h2>Welcome back, <span id="userName">there</span></h2>
+            <p>Here's what's happening across your subscriptions.</p>
+          </div>
+        </section>
+
+        <!-- ============ STATS ROW ============ -->
+        <section class="stat-grid">
+          <article class="stat-card">
+            <span class="stat-card__icon stat-card__icon--blue">📦</span>
+            <div>
+              <span class="stat-card__label">Active plans</span>
+              <span class="stat-card__value" id="statActivePlans">—</span>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-card__icon stat-card__icon--mint">💰</span>
+            <div>
+              <span class="stat-card__label">Total saved</span>
+              <span class="stat-card__value" id="statTotalSaved">—</span>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-card__icon stat-card__icon--sand">📅</span>
+            <div>
+              <span class="stat-card__label">Next payment</span>
+              <span class="stat-card__value" id="statNextPayment">—</span>
+            </div>
+          </article>
+          <article class="stat-card">
+            <span class="stat-card__icon stat-card__icon--pink">🔔</span>
+            <div>
+              <span class="stat-card__label">Unread updates</span>
+              <span class="stat-card__value" id="statUnread">—</span>
+            </div>
+          </article>
+        </section>
+
+        <!-- ============ QUICK ACTIONS ============ -->
+        <section class="quick-actions">
+          <a href="browse.html" class="quick-action">
+            <span class="quick-action__icon quick-action__icon--blue">🔍</span>
+            <span>Browse plans</span>
+          </a>
+          <a href="airtime.html" class="quick-action">
+            <span class="quick-action__icon quick-action__icon--mint">📱</span>
+            <span>Buy airtime & data</span>
+          </a>
+          <a href="savings.html" class="quick-action">
+            <span class="quick-action__icon quick-action__icon--sand">💰</span>
+            <span>View savings</span>
+          </a>
+        </section>
+
+        <div class="dash__layout">
+
+          <section class="dash__groups">
+            <div class="dash__section-header">
+              <h2>My groups</h2>
+              <a href="browse.html" class="dash__link">Browse plans →</a>
+            </div>
+            <div class="group-grid" id="groupGrid"></div>
+            <div class="dash__empty" id="groupsEmpty" hidden>
+              <p>You haven't joined any plans yet.</p>
+              <a href="browse.html" class="hero__cta">
+                <span class="hero__cta-text hero__cta-text--default">Browse plans</span>
+                <span class="hero__cta-text hero__cta-text--hover">Find a plan to join</span>
+              </a>
+            </div>
+          </section>
+
+          <aside class="dash__sidebar">
+            <section class="panel">
+              <div class="dash__section-header">
+                <h2>Notifications</h2>
+                <button type="button" class="dash__link" id="markAllRead">Mark all read</button>
+              </div>
+              <ul class="notif-list" id="notifList"></ul>
+              <a href="notifications.html" class="dash__see-all">See all notifications →</a>
+            </section>
+
+            <section class="panel" id="waitlist">
+              <div class="dash__section-header"><h2>Waitlist</h2></div>
+              <ul class="waitlist-list" id="waitlistList"></ul>
+              <p class="dash__empty-inline" id="waitlistEmpty" hidden>You're not on any waitlists right now.</p>
+            </section>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script src="../js/store.js"></script>
+<script src="../js/app-shell.js"></script>
+<script src="../js/dashboard.js"></script>
+</body>
+</html>

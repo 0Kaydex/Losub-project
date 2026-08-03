@@ -1,0 +1,133 @@
+.navbar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  z-index: 1000;
+  background: rgba(250, 249, 246, 0.6);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+}
+
+.navbar__inner {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.navbar__logo {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 22px;
+  letter-spacing: -0.02em;
+}
+
+.navbar__links {
+  display: flex;
+  gap: 32px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.navbar__links a:hover { color: var(--ink); }
+
+.navbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 15px;
+  font-weight: 500;
+}
+
+.navbar__login { color: var(--ink-soft); }
+.navbar__login:hover { color: var(--ink); }
+
+.navbar__signup {
+  background: var(--ink);
+  color: var(--paper);
+  padding: 10px 20px;
+  border-radius: var(--r-pill);
+  transition: transform 0.15s ease, background 0.15s ease;
+}
+
+.navbar__signup:hover {
+  background: var(--chip-blue);
+  transform: translateY(-1px);
+}
+
+.navbar__burger {
+  display: none;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: none;
+  padding: 0;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+}
+
+.navbar__burger span {
+  display: block;
+  height: 2px;
+  background: var(--ink);
+  border-radius: 2px;
+}
+
+.navbar__mobile-menu {
+  display: none;
+  position: fixed;
+  top: var(--header-h);
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-bottom: 1px solid var(--line);
+  padding: 12px var(--gutter) 20px;
+  flex-direction: column;
+  gap: 4px;
+  z-index: 999;
+}
+
+.navbar__mobile-menu.is-open { display: flex; }
+
+.navbar__mobile-menu a {
+  padding: 12px 4px;
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+.navbar__mobile-menu a:last-child { border-bottom: none; }
+
+/* Re-assert the pill button look for Sign up inside the mobile menu,
+   since .navbar__mobile-menu a above would otherwise override it */
+.navbar__mobile-menu .navbar__signup {
+  padding: 10px 20px;
+  color: var(--paper);
+  background: var(--ink);
+  border-bottom: none;
+  border-radius: var(--r-pill);
+  text-align: center;
+}
+
+.navbar__mobile-menu .navbar__signup:hover {
+  background: var(--chip-blue);
+}
+
+/* Keep Log in styled like the other plain links in the mobile menu */
+.navbar__mobile-menu .navbar__login {
+  color: var(--ink-soft);
+  border-bottom: 1px solid var(--line);
+}
+
+@media (max-width: 720px) {
+  .navbar__links { display: none; }
+  .navbar__login { display: none; }
+  .navbar__burger { display: flex; }
+}

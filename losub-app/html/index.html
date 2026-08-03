@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Losub — Share the price of your subscriptions</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css">
+  <link rel="stylesheet" href="../css/navbar.css" >
+  <link rel="stylesheet" href="../css/hero.css" >
+  <link rel="stylesheet" href="../css/showcase.css" >
+  <link rel="stylesheet" href="../css/how-it-works.css" >
+  <link rel="stylesheet" href="../css/testimonials.css" >
+  <link rel="stylesheet" href="../css/categories.css" >
+  <link rel="stylesheet" href="../css/faq.css" >
+  <link rel="stylesheet" href="../css/footer.css" >
+</head>
+<body>
+
+  <!-- ============ NAVBAR ============ -->
+  <navbar class="navbar">
+    <div class="wrap navbar__inner">
+      <a href="#top" class="navbar__logo">Losub</a>
+
+      <nav class="navbar__links">
+        <a href="#how">The Guide</a>
+        <a href="#subscriptions">The Magazine</a>
+      </nav>
+
+      <div class="navbar__actions">
+      <a href="../html/auth.html?tab=signin" class="navbar__login">Log in</a>
+      <a href="../html/auth.html?tab=signup" class="navbar__signup">Sign up</a>
+        <button class="navbar__burger" aria-label="Open menu" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+
+  <nav class="navbar__mobile-menu">
+  <a href="#how">The Guide</a>
+  <a href="#subscriptions">The Magazine</a>
+  <a href="auth.html?tab=signin" class="navbar__login">Log in</a>
+  <a href="auth.html?tab=signup" class="navbar__signup">Sign up</a>
+</nav>
+  </navbar>
+
+  <main id="top">
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <img src="../images/hero 2.png"
+        class="hero-bg"
+        alt="">
+      <div class="wrap hero__inner">
+        <h1 class="hero__title"> Share the price of<br /> your <span class="hero__rotator" id="heroRotator"> Netflix </span> subscription
+        </h1>
+        <p class="hero__subtitle">
+          Save on subscriptions by joining the world's largest co-subscription community.
+        </p>
+      
+
+        <div class="hero__network">
+          <svg class="hero__thread" viewBox="0 0 280 40" preserveAspectRatio="none" aria-hidden="true">
+            <path d="M10 20 Q140 -10 270 20" fill="none" stroke="var(--line)" stroke-width="2" stroke-dasharray="1 10" stroke-linecap="round" />
+          </svg>
+          <div class="avatar-stack">
+            <span class="avatar" style="background: var(--pastel-sky); animation-delay: 0ms">
+              <img src="../images/avater 1.jpg" alt="User avatar" class="avatar__img" />
+            </span>
+            <span class="avatar" style="background: var(--pastel-sky); animation-delay: 0ms">
+              <img src="../images/avater 2.jpg" alt="User avatar" class="avatar__img" />
+            </span>
+            <span class="avatar" style="background: var(--pastel-sky); animation-delay: 0ms">
+              <img src="../images/avater 3.jpg" alt="User avatar" class="avatar__img" />
+            </span>
+            <span class="avatar" style="background: var(--pastel-sky); animation-delay: 0ms">
+              <img src="../images/avater 4.jpg" alt="User avatar" class="avatar__img" />
+            </span>
+            <span class="avatar" style="background: var(--pastel-sky); animation-delay: 0ms">
+              <img src="../images/avater 5.jpg" alt="User avatar" class="avatar__img" />
+            </span>
+          </div>
+        </div>
+
+        <a href="../html/auth.html?tab=signup" class="hero__cta">
+            <span class="hero__cta-text hero__cta-text--default">Create Account</span>
+            <svg class="hero__cta-arrow" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </a>
+
+        <div class="hero__trust">
+          <span class="hero__stars" aria-hidden="true">★★★★★</span>
+          <span>9,605 reviews on Trustpilot</span>
+        </div>
+
+        <!-- <div class="hero__stores"> -->
+          <!-- <a href="#appstore" class="store-badge"> -->
+            <!-- <span class="store-badge__icon"></span> -->
+            <!-- <span class="store-badge__text"><small>Download on the</small>App Store</span> -->
+          <!-- </a> -->
+          <!-- <a href="#googleplay" class="store-badge"> -->
+            <!-- <span class="store-badge__icon"></span> -->
+            <!-- <span class="store-badge__text"><small>GET IT ON</small>Google Play</span> -->
+          <!-- </a> -->
+        <!-- </div> -->
+    </section>
+
+<!-- ============ SUBSCRIPTION SHOWCASE ============ -->
+<div class="showcase">
+  <div class="wrap showcase__inner">
+    <div class="showcase__intro">
+      <h2>More than<br />100 shareable<br />subscriptions</h2>
+      <a href="#subscriptions" class="showcase__link">See all subscriptions</a>
+    </div>
+
+    <div class="showcase__cards">
+      <div class="showcase__track">
+        <article class="sub-card sub-card--green">
+          <h3>Spotify</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦800</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <article class="sub-card sub-card--red">
+          <h3>youtube</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦900</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <article class="sub-card sub-card--capcut">
+          <h3>Capcut</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦2700</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <article class="sub-card sub-card--Netred">
+          <h3>Netflix</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦1500</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <!-- duplicate set, for a seamless loop -->
+        <article class="sub-card sub-card--green">
+          <h3>Spotify</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦800</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <article class="sub-card sub-card--red">
+          <h3>youtube</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦900</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <article class="sub-card sub-card--capcut">
+          <h3>Capcut</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦2700</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+
+        <article class="sub-card sub-card--Netred">
+          <h3>Netflix</h3>
+          <div class="seat-row"><span class="seat"></span><span class="seat"></span><span class="seat"></span></div>
+          <div class="sub-card__price"><strong>₦1500</strong>/month</div>
+          <button type="button" class="sub-card__cta">Join</button>
+        </article>
+      </div>
+    </div>
+  </div>
+</div>
+
+    <!-- ============ HOW IT WORKS ============ -->
+    <section class="how" id="how">
+      <div class="wrap">
+        <div class="how__header">
+          <h2>How does it work?</h2>
+          <p>Share subscriptions, split the bill, and save more—securely.</p>
+        </div>
+
+        <div class="how__grid">
+          <div class="how__card how__card--mint">
+            <span class="how__eyebrow">Plan manager</span>
+            <h3>Manage available seats</h3>
+            <p>Work with Losub to keep plans going.</p>
+            <div class="how__art" aria-hidden="true">
+              <div class="how__seat how__seat--a"></div>
+              <div class="how__seat how__seat--b"></div>
+              <span class="how__plus">+</span>
+            </div>
+          </div>
+
+          <div class="how__card how__card--sand">
+            <span class="how__eyebrow">Co-subscribers</span>
+            <h3>Join a shared subscription</h3>
+            <p>Access subscriptions you're interested in and enjoy it. No strings attached.</p>
+            <div class="how__art how__art--trio" aria-hidden="true">
+              <div class="how__seat how__seat--c"></div>
+              <div class="how__seat how__seat--d"></div>
+              <div class="how__seat how__seat--e"></div>
+            </div>
+          </div>
+        </div>
+
+        <button type="button" class="how__video">
+          <span class="how__play" aria-hidden="true">▶</span>
+          Watch the video
+        </button>
+      </div>
+    </section>
+
+  <!-- ============ TESTIMONIALS ============ -->
+<section class="testimonials">
+  <div class="wrap testimonials__inner">
+    <span class="testimonials__badge">★★★★★ 4.3/5 on Trustpilot</span>
+    <h2>More than a million Losubers trust us</h2>
+
+    <div class="testimonials__carousel">
+      <button class="testimonials__arrow testimonials__arrow--prev" aria-label="Previous review">‹</button>
+      <div class="testimonials__stage"></div>
+      <button class="testimonials__arrow testimonials__arrow--next" aria-label="Next review">›</button>
+    </div>
+
+    <div class="testimonials__dots"></div>
+  </div>
+</section>
+
+    <!-- ============ CATEGORY GRID ============ -->
+    <section class="categories" id="subscriptions">
+      <div class="wrap">
+        <h2 class="categories__title">A wide range of subscriptions<br />for all your needs</h2>
+
+        <div class="categories__grid">
+          <article class="category-card" style="background: var(--pastel-lilac);">
+            <span class="category-card__label">Movies & TV</span>
+            <h3>Prime Video, MasterClass…</h3>
+            <p>Watch movies, TV shows and anime in HD streaming.</p>
+          </article>
+          <article class="category-card" style="background: var(--pastel-mint);">
+            <span class="category-card__label">Music</span>
+            <h3>Amazon Music, Deezer, Tidal…</h3>
+            <p>Listen to your favorite artists without limits or ads.</p>
+          </article>
+          <!-- <article class="category-card" style="background: var(--pastel-sky);">
+            <span class="category-card__label">Video games</span>
+            <h3>Nintendo Switch, Bayam…</h3>
+            <p>Access hundreds of popular games for the whole family.</p>
+          </article> -->
+          <article class="category-card" style="background: var(--pastel-sand);">
+            <span class="category-card__label">Productivity</span>
+            <h3>Microsoft 365, CapCut…</h3>
+            <p>Work with professional software and editing tools.</p>
+          </article>
+          <!-- <article class="category-card" style="background: var(--pastel-peach);">
+            <span class="category-card__label">Press & reading</span>
+            <h3>Readly, Bookbeat, Blinkist…</h3>
+            <p>Read digital newspapers and magazines on all your devices.</p>
+          </article> -->
+          <article class="category-card" style="background: var(--pastel-pink);">
+            <span class="category-card__label">Security & VPN</span>
+            <h3>Bitdefender, CyberGhost…</h3>
+            <p>Protect your browsing and personal data.</p>
+          </article>
+          <!-- <article class="category-card" style="background: var(--pastel-mint);">
+            <span class="category-card__label">Delivery</span>
+            <h3>Amazon Prime, Uber One…</h3>
+            <p>Enjoy premium access to your favorite sites.</p>
+          </article> -->
+          <!-- <article class="category-card" style="background: var(--pastel-sand);">
+            <span class="category-card__label">Cloud</span>
+            <h3>Dropbox, Kdrive…</h3>
+            <p>Store and back up your files with more space.</p>
+          </article> -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="faq">
+      <div class="wrap">
+        <h2>Questions &amp; answers</h2>
+        <div class="faq__list">
+
+          <div class="faq-item">
+            <button class="faq-item__question" aria-expanded="false">
+              Why are subscriptions so affordable?
+              <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="faq-item__answer">
+              <p>Sharing an eligible seat splits the subscription's cost among every co-subscriber, so each person only pays their share instead of the full price.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-item__question" aria-expanded="false">
+              What types of subscriptions can be shared on Losub?
+              <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="faq-item__answer">
+              <p>Any service with a family or multi-seat plan — streaming, music, productivity, gaming, VPNs and more.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-item__question" aria-expanded="false">
+              Is Losub secure?
+              <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="faq-item__answer">
+              <p>Every payment runs through our escrow system, so owners and co-subscribers are protected before, during and after the swap.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-item__question" aria-expanded="false">
+              Can I cancel or stop sharing a subscription?
+              <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="faq-item__answer">
+              <p>Yes, you can leave or stop sharing a subscription at any time from your account settings.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-item__question" aria-expanded="false">
+              Do I lose my favorites when I share my subscription?
+              <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="faq-item__answer">
+              <p>No — your personal library, history and preferences stay untouched when you share a seat.</p>
+            </div>
+          </div>
+
+          <div class="faq-item">
+            <button class="faq-item__question" aria-expanded="false">
+              What happens if, after I've paid, my subscription access doesn't work?
+              <span class="faq-item__chevron" aria-hidden="true">⌄</span>
+            </button>
+            <div class="faq-item__answer">
+              <p>Our support team steps in immediately and you're refunded if the issue can't be resolved.</p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="wrap footer__top">
+      <div class="footer__brand">
+        <span class="footer__logo">Losub</span>
+        <div class="footer__social" aria-hidden="true">
+          <span class="social-dot"></span>
+          <span class="social-dot"></span>
+          <span class="social-dot"></span>
+          <span class="social-dot"></span>
+        </div>
+        <p class="footer__hours">Monday to Friday, 10 a.m. to 6 p.m.</p>
+        <a href="#contact" class="footer__contact">Contact us</a>
+      </div>
+
+      <div class="footer__col">
+        <h4>About us</h4>
+        <ul>
+          <li><a href="#">Help Center</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">News</a></li>
+          <li><a href="#">Sharing guide</a></li>
+          <li><a href="#">Press area</a></li>
+        </ul>
+      </div>
+
+      <div class="footer__col">
+        <h4>Legal</h4>
+        <ul>
+          <li><a href="#">Terms and conditions of use</a></li>
+          <li><a href="#">Privacy policy</a></li>
+          <li><a href="#">Legal Notice</a></li>
+          <li><a href="#">Cookies</a></li>
+        </ul>
+      </div>
+
+      <div class="footer__col">
+        <h4>Categories</h4>
+        <ul>
+          <li><a href="#">Press & Reading</a></li>
+          <li><a href="#">Sound & VPN</a></li>
+          <li><a href="#">Music</a></li>
+          <li><a href="#">Video Games</a></li>
+          <li><a href="#">Productivity</a></li>
+          <li><a href="#">Wellness & Sports</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="wrap footer__bottom">
+      <p>Copyright 2019–2026 LOSUB SAS. All rights reserved.</p>
+      <p>Losub is registered with the ACPR as a payment service agent.</p>
+    </div>
+  </footer>
+
+<script src="../js/main.js"></script>
+</body>
+</html>

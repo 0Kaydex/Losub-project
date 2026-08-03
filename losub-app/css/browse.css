@@ -1,0 +1,412 @@
+.browse-search {
+  margin-bottom: 32px;
+}
+
+.browse-search input {
+  width: 100%;
+  padding: 16px 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--surface);
+  font-size: 15px;
+  color: var(--ink);
+}
+
+.browse-search input:focus {
+  outline: 2px solid var(--chip-green);
+  outline-offset: 1px;
+}
+
+.browse-section {
+  margin-bottom: 40px;
+}
+
+.browse-section h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+/* ---------- Categories ---------- */
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 12px;
+}
+
+.category-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 16px;
+  border: 2px solid transparent;
+  border-radius: var(--r-lg);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  text-align: left;
+}
+
+.category-chip__icon {
+  font-size: 22px;
+}
+
+.category-chip.is-active {
+  border-color: var(--ink);
+}
+
+/* ---------- Horizontal scrolling row (Top Plans) ---------- */
+.plan-row {
+  display: flex;
+  gap: 16px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scroll-snap-type: x proximity;
+}
+
+.plan-row::-webkit-scrollbar {
+  height: 6px;
+}
+.plan-row::-webkit-scrollbar-thumb {
+  background: var(--line);
+  border-radius: 999px;
+}
+
+.offer-card {
+  flex: 0 0 220px;
+  scroll-snap-align: start;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 8px;
+}
+
+.offer-card__logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  padding: 10px;
+  box-sizing: border-box;
+}
+
+.offer-card__manager {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.offer-card__plan {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.offer-card__plan strong { color: var(--ink); }
+
+.offer-card__contribution {
+  margin-top: 6px;
+  padding: 10px;
+  background: var(--paper);
+  border-radius: var(--r-md);
+  width: 100%;
+}
+
+.offer-card__contribution-label {
+  display: block;
+  font-size: 11px;
+  color: var(--ink-soft);
+}
+
+.offer-card__contribution-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.offer-card__cta {
+  width: 100%;
+  margin-top: 8px;
+  padding: 10px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+}
+.offer-card__cta:hover { background: var(--chip-blue); }
+
+.offer-card__cta--full {
+  background: var(--ink-soft);
+}
+
+/* ---------- Become manager banner ---------- */
+.manager-banner {
+  background: linear-gradient(135deg, #FF7A1A, #FFB020);
+  border-radius: var(--r-lg);
+  padding: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 40px;
+}
+
+.manager-banner__text h2 {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  margin-bottom: 6px;
+}
+
+.manager-banner__text p {
+  font-size: 14px;
+  opacity: 0.95;
+  margin-bottom: 16px;
+}
+
+.manager-banner__cta {
+  display: inline-block;
+  padding: 10px 20px;
+  background: #fff;
+  color: #B8460E;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 700;
+}
+.manager-banner__cta:hover { opacity: 0.9; }
+
+.manager-banner__art {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  flex-shrink: 0;
+}
+
+.manager-banner__circle {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,0.5);
+  width: 70px;
+  height: 70px;
+  top: 0;
+  left: 10px;
+}
+
+.manager-banner__circle--2 {
+  width: 50px;
+  height: 50px;
+  top: 40px;
+  left: 50px;
+  border-color: rgba(255,255,255,0.3);
+}
+
+@media (max-width: 600px) {
+  .manager-banner { flex-direction: column; text-align: center; }
+}
+
+/* ---------- All plans grid ---------- */
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+}
+
+.plan-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.plan-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  box-sizing: border-box;
+}
+
+.plan-card__name {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.plan-card__seats {
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.plan-card__bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 4px;
+  gap: 10px;
+}
+
+.plan-card__price {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+.plan-card__price small {
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-soft);
+}
+
+.plan-card__cta {
+  padding: 8px 16px;
+  border-radius: var(--r-pill);
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  white-space: nowrap;
+}
+.plan-card__cta:hover { background: var(--chip-blue); }
+
+.plan-card__cta--full {
+  background: var(--ink-soft);
+}
+
+/* ---------- FAQ ---------- */
+.browse-faq {
+  margin-top: 8px;
+  margin-bottom: 40px;
+}
+
+.browse-faq h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-bottom: 16px;
+}
+
+.faq-item {
+  border-bottom: 1px solid var(--line);
+}
+
+.faq-item__question {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 18px 4px;
+  background: none;
+  border: none;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  text-align: left;
+}
+
+.faq-item__chevron {
+  transition: transform 0.2s ease;
+  color: var(--ink-soft);
+}
+
+.faq-item.is-open .faq-item__chevron {
+  transform: rotate(180deg);
+}
+
+.faq-item__answer {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.25s ease;
+}
+
+.faq-item.is-open .faq-item__answer {
+  max-height: 200px;
+}
+
+.faq-item__answer p {
+  padding: 0 4px 18px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+}
+
+/* ---------- Manager offer modal ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  max-width: 420px;
+  width: 100%;
+  padding: 32px 28px 28px;
+}
+
+.modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
+.modal h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modal__sub {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.modal__terms {
+  margin: 18px 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+@media (max-width: 480px) {
+  .plan-grid { grid-template-columns: 1fr; }
+}

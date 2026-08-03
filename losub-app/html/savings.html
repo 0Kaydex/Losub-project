@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Savings — Losub</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/savings.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar"><img src="../images/icons/sidebar collapse btn.png" alt="" class="sidebar__icon" /></button>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon"><img src="../images/icons/home icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon"> <img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="savings.html" class="sidebar__link" data-page="savings">
+          <span class="sidebar__icon"> <img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Savings</span>
+        </a>
+        <a href="payment-history.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon"> <img src="../images/icons/payment history.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Payment history</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon"> <img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Airtime & data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon"> <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">My savings</h1>
+        <!-- <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div> -->
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+
+        <!-- <button type="button" class="back-btn" onclick="history.back()">
+          <span class="back-btn__arrow">&larr;</span> Back
+        </button> -->
+
+        <section class="page__header">
+          <h2>My total savings</h2>
+          <p>What you'd pay alone, versus what you actually pay on Losub.</p>
+        </section>
+
+        <section class="savings-hero">
+          <span class="savings-hero__label">Total saved so far</span>
+          <span class="savings-hero__value" id="totalSaved">—</span>
+          <span class="savings-hero__sub" id="savedPercent">—</span>
+        </section>
+
+        <section class="panel">
+          <div class="section-header"><h2>Breakdown by plan</h2></div>
+          <div class="savings-table" id="savingsBreakdown"></div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/savings.js"></script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+/* ===========================================================
+   Losub — base styles & design tokens
+   =========================================================== */
+
+:root {
+  /* --- Core palette --- */
+  --ink: #14171A;
+  --ink-soft: #4B5157;
+  --ink-faint: #8A9096;
+  --paper: #FAF9F6;
+  --white: #f3f2ce;
+  --note: #e9e9e9;
+  --surface: #FFFFFF;
+  --line: #E7E4DD;
+
+  /* --- Brand chips (from the shared subscriptions) --- */
+  --chip-green: #2FB255;
+  --chip-blue: #1E90FF;
+  --chip-Netred: #E50914;
+  --chip-green-deep: #1F8F42;
+  --chip-red: #E43535;
+  --chip-red-deep: #B82626;
+  --chip-capcut: #02E0F7;
+  --chip-yellow-deep: #D89A1E;
+
+  /* --- Pastels --- */
+  --pastel-pink: #F4D8E3;
+  --pastel-mint: #D9EEDD;
+  --pastel-sand: #F1E7D2;
+  --pastel-lilac: #E4DEF3;
+  --pastel-sky: #D8E9F4;
+  --pastel-peach: #F6DFCF;
+
+  /* --- Type --- */
+  --font-display: "Space Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --font-body: "Inter", "Helvetica Neue", Arial, sans-serif;
+  --font-pro: "SF pro"
+
+  /* --- Radii & shadow --- */
+  --r-sm: 10px;
+  --r-md: 16px;
+  --r-lg: 24px;
+  --r-pill: 999px;
+  --shadow-card: 0 1px 2px rgba(20, 23, 26, 0.04), 0 12px 24px -12px rgba(20, 23, 26, 0.14);
+  --shadow-soft: 0 1px 2px rgba(20, 23, 26, 0.03), 0 6px 16px -8px rgba(20, 23, 26, 0.10);
+
+  /* --- Layout --- */
+  --content-w: 1140px;
+  --gutter: 24px;
+  --header-h: 76px;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: var(--header-h);
+}
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+  /* space for the fixed header so content never sits underneath it */
+  padding-top: var(--header-h);
+}
+
+h1, h2, h3, h4 {
+  font-family: var(--font-display);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+p { margin: 0; }
+
+a { color: inherit; text-decoration: none; }
+
+button { font-family: var(--font-body); cursor: pointer; }
+
+img { max-width: 100%; display: block; }
+
+ul { margin: 0; padding: 0; }
+
+.wrap {
+  max-width: var(--content-w);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+:focus-visible {
+  outline: 2px solid var(--chip-blue);
+  outline-offset: 3px;
+}

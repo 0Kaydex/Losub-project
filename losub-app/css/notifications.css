@@ -1,0 +1,64 @@
+.notif-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  margin-top: 4px;
+  border:2px solid red;
+  
+}
+
+.full-notif-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.full-notif-item {
+  display: flex;
+  gap: 14px;
+  padding: 16px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.full-notif-item:last-child { border-bottom: none; }
+
+.full-notif-item__icon {
+  flex-shrink: 0;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  background: var(--pastel-sky);
+}
+
+.full-notif-item__body {
+  flex: 1;
+}
+
+.full-notif-item__body p {
+  font-size: 14px;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.full-notif-item.is-read .full-notif-item__body p { color: var(--ink-soft); }
+
+.full-notif-item__meta {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.full-notif-item__dot-unread {
+  flex-shrink: 0;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--chip-blue);
+  margin-top: 6px;
+}

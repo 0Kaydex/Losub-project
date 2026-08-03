@@ -1,0 +1,140 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Airtime & Data — Losub</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+/>
+
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/shared.css" />
+<link rel="stylesheet" href="../css/app-shell.css" />
+<link rel="stylesheet" href="../css/airtime.css" />
+</head>
+<body class="app-shell-page">
+
+<div class="app-shell">
+
+    <aside class="sidebar" id="sidebar">
+    <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar">⟨⟩</button>
+    </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon">🏠</span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon">🔍</span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="savings.html" class="sidebar__link" data-page="savings">
+          <span class="sidebar__icon">💰</span><span class="sidebar__label">Savings</span>
+        </a>
+        <a href="payment-history.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon">🧾</span><span class="sidebar__label">Payment history</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon">📱</span><span class="sidebar__label">Airtime & data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon">🔔</span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Airtime & data</h1>
+        <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div>
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          🔔<span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+        <section class="page__header">
+          <p class="airtime-tag">New</p>
+          <h2>Buy airtime and data</h2>
+          <p>Top up any Nigerian network, straight from your Losub balance.</p>
+        </section>
+
+        <div class="airtime-layout">
+          <section class="panel airtime-form">
+
+            <div class="airtime-type-toggle">
+              <button type="button" class="airtime-type-toggle__btn is-active" data-type="airtime">Airtime</button>
+              <button type="button" class="airtime-type-toggle__btn" data-type="data">Data</button>
+            </div>
+
+            <label class="airtime-field">
+              <span>Network</span>
+              <div class="network-grid" id="networkGrid">
+                <button type="button" class="network-chip is-active" data-network="mtn" style="--chip-color:#FFC800;">MTN</button>
+                <button type="button" class="network-chip" data-network="glo" style="--chip-color:#3DAE2B;">Glo</button>
+                <button type="button" class="network-chip" data-network="airtel" style="--chip-color:#E30513;">Airtel</button>
+                <button type="button" class="network-chip" data-network="9mobile" style="--chip-color:#00A651;">9mobile</button>
+              </div>
+            </label>
+
+            <label class="airtime-field">
+              <span>Phone number</span>
+              <input type="tel" id="phoneNumber" placeholder="080X XXX XXXX" />
+            </label>
+
+            <!-- AIRTIME AMOUNT -->
+            <div id="airtimeSection">
+              <label class="airtime-field">
+                <span>Amount</span>
+                <input type="number" id="airtimeAmount" placeholder="Enter amount" min="50" />
+              </label>
+              <div class="amount-quick-grid">
+                <button type="button" class="amount-chip" data-amount="100">₦100</button>
+                <button type="button" class="amount-chip" data-amount="200">₦200</button>
+                <button type="button" class="amount-chip" data-amount="500">₦500</button>
+                <button type="button" class="amount-chip" data-amount="1000">₦1,000</button>
+                <button type="button" class="amount-chip" data-amount="2000">₦2,000</button>
+                <button type="button" class="amount-chip" data-amount="5000">₦5,000</button>
+              </div>
+            </div>
+
+            <!-- DATA PLAN LIST -->
+            <div id="dataSection" hidden>
+              <label class="airtime-field"><span>Choose a data plan</span></label>
+              <div class="data-plan-list" id="dataPlanList"></div>
+            </div>
+
+            <div class="airtime-message" id="airtimeMessage" hidden></div>
+
+            <button type="button" class="auth-submit" id="buyBtn">Buy now</button>
+          </section>
+
+          <aside class="airtime-summary panel">
+            <h3>Order summary</h3>
+            <div class="summary-row"><span>Network</span><span id="summaryNetwork">MTN</span></div>
+            <div class="summary-row"><span>Type</span><span id="summaryType">Airtime</span></div>
+            <div class="summary-row"><span>Phone</span><span id="summaryPhone">—</span></div>
+            <div class="summary-row summary-row--total"><span>Total</span><span id="summaryTotal">₦0</span></div>
+          </aside>
+        </div>
+      </main>
+    </div>
+  </div>
+
+<script src="../js/app-shell.js"></script>
+<script src="../js/airtime.js"></script>
+</body>
+</html>
