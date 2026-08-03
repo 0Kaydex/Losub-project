@@ -3,7 +3,7 @@
   font-size: 24px;
   font-weight: 700;
   color: var(--ink);
-  border: 2px solid red;
+  /* border: 2px solid red; */
 }
 
 .dash__greeting p {
@@ -12,13 +12,20 @@
   font-size: 14px;
 }
 
-.savings-section { margin-bottom: 20px; }
+.savings-section { margin-bottom: 20px;
+/* border: 2px solid red;  */
+max-width: 400px;
+/* box-shadow: var(--shadow-card-2); */
+box-shadow: var(--border-card);
+
+}
 
 .savings-section__total {
   font-size: 20px;
   font-weight: 700;
   color: var(--ink);
   font-family: var(--font-display);
+  /* border: 2px solid red; */
 }
 
 .savings-breakdown {
@@ -47,6 +54,7 @@
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
   margin-bottom: 20px;
+  height: 100px;
 }
 
 .stat-card {
@@ -57,6 +65,8 @@
   display: flex;
   align-items: center;
   gap: 12px;
+  border: 0.1px solid var(--chip-blue);
+  
 }
 
 .stat-card__icon {

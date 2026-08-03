@@ -8,7 +8,7 @@
   --ink-soft: #4B5157;
   --ink-faint: #8A9096;
   --paper: #FAF9F6;
-  --white: #f3f2ce;
+  --white: #fafcfe;
   --note: #e9e9e9;
   --surface: #FFFFFF;
   --line: #E7E4DD;
@@ -43,6 +43,8 @@
   --r-pill: 999px;
   --shadow-card: 0 1px 2px rgba(20, 23, 26, 0.04), 0 12px 24px -12px rgba(20, 23, 26, 0.14);
   --shadow-soft: 0 1px 2px rgba(20, 23, 26, 0.03), 0 6px 16px -8px rgba(20, 23, 26, 0.10);
+  --shadow-card-2:  --shadow-card: 0 1px 2px rgba(20, 23, 26, 0.2), 0 12px 28px -8px rgba(20, 23, 26, 0.18);
+  --border-card: 1px solid rgba(20, 23, 26, 0.08);
 
   /* --- Layout --- */
   --content-w: 1140px;
