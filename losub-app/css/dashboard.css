@@ -40,8 +40,9 @@ box-shadow: var(--border-card);
   justify-content: space-between;
   padding: 10px 0;
   border-bottom: 1px solid var(--line);
-  font-size: 13px; */
+  font-size: 13px; 
  } 
+
 .savings-row:last-child { border-bottom: none; } gi
 .savings-row__plan { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
 .savings-row__dot { width: 8px; height: 8px; border-radius: 50%; }
