@@ -160,36 +160,10 @@ document.addEventListener("DOMContentLoaded", () => {
   renderGroups();
   renderNotifications();
   renderWaitlist();
-  function renderSavings() {
-  const total = groups.reduce((sum, g) => sum + ((g.soloPrice || 0) - (g.yourPrice || 0)), 0);
-  document.getElementById("savingsTotal").textContent = fmt(total);
-
-  const breakdown = document.getElementById("savingsBreakdown");
-  const empty = document.getElementById("savingsEmpty");
-
-  if (!groups.length) {
-    breakdown.hidden = true;
-    empty.hidden = false;
-    return;
+  renderWalletBalance();
+  function renderWalletBalance() {
+    document.getElementById("dashWalletBalance").textContent = fmt(getWalletBalance());
   }
-  breakdown.hidden = false;
-  empty.hidden = true;
-
-  breakdown.innerHTML = groups.map(g => {
-    const saved = (g.soloPrice || 0) - (g.yourPrice || 0);
-    return `
-      <div class="savings-row">
-        <span class="savings-row__plan">
-          <span class="savings-row__dot" style="background:${g.color || '#111827'}"></span>
-          ${g.plan}
-        </span>
-        <span class="savings-row__detail">${fmt(g.soloPrice || 0)} → ${fmt(g.yourPrice || 0)}</span>
-        <span class="savings-row__saved">Save ${fmt(saved)}</span>
-      </div>
-    `;
-  }).join("");
-}
-
   // ---------- Greeting name (app-shell.js also fills the sidebar name/initial separately) ----------
   const storedUser = localStorage.getItem("losub_user");
   if (storedUser) {
