@@ -5,6 +5,7 @@
 :root {
   /* --- Core palette --- */
   --ink: #14171A;
+  --ink-deep: #0D1115;
   --ink-soft: #4B5157;
   --ink-faint: #8A9096;
   --paper: #FAF9F6;
@@ -22,6 +23,9 @@
   --chip-red-deep: #B82626;
   --chip-capcut: #02E0F7;
   --chip-yellow-deep: #D89A1E;
+  --chip-accent:#6fb5ff;
+  
+
 
   /* --- Pastels --- */
   --pastel-pink: #F4D8E3;

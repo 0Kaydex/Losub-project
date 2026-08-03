@@ -85,11 +85,11 @@
 
 .sidebar__link:hover {
   background: var(--paper);
-  color: var(--ink);
+  color: var(--ink-deep);
 }
 
 .sidebar__link.is-active {
-  background: var(--chip-capcut);
+  background: var(--chip-accent);
   color: var(--ink);
 }
 
