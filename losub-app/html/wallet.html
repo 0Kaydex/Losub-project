@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Wallet — Losub</title>
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/wallet.css" />
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar">⟨⟩</button>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon">🏠</span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon">🔍</span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="wallet.html" class="sidebar__link" data-page="wallet">
+          <span class="sidebar__icon">👛</span><span class="sidebar__label">Wallet</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon">📱</span><span class="sidebar__label">Airtime & data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon">🔔</span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Wallet</h1>
+        <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div>
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          🔔<span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+
+        <button type="button" class="back-btn" onclick="history.back()">
+          <span class="back-btn__arrow">&larr;</span> Back
+        </button>
+
+        <section class="page__header">
+          <h2>Wallet</h2>
+          <p>Fund your wallet to pay for plans and buy airtime or data.</p>
+        </section>
+
+        <!-- ============ BALANCE ============ -->
+        <section class="wallet-balance-card">
+          <div>
+            <span class="wallet-balance-card__label">Available balance</span>
+            <span class="wallet-balance-card__value" id="walletBalance">₦0</span>
+          </div>
+          <button type="button" class="wallet-balance-card__fund-btn" id="openFundModal">+ Fund wallet</button>
+        </section>
+
+        <!-- ============ TRANSACTIONS ============ -->
+        <section class="panel">
+          <div class="section-header">
+            <h2>Transactions</h2>
+            <button type="button" class="link-btn" id="downloadPdfBtn">Download PDF</button>
+          </div>
+
+          <div class="wallet-filters">
+            <div class="tab-bar" id="dateFilterTabs">
+              <button type="button" class="tab-bar__btn is-active" data-range="all">All time</button>
+              <button type="button" class="tab-bar__btn" data-range="today">Today</button>
+              <button type="button" class="tab-bar__btn" data-range="week">This week</button>
+              <button type="button" class="tab-bar__btn" data-range="month">This month</button>
+            </div>
+            <div class="wallet-date-range">
+              <input type="date" id="dateFrom" />
+              <span>to</span>
+              <input type="date" id="dateTo" />
+              <button type="button" class="link-btn" id="applyCustomRange">Apply</button>
+            </div>
+          </div>
+
+          <ul class="tx-list" id="txList"></ul>
+          <p class="empty-state" id="txEmpty" hidden>No transactions in this range.</p>
+
+          <button type="button" class="tx-view-more" id="viewMoreBtn" hidden>View more</button>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ FUND WALLET MODAL ============ -->
+  <div class="modal-overlay" id="fundModalOverlay" hidden>
+    <div class="modal">
+      <button type="button" class="modal__close" id="fundModalClose" aria-label="Close">&times;</button>
+      <h2>Fund wallet</h2>
+      <p class="modal__sub">Add money to your Losub wallet.</p>
+
+      <div class="amount-quick-grid">
+        <button type="button" class="amount-chip" data-amount="1000">₦1,000</button>
+        <button type="button" class="amount-chip" data-amount="2000">₦2,000</button>
+        <button type="button" class="amount-chip" data-amount="5000">₦5,000</button>
+        <button type="button" class="amount-chip" data-amount="10000">₦10,000</button>
+        <button type="button" class="amount-chip" data-amount="20000">₦20,000</button>
+        <button type="button" class="amount-chip" data-amount="50000">₦50,000</button>
+      </div>
+
+      <label class="auth-field">
+        <span>Or enter an amount</span>
+        <input type="number" id="fundAmountInput" placeholder="Enter amount" min="100" />
+      </label>
+
+      <div class="airtime-message" id="fundMessage" hidden></div>
+
+      <button type="button" class="auth-submit" id="confirmFundBtn">Fund now</button>
+    </div>
+  </div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/wallet.js"></script>
+  <script src=" ../store.js"></script>
+</body>
+</html>
