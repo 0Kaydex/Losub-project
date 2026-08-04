@@ -13,7 +13,7 @@
   ```
   node -v
   ```
-  If you're on an ol der version, tell me and I'll swap the database layer for the `sql.js` package instead — same schema, no native compiling required either way.
+  If you're on an older version, tell me and I'll swap the database layer for the `sql.js` package instead — same schema, no native compiling required either way.
 
 ## 2. Install
 ```bash

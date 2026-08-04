@@ -4,7 +4,11 @@
 const { DatabaseSync } = require("node:sqlite");
 const path = require("path");
 
-const db = new DatabaseSync(path.join(__dirname, "losub.db"));
+// Locally: stores losub.db next to this file, as before.
+// In production (Fly.io): set DB_PATH=/data/losub.db to write to the
+// persistent volume instead of the container's ephemeral filesystem.
+const dbPath = process.env.DB_PATH || path.join(__dirname, "losub.db");
+const db = new DatabaseSync(dbPath);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (

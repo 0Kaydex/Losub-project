@@ -13,49 +13,89 @@
   margin-bottom: 24px;
 }
 
- .savings-section { margin-bottom: 20px;
-border: 2px solid red; 
-max-width: 400px;
-box-shadow: var(--shadow-card-2);
-box-shadow: var(--border-card); 
-
-}  
-
-  .savings-section__total {
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--ink);
-  font-family: var(--font-display);
-  border: 2px solid red; 
-} 
-
-.savings-breakdown {
-  display: flex;
-  flex-direction: column;
-} 
-
-.savings-row {
+.wallet-mini {
+  background: linear-gradient(135deg, var(--chip-blue), #5B4FE8);
+  border-radius: var(--r-lg);
+  padding: 22px 26px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 0;
-  border-bottom: 1px solid var(--line);
-  font-size: 13px; 
-} 
- .savings-row:last-child { border-bottom: none; } 
+  flex-wrap: wrap;
+  gap: 14px;
+  margin-bottom: 20px;
+  color: #fff;
+  position: relative;
+  overflow: hidden;
+}
 
-.savings-row__plan { display: flex; align-items: center; gap: 8px; font-weight: 600; color: var(--ink); }
-.savings-row__dot { width: 8px; height: 8px; border-radius: 50%; }
-.savings-row__detail { color: var(--ink-soft); }
-.savings-row__saved { color: #1f5c3f; font-weight: 700; } 
+.wallet-mini::after {
+  content: "";
+  position: absolute;
+  top: -40px;
+  right: -40px;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.12);
+
+}
+
+.wallet-mini__left {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  position: relative;
+  z-index: 1;
+}
+
+.wallet-mini__label {
+  font-size: 13px;
+  opacity: 0.85;
+}
+
+.wallet-mini__value {
+  font-family: var(--font-display);
+  font-size: 30px;
+  font-weight: 700;
+}
+
+.wallet-mini__actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.wallet-mini__fund-btn {
+  padding: 10px 20px;
+  background: #fff;
+  color: #4038C4;
+  border-radius: var(--r-pill);
+  font-size: 13px;
+  font-weight: 700;
+}
+.wallet-mini__fund-btn:hover { opacity: 0.9; }
+
+.wallet-mini__link {
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  opacity: 0.9;
+}
+.wallet-mini__link:hover { opacity: 1; text-decoration: underline; }
+
+@media (max-width: 480px) {
+  .wallet-mini { flex-direction: column; align-items: flex-start; }
+}
 .dash__greeting  { margin-bottom: 24px; }
 
 .stat-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
   gap: 14px;
-  margin-bottom: 20px;
-  height: 100px;
+  margin-bottom: 24px;
+  /* height: 100px; */
 }
 
 .stat-card {

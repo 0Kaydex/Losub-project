@@ -8,7 +8,11 @@ const { requireAuth } = require("./middleware/auth");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-app.use(cors());
+// In development this allows your local Live Server. In production, set
+// FRONTEND_ORIGIN to your real deployed frontend URL (e.g. your Vercel domain)
+// so only your own site can call this API from a browser.
+const allowedOrigin = process.env.FRONTEND_ORIGIN || "http://127.0.0.1:5500";
+app.use(cors({ origin: allowedOrigin }));
 app.use(express.json());
 
 app.get("/api/health", (req, res) => {

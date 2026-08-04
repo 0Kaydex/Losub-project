@@ -36,7 +36,7 @@
 .auth-toggle {
   position: relative;
   display: flex;
-  background: var(--pastel-sand);
+  background: var(--chip-accent);
   border-radius: var(--r-pill);
   padding: 4px;
   margin-bottom: 28px;
@@ -163,7 +163,7 @@
 }
 
 .auth-field input:focus {
-  outline: 2px solid var(--chip-green);
+  outline: 2px solid var(--chip-blue);
   outline-offset: 1px;
 }
 
@@ -196,7 +196,7 @@
 .auth-submit {
   width: 100%;
   padding: 14px;
-  background: var(--ink);
+  background: var(--chip-blue);
   color: var(--paper);
   border: none;
   border-radius: var(--r-pill);
