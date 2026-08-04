@@ -36,7 +36,7 @@
 .auth-toggle {
   position: relative;
   display: flex;
-  background: var(--pastel-sand);
+  background: var(--chip-accent);
   border-radius: var(--r-pill);
   padding: 4px;
   margin-bottom: 28px;
