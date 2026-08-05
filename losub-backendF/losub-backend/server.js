@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 // so only your own site can call this API from a browser.
 const allowedOrigins = (
   process.env.FRONTEND_ORIGINS ||
-  "http://127.0.0.1:5500"
+  "http://127.0.0.1:5500,http://localhost:5500"
 )
   .split(",")
   .map(origin => origin.trim());
@@ -21,7 +21,7 @@ const allowedOrigins = (
 app.use(
   cors({
     origin(origin, callback) {
-      // Allow requests with no Origin (e.g. curl, Postman, server-to-server)
+      // Allow requests without an Origin header (Postman, curl, etc.)
       if (!origin) return callback(null, true);
 
       if (allowedOrigins.includes(origin)) {
@@ -30,8 +30,10 @@ app.use(
 
       return callback(new Error(`Origin ${origin} not allowed by CORS`));
     },
+    credentials: true,
   })
 );
+
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Losub backend is running." });
 });
