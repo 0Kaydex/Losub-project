@@ -29,7 +29,7 @@
 
 .airtime-type-toggle {
   display: flex;
-  background: var(--paper);
+  background: var(--chip-accent);
   border-radius: var(--r-pill);
   padding: 4px;
   margin-bottom: 20px;
@@ -72,7 +72,7 @@
   color: var(--ink);
 }
 .airtime-field input:focus {
-  outline: 2px solid var(--chip-green);
+  outline: 2px solid var(--chip-blue);
   outline-offset: 1px;
 }
 

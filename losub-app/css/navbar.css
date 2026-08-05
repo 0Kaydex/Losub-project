@@ -19,11 +19,26 @@
   justify-content: space-between;
 }
 
-.navbar__logo {
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 22px;
-  letter-spacing: -0.02em;
+.navbar__logo{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    text-decoration:none;
+    color:var(--ink);
+}
+
+.navbar__logo img{
+    width:40px;
+    height:40px;
+    object-fit:contain;
+    display:block;
+    flex-shrink:0;
+}
+
+.navbar__logo span{
+    font-size:20px;
+    font-weight:700;
+    line-height:1;
 }
 
 .navbar__links {
