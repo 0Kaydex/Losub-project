@@ -281,3 +281,4 @@ function waitForGoogle() {
 }
 
 waitForGoogle();
+});
