@@ -195,29 +195,70 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
   // ---------- GOOGLE SIGN-IN ----------
+  // function initGoogle() {
+  //   if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+  //     console.warn("Google Sign-In not configured yet — set GOOGLE_CLIENT_ID in js/config.js");
+  //     return;
+  //   }
+
+  //   google.accounts.id.initialize({
+  //     client_id: GOOGLE_CLIENT_ID,
+  //     callback: handleGoogleCredential,
+  //   });
+
+  //   // Render Google's real button off-screen; our styled buttons forward clicks to it.
+  //   google.accounts.id.renderButton(document.getElementById("hiddenGoogleButton"), {
+  //     type: "standard",
+  //   });
+
+  //   document.querySelectorAll("[data-google-trigger]").forEach(btn => {
+  //     btn.addEventListener("click", () => {
+  //       const realButton = document.querySelector("#hiddenGoogleButton div[role=button]");
+  //       if (realButton) realButton.click();
+  //     });
+  //   });
+  // }
+
   function initGoogle() {
-    if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-      console.warn("Google Sign-In not configured yet — set GOOGLE_CLIENT_ID in js/config.js");
-      return;
-    }
+  console.log("Google init started");
 
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCredential,
-    });
-
-    // Render Google's real button off-screen; our styled buttons forward clicks to it.
-    google.accounts.id.renderButton(document.getElementById("hiddenGoogleButton"), {
-      type: "standard",
-    });
-
-    document.querySelectorAll("[data-google-trigger]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        const realButton = document.querySelector("#hiddenGoogleButton div[role=button]");
-        if (realButton) realButton.click();
-      });
-    });
+  if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+    console.warn("Google Sign-In not configured yet");
+    return;
   }
+
+  console.log("Google client:", GOOGLE_CLIENT_ID);
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+  });
+
+  console.log("Google initialized");
+
+  google.accounts.id.renderButton(
+    document.getElementById("hiddenGoogleButton"),
+    {
+      type: "standard",
+    }
+  );
+
+  console.log("Google button rendered");
+
+  document.querySelectorAll("[data-google-trigger]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      console.log("Custom Google button clicked");
+
+      const realButton = document.querySelector(
+        "#hiddenGoogleButton div[role=button]"
+      );
+
+      console.log("Real button:", realButton);
+
+      if (realButton) realButton.click();
+    });
+  });
+}
 
   async function handleGoogleCredential(response) {
     const activeForm = document.querySelector(".auth-form.is-active");
@@ -230,10 +271,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Google's script loads async — wait for it before initializing
-  if (window.google) {
+// Wait until Google Identity Services is available
+function waitForGoogle() {
+  if (window.google && google.accounts && google.accounts.id) {
     initGoogle();
   } else {
-    window.addEventListener("load", initGoogle);
+    setTimeout(waitForGoogle, 100);
   }
-});
+}
+
+waitForGoogle();
