@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Group — Losub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/manage-group.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__top">
+        <a href="dashboard.html" class="sidebar__logo">Losub</a>
+        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar"><img src="../images/icons/sidebar collapse btn.png" alt="" class="sidebar__icon" /></button>
+      </div>
+      <nav class="sidebar__nav">
+        <a href="dashboard.html" class="sidebar__link" data-page="dashboard">
+          <span class="sidebar__icon"><img src="../images/icons/home icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Dashboard</span>
+        </a>
+        <a href="browse.html" class="sidebar__link" data-page="browse">
+          <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
+        </a>
+        <a href="wallet.html" class="sidebar__link" data-page="payment-history">
+          <span class="sidebar__icon"><img src="../images/icons/wallet.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Wallet</span>
+        </a>
+        <a href="airtime.html" class="sidebar__link" data-page="airtime">
+          <span class="sidebar__icon"><img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Airtime/data</span>
+          <span class="sidebar__badge">New</span>
+        </a>
+        <a href="notifications.html" class="sidebar__link" data-page="notifications">
+          <span class="sidebar__icon"><img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Notifications</span>
+        </a>
+      </nav>
+      <a href="account.html" class="sidebar__user" data-page="account">
+        <span class="sidebar__avatar" data-user-initial>?</span>
+        <span class="sidebar__label" data-user-name>Account</span>
+      </a>
+    </aside>
+
+    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Manage group</h1>
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+
+        <button type="button" class="back-btn" onclick="history.back()">
+          <span class="back-btn__arrow">&larr;</span> Back
+        </button>
+
+        <!-- ============ PLAN SUMMARY ============ -->
+        <section class="group-summary" id="groupSummary">
+          <!-- populated by JS -->
+        </section>
+
+        <!-- ============ ROSTER ============ -->
+        <section class="mg-section">
+          <div class="mg-section__head">
+            <h2>Members</h2>
+            <span class="mg-section__count" id="seatCountLabel"></span>
+          </div>
+
+          <div class="seat-grid" id="seatGrid">
+            <!-- populated by JS -->
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ INVITE MODAL ============ -->
+  <div class="modal-overlay" id="inviteModalOverlay" hidden>
+    <div class="modal">
+      <button type="button" class="modal__close" id="inviteModalClose" aria-label="Close">&times;</button>
+      <h2>Invite a member</h2>
+      <p class="modal__sub">Send an invite to fill this seat. They'll get a link to join and pay their share.</p>
+
+      <form id="inviteForm">
+        <label class="mg-field">
+          <span class="mg-field__label">Email or phone number</span>
+          <input type="text" id="inviteInput" placeholder="e.g. jane@email.com" required />
+        </label>
+        <p class="mg-field__error" id="inviteError" hidden>Please enter a valid email or phone number.</p>
+
+        <div class="modal__actions">
+          <button type="submit" class="auth-submit">Send invite</button>
+          <button type="button" class="link-btn" id="copyInviteLink">Or copy invite link instead</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ REMOVE MEMBER MODAL ============ -->
+  <div class="modal-overlay" id="removeModalOverlay" hidden>
+    <div class="modal">
+      <button type="button" class="modal__close" id="removeModalClose" aria-label="Close">&times;</button>
+      <h2>Remove member?</h2>
+      <p class="modal__sub">
+        <strong id="removeMemberName">This member</strong> will lose access to the shared plan and their seat will open up for someone else.
+      </p>
+      <div class="modal__actions">
+        <button type="button" class="auth-submit auth-submit--danger" id="confirmRemove">Remove member</button>
+        <button type="button" class="link-btn" id="cancelRemove">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ TOAST ============ -->
+  <div class="mg-toast" id="mgToast" hidden></div>
+
+  <script src="../js/store.js"></script>
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/manage-group.js"></script>
+</body>
+</html>

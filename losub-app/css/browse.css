@@ -286,8 +286,13 @@
 .plan-card__cta:hover { background: var(--chip-blue); }
 
 .plan-card__cta--full {
+  width: 100%;
+  margin-top: 4px;
   background: var(--ink-soft);
+  font-size: 12px;
+  padding: 10px 12px;
 }
+.plan-card__cta--full:hover { background: var(--ink); }
 
 /* ---------- FAQ ---------- */
 .browse-faq {
@@ -347,7 +352,7 @@
 }
 
 /* ---------- Manager offer modal ---------- */
-.modal-overlay {
+/* .modal-overlay {
   position: fixed;
   inset: 0;
   background: rgba(20, 18, 14, 0.45);
@@ -405,7 +410,7 @@
   flex-direction: column;
   gap: 10px;
   align-items: center;
-}
+} */
 
 @media (max-width: 480px) {
   .plan-grid { grid-template-columns: 1fr; }

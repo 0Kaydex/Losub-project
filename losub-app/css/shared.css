@@ -115,6 +115,70 @@
   border-color: var(--ink);
 }
 
+/* ---------- Shared modal (used across browse, manage-group, wallet, etc.) ---------- */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 18, 14, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2000;
+  padding: 20px;
+}
+.modal-overlay[hidden] { display: none; }
+
+.modal {
+  position: relative;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  max-width: 420px;
+  width: 100%;
+  padding: 32px 28px 28px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.modal__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  border: none;
+  background: none;
+  font-size: 22px;
+  line-height: 1;
+  color: var(--ink-soft);
+}
+
+.modal h2 {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.modal__sub {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+
+.modal__terms {
+  margin: 18px 0;
+  padding-left: 18px;
+  font-size: 13px;
+  color: var(--ink-soft);
+  line-height: 1.6;
+}
+
+.modal__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  margin-top: 8px;
+}
+
 @media (max-width: 720px) {
   .page { padding-top: calc(var(--header-h) + 20px); }
 }

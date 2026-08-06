@@ -51,38 +51,43 @@ document.addEventListener("DOMContentLoaded", () => {
       </article>
     `).join("");
   }
+// plan grid rendering
+ function renderPlanGrid() {
+  const grid = document.getElementById("planGrid");
+  const empty = document.getElementById("planEmpty");
+  const visible = getVisiblePlans();
 
-  // ---------- Full plan grid (search + category filtered) ----------
-  function renderPlanGrid() {
-    const grid = document.getElementById("planGrid");
-    const empty = document.getElementById("planEmpty");
-    const visible = getVisiblePlans();
-
-    if (!visible.length) {
-      grid.hidden = true;
-      empty.hidden = false;
-      return;
-    }
-    grid.hidden = false;
-    empty.hidden = true;
-
-    grid.innerHTML = visible.map(p => {
-      const isFull = p.seatsFilled >= p.seatsTotal;
-      return `
-        <article class="plan-card">
-          <img src="${p.logo}" alt="${p.name}" class="plan-card__icon" style="background:${p.color}1A;" />
-          <span class="plan-card__name">${p.name}</span>
-          <span class="plan-card__seats">${p.seatsFilled}/${p.seatsTotal} seats filled</span>
-          <div class="plan-card__bottom">
-            <span class="plan-card__price">${fmt(p.price)}<small>/mo</small></span>
-            <button type="button" class="plan-card__cta ${isFull ? 'plan-card__cta--full' : ''}" data-id="${p.id}">
-              ${isFull ? "Full — Become manager" : "Join"}
-            </button>
-          </div>
-        </article>
-      `;
-    }).join("");
+  if (!visible.length) {
+    grid.hidden = true;
+    empty.hidden = false;
+    return;
   }
+  grid.hidden = false;
+  empty.hidden = true;
+
+  grid.innerHTML = visible.map(p => {
+    const isFull = p.seatsFilled >= p.seatsTotal;
+    const joinBtn = isFull
+      ? ""
+      : `<button type="button" class="plan-card__cta" data-id="${p.id}">Join</button>`;
+    const fullBtn = isFull
+      ? `<button type="button" class="plan-card__cta plan-card__cta--full" data-id="${p.id}">Full — Become manager</button>`
+      : "";
+
+    return `
+      <article class="plan-card ${isFull ? 'plan-card--full' : ''}">
+        <img src="${p.logo}" alt="${p.name}" class="plan-card__icon" style="background:${p.color}1A;" />
+        <span class="plan-card__name">${p.name}</span>
+        <span class="plan-card__seats">${p.seatsFilled}/${p.seatsTotal} seats filled</span>
+        <div class="plan-card__bottom">
+          <span class="plan-card__price">${fmt(p.price)}<small>/mo</small></span>
+          ${joinBtn}
+        </div>
+        ${fullBtn}
+      </article>
+    `;
+  }).join("");
+}
 
   function renderAll() {
     renderTopPlans();
