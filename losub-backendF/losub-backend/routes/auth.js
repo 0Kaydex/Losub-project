@@ -1,5 +1,6 @@
 const express = require("express");
 const bcrypt = require("bcryptjs");
+const { requireAuth } = require("../middleware/auth");
 const jwt = require("jsonwebtoken");
 const db = require("../db");
 const { generateToken, hashToken } = require("../utils/tokens");
@@ -278,6 +279,171 @@ router.post("/google", async (req, res) => {
     console.error("Google sign-in error:", err.message);
     res.status(401).json({ error: "Google sign-in failed. Please try again." });
   }
+});
+
+// ======================================
+// UPDATE PROFILE
+// PUT /api/auth/me
+// ======================================
+
+router.put("/me", requireAuth, (req, res) => {
+
+    try {
+
+        let { fullname, email } = req.body;
+
+        fullname = fullname.trim();
+        email = email.trim().toLowerCase();
+
+        if (!fullname || !email) {
+            return res.status(400).json({
+                error: "Full name and email are required."
+            });
+        }
+
+        const existing = db.prepare(`
+            SELECT id
+            FROM users
+            WHERE email = ?
+            AND id != ?
+        `).get(email, req.userId);
+
+        if (existing) {
+            return res.status(409).json({
+                error: "Email is already in use."
+            });
+        }
+
+        const current = db.prepare(`
+            SELECT *
+            FROM users
+            WHERE id = ?
+        `).get(req.userId);
+
+        const emailChanged = current.email !== email;
+
+        db.prepare(`
+            UPDATE users
+            SET
+                fullname = ?,
+                email = ?,
+                email_verified = ?
+            WHERE id = ?
+        `).run(
+            fullname,
+            email,
+            emailChanged ? 0 : current.email_verified,
+            req.userId
+        );
+
+        const updated = db.prepare(`
+            SELECT
+                id,
+                fullname,
+                email,
+                email_verified
+            FROM users
+            WHERE id = ?
+        `).get(req.userId);
+
+        res.json({
+            message: "Profile updated successfully.",
+            user: updated
+        });
+
+    } catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Unable to update profile."
+        });
+
+    }
+
+});
+
+// ======================================
+// CHANGE PASSWORD
+// PUT /api/auth/me/password
+// ======================================
+
+router.put("/me/password", requireAuth, async (req, res) => {
+
+    try {
+
+        const {
+            currentPassword,
+            newPassword
+        } = req.body;
+
+        if (!currentPassword || !newPassword) {
+
+            return res.status(400).json({
+                error: "Both passwords are required."
+            });
+
+        }
+
+        if (newPassword.length < 8) {
+
+            return res.status(400).json({
+                error: "Password must be at least 8 characters."
+            });
+
+        }
+
+        const user = db.prepare(`
+            SELECT *
+            FROM users
+            WHERE id = ?
+        `).get(req.userId);
+
+        if (user.auth_provider === "google" && !user.password_hash) {
+
+            return res.status(400).json({
+                error: "Google accounts cannot change passwords."
+            });
+
+        }
+
+        const correct = await bcrypt.compare(
+            currentPassword,
+            user.password_hash
+        );
+
+        if (!correct) {
+
+            return res.status(401).json({
+                error: "Current password is incorrect."
+            });
+
+        }
+
+        const hash = await bcrypt.hash(newPassword, 10);
+
+        db.prepare(`
+            UPDATE users
+            SET password_hash = ?
+            WHERE id = ?
+        `).run(hash, req.userId);
+
+        res.json({
+            message: "Password updated successfully."
+        });
+
+    }
+
+    catch (err) {
+
+        console.error(err);
+
+        res.status(500).json({
+            error: "Unable to update password."
+        });
+
+    }
+
 });
 
 module.exports = router;

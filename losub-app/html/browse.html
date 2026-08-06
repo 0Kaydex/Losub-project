@@ -5,13 +5,13 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Browse Plans — Losub</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
-  
+
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/shared.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
@@ -31,9 +31,6 @@
         </a>
         <a href="browse.html" class="sidebar__link" data-page="browse">
           <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
-        </a>
-        <!-- <a href="savings.html" class="sidebar__link" data-page="savings"> -->
-          <!-- <span class="sidebar__icon"><img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Savings</span> -->
         </a>
         <a href="wallet.html" class="sidebar__link" data-page="payment-history">
           <span class="sidebar__icon"><img src="../images/icons/wallet.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Wallet</span>
@@ -58,7 +55,6 @@
       <header class="topbar">
         <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
         <h1 class="topbar__title">Browse plans</h1>
-        <!-- <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div> -->
         <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
           <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
         </button>
@@ -66,15 +62,13 @@
 
       <main class="page-content">
 
-        <!-- <button type="button" class="back-btn" onclick="history.back()">
-          <span class="back-btn__arrow">&larr;</span> Back
-        </button> -->
-
+        <!-- ============ HEADER ============ -->
         <section class="page__header">
-          <h2>Find a plan to join</h2>
+          <h2>Browse Plans</h2>
           <p>Save on subscriptions by sharing the cost with others.</p>
         </section>
 
+        <!-- ============ SEARCH BAR ============ -->
         <div class="browse-search">
           <input type="search" id="planSearch" placeholder="Search Spotify, Netflix, Capcut…" />
         </div>
@@ -106,16 +100,23 @@
           </div>
         </section>
 
-        <!-- ============ TOP PLANS ============ -->
+        <!-- ============ ALL SUBSCRIPTIONS (COMPLETE GRID) ============ -->
+        <section class="browse-section" id="allPlans">
+          <h2>All Subscriptions</h2>
+          <div class="plan-grid" id="planGrid"></div>
+          <p class="empty-state" id="planEmpty" hidden>No plans match your search.</p>
+        </section>
+
+        <!-- ============ FEATURED PLANS (HORIZONTAL SCROLL) ============ -->
         <section class="browse-section">
-          <h2>Top plans</h2>
+          <h2>⭐ Featured Plans</h2>
           <div class="plan-row" id="newOffersRow"></div>
         </section>
 
-        <!-- ============ BECOME MANAGER BANNER ============ -->
+        <!-- ============ BECOME MANAGER BANNER (CTA) ============ -->
         <section class="manager-banner">
           <div class="manager-banner__text">
-            <h2>Become account manager</h2>
+            <h2>🟧 Become an Account Manager</h2>
             <p>Start a new group and pay less for managing it.</p>
             <a href="#allPlans" class="manager-banner__cta">See full plans</a>
           </div>
@@ -123,13 +124,6 @@
             <span class="manager-banner__circle"></span>
             <span class="manager-banner__circle manager-banner__circle--2"></span>
           </div>
-        </section>
-
-        <!-- ============ ALL PLANS ============ -->
-        <section class="browse-section" id="allPlans">
-          <h2>All plans</h2>
-          <div class="plan-grid" id="planGrid"></div>
-          <p class="empty-state" id="planEmpty" hidden>No plans match your search.</p>
         </section>
 
         <!-- ============ FAQ ============ -->

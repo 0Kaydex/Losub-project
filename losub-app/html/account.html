@@ -5,19 +5,19 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Account — Losub</title>
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
     href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
     rel="stylesheet"
   />
-  
+
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/shared.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
   <link rel="stylesheet" href="../css/account.css" />
 </head>
-<body class=" app-shell-page">
+<body class="app-shell-page">
 
   <div class="app-shell">
     <aside class="sidebar" id="sidebar">
@@ -31,9 +31,6 @@
         </a>
         <a href="browse.html" class="sidebar__link" data-page="browse">
           <span class="sidebar__icon"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Browse plans</span>
-        </a>
-        <!-- <a href="savings.html" class="sidebar__link" data-page="savings"> -->
-          <!-- <span class="sidebar__icon"><img src="../images/icons/savings.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Savings</span> -->
         </a>
         <a href="wallet.html" class="sidebar__link" data-page="wallet">
           <span class="sidebar__icon"><img src="../images/icons/wallet.png" alt="" class="sidebar__icon" /></span><span class="sidebar__label">Wallet</span>
@@ -58,7 +55,6 @@
       <header class="topbar">
         <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
         <h1 class="topbar__title">My account</h1>
-        <!-- <div class="topbar__search"><input type="search" placeholder="Search plans, groups…" /></div> -->
         <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
           🔔<span class="topbar__bell-dot" id="bellDot" hidden></span>
         </button>
@@ -67,51 +63,76 @@
       <main class="page-content">
         <div class="wrap--narrow">
 
-          <!-- <button type="button" class="back-btn" onclick="history.back()"> -->
-            <!-- <span class="back-btn__arrow">&larr;</span> Back -->
-          <!-- </button> -->
-
           <section class="page__header">
             <h2>My account</h2>
             <p>Manage your profile and security settings.</p>
           </section>
 
+          <!-- Profile summary card -->
+          <section class="panel profile-summary">
+            <div class="profile-header">
+              <span class="profile-header__avatar" id="profileAvatar">?</span>
+              <div>
+                <div class="profile-header__name" id="profileName">—</div>
+                <div class="profile-header__email" id="profileEmail">—</div>
+              </div>
+            </div>
+          </section>
+
           <section class="panel">
-            <div class="section-header"><h2>Profile</h2></div>
+            <div class="section-header">
+              <h2>Profile</h2>
+              <p class="section-header__sub">This is how you appear across Losub.</p>
+            </div>
+            <div id="profileMessage" class="auth-message" hidden></div>
             <form id="profileForm" novalidate>
               <label class="auth-field">
                 <span>Full name</span>
-                <input type="text" name="fullname" id="fullname" required />
+                <input type="text" name="fullname" id="fullname" autocomplete="name" required />
               </label>
               <label class="auth-field">
                 <span>Email</span>
-                <input type="email" name="email" id="email" required />
+                <input type="email" name="email" id="email" autocomplete="email" required />
               </label>
-              <button type="submit" class="auth-submit">Save changes</button>
+              <div class="panel__footer">
+                <button type="submit" class="auth-submit" id="profileSubmit" disabled>Save changes</button>
+              </div>
             </form>
           </section>
 
           <section class="panel">
-            <div class="section-header"><h2>Change password</h2></div>
+            <div class="section-header">
+              <h2>Change password</h2>
+              <p class="section-header__sub">Use at least 8 characters, mixing letters and numbers.</p>
+            </div>
+            <div id="passwordMessage" class="auth-message" hidden></div>
             <form id="passwordForm" novalidate>
               <label class="auth-field">
                 <span>Current password</span>
-                <input type="password" name="current" placeholder="••••••••" required />
+                <input type="password" name="current" id="currentPassword" placeholder="••••••••" autocomplete="current-password" required />
               </label>
               <label class="auth-field">
                 <span>New password</span>
-                <input type="password" name="newpass" placeholder="At least 8 characters" required />
+                <input type="password" name="newpass" id="newPassword" placeholder="At least 8 characters" autocomplete="new-password" minlength="8" required />
+                <span class="auth-field__hint" id="passwordHint">Strength: —</span>
               </label>
-              <button type="submit" class="auth-submit">Update password</button>
+              <div class="panel__footer">
+                <button type="submit" class="auth-submit">Update password</button>
+              </div>
             </form>
           </section>
 
-          <section class="panel">
-            <div class="section-header"><h2>Account roles</h2></div>
+          <!-- <section class="panel">
+            <div class="section-header">
+              <h2>Account roles</h2>
+              <p class="section-header__sub">Plans and groups you belong to.</p>
+            </div>
             <div id="roleSummary" class="role-summary"></div>
-          </section>
+          </section> -->
 
-          <button type="button" class="logout-btn" id="logoutBtn">Log out</button>
+          <button type="button" class="logout-btn" id="logoutBtn">
+            <span class="logout-btn__icon" aria-hidden="true">⏻</span> Log out
+          </button>
         </div>
       </main>
     </div>
