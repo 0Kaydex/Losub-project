@@ -246,18 +246,12 @@ document.addEventListener("DOMContentLoaded", () => {
   console.log("Google button rendered");
 
   document.querySelectorAll("[data-google-trigger]").forEach(btn => {
-    btn.addEventListener("click", () => {
-      console.log("Custom Google button clicked");
+  btn.addEventListener("click", () => {
+    console.log("Custom Google button clicked");
 
-      const realButton = document.querySelector(
-        "#hiddenGoogleButton div[role=button]"
-      );
-
-      console.log("Real button:", realButton);
-
-      if (realButton) realButton.click();
-    });
+    google.accounts.id.prompt();
   });
+});
 }
 
   async function handleGoogleCredential(response) {
