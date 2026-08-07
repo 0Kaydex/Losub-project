@@ -40,6 +40,13 @@ const migrations = [
   "ALTER TABLE users ADD COLUMN google_id TEXT",
   "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'",
 ];
+
+const migrations = [
+  "ALTER TABLE users ADD COLUMN google_id TEXT",
+  "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'",
+  "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'"
+];
+
 for (const sql of migrations) {
   try {
     db.exec(sql);
