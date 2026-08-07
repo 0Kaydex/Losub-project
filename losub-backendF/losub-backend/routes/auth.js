@@ -155,11 +155,20 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ error: "Please verify your email before logging in." });
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
+    const token = jwt.sign(
+  {
+    userId: user.id,
+    role: user.role,
+  },
+  JWT_SECRET,
+  {
+    expiresIn: "7d",
+  }
+);
 
     res.json({
       token,
-      user: { id: user.id, fullname: user.fullname, email: user.email },
+      user: { id: user.id, fullname: user.fullname, email: user.email, role: user.role },
     });
   } catch (err) {
     console.error(err);
@@ -269,11 +278,19 @@ router.post("/google", async (req, res) => {
       user = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
     }
 
-    const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: "7d" });
-
+    const token = jwt.sign(
+  {
+    userId: user.id,
+    role: user.role,
+  },
+  JWT_SECRET,
+  {
+    expiresIn: "7d",
+  }
+);
     res.json({
       token,
-      user: { id: user.id, fullname: user.fullname, email: user.email },
+      user: { id: user.id, fullname: user.fullname, email: user.email, role: user.role },
     });
   } catch (err) {
     console.error("Google sign-in error:", err.message);
