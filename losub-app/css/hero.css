@@ -24,10 +24,10 @@
     background:
         radial-gradient(
             circle at center,
-            rgba(255,255,255,.82) 1%,
-            rgba(255,255,255,.68) 1%,
-            rgba(255,255,255,.35)  1%,
-            rgba(255,255,255,.15) 1%
+            rgba(255,255,255,.82) 100%,
+            rgba(255,255,255,.68) 10%,
+            rgba(255,255,255,.35)  10%,
+            rgba(255,255,255,.15) 10%
         );
 
     pointer-events:none;
