@@ -42,3 +42,6 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Losub backend running on port ${PORT}`);
 });
+
+const ownerRoutes = require("./routes/owner");
+app.use("/api/owner", ownerRoutes);

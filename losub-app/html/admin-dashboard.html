@@ -22,46 +22,7 @@
 
   <div class="app-shell admin-shell">
 
-    <aside class="sidebar" id="sidebar">
-      <div class="sidebar__top">
-        <a href="admin-dashboard.html" class="sidebar__logo">Losub <span class="admin-badge">Admin</span></a>
-        <button class="sidebar__collapse-btn" id="sidebarCollapseBtn" aria-label="Collapse sidebar">⟨⟩</button>
-      </div>
-
-      <nav class="sidebar__nav">
-        <a href="admin-dashboard.html" class="sidebar__link" data-page="admin-dashboard">
-          <span class="sidebar__icon">🏠</span><span class="sidebar__label">Dashboard</span>
-        </a>
-        <a href="admin-users.html" class="sidebar__link" data-page="admin-users">
-          <span class="sidebar__icon">👥</span><span class="sidebar__label">Users</span>
-        </a>
-        <a href="admin-groups.html" class="sidebar__link" data-page="admin-groups">
-          <span class="sidebar__icon">📦</span><span class="sidebar__label">Groups & plans</span>
-        </a>
-        <a href="admin-verification.html" class="sidebar__link" data-page="admin-verification">
-          <span class="sidebar__icon">✅</span><span class="sidebar__label">Verification</span>
-        </a>
-        <a href="admin-messaging.html" class="sidebar__link" data-page="admin-messaging">
-          <span class="sidebar__icon">💬</span><span class="sidebar__label">Messaging</span>
-        </a>
-        <a href="admin-reassignment.html" class="sidebar__link" data-page="admin-reassignment">
-          <span class="sidebar__icon">🔁</span><span class="sidebar__label">Reassignment</span>
-        </a>
-        <a href="admin-audit.html" class="sidebar__link" data-page="admin-audit">
-          <span class="sidebar__icon">📜</span><span class="sidebar__label">Audit log</span>
-        </a>
-        <a href="admin-wallet.html" class="sidebar__link" data-page="admin-wallet">
-          <span class="sidebar__icon">💰</span><span class="sidebar__label">Wallet oversight</span>
-        </a>
-      </nav>
-
-      <a href="#" class="sidebar__user" id="adminLogout">
-        <span class="sidebar__avatar">A</span>
-        <span class="sidebar__label">Log out</span>
-      </a>
-    </aside>
-
-    <div class="app-shell__backdrop" id="shellBackdrop"></div>
+   <div id="adminSidebar"></div>
 
     <div class="app-shell__main">
       <header class="topbar">
@@ -166,5 +127,6 @@
 <script src="../js/store.js"></script>
 <script src="../js/app-shell.js"></script>
 <script src="../js/admin-dashboard.js"></script>
+<script src="../js/load-admin-sidebar.js"></script>
 </body>
 </html>

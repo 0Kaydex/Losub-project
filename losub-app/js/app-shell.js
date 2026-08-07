@@ -1,8 +1,10 @@
-document.addEventListener("DOMContentLoaded", () => {
-  const sidebar = document.getElementById("sidebar");
-  const backdrop = document.getElementById("shellBackdrop");
-  const collapseBtn = document.getElementById("sidebarCollapseBtn");
-  const menuBtn = document.getElementById("topbarMenuBtn");
+function initAppShell() {
+
+    const sidebar = document.getElementById("sidebar");
+    const backdrop = document.getElementById("shellBackdrop");
+    const collapseBtn = document.getElementById("sidebarCollapseBtn");
+    const menuBtn = document.getElementById("topbarMenuBtn");
+
 
   // ---------- Desktop collapse (persisted) ----------
   if (localStorage.getItem("losub_sidebar_collapsed") === "true") {
@@ -44,4 +46,5 @@ document.addEventListener("DOMContentLoaded", () => {
       document.querySelectorAll("[data-user-initial]").forEach(el => el.textContent = initial);
     } catch {}
   }
-});
+}
+window.initAppShell = initAppShell;

@@ -5,30 +5,18 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Group — Losub</title>
   <link rel="stylesheet" href="../css/base.css" />
-  <link rel="stylesheet" href="../css/navbar.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
   <link rel="stylesheet" href="../css/shared.css" />
   <link rel="stylesheet" href="../css/group.css" />
 </head>
-<body>
 
-  <navbar class="navbar">
-    <div class="wrap navbar__inner">
-      <a href="dashboard.html" class="navbar__logo">Losub</a>
-      <nav class="navbar__links">
-        <a href="browse.html">Browse plans</a>
-        <a href="savings.html">My savings</a>
-      </nav>
-      <div class="navbar__actions">
-        <a href="notifications.html" class="navbar__login">Notifications</a>
-        <a href="account.html" class="navbar__signup">My account</a>
-      </div>
-    </div>
-  </navbar>
+<body class="app-shell-page">
 
-  <main class="page">
-    <div class="wrap">
+  <div class="app-shell">
+    
+    <div id="userSidebar"></div>
 
-      <a href="dashboard.html" class="link-btn">&larr; Back to dashboard</a>
+    <div class="app-shell__main">
 
       <section class="page__header" style="margin-top:16px;">
         <div class="group-head">
@@ -55,27 +43,6 @@
             <div class="status-row">
               <span>You pay</span>
               <span id="yourPrice">—</span>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="section-header">
-              <h2>Your savings on this plan</h2>
-              <a href="savings.html" class="link-btn">Full breakdown →</a>
-            </div>
-            <div class="savings-mini">
-              <div>
-                <span class="savings-mini__label">Solo price</span>
-                <span class="savings-mini__value" id="soloPrice">—</span>
-              </div>
-              <div>
-                <span class="savings-mini__label">You pay</span>
-                <span class="savings-mini__value" id="miniYourPrice">—</span>
-              </div>
-              <div class="savings-mini--highlight">
-                <span class="savings-mini__label">You save</span>
-                <span class="savings-mini__value" id="miniSaved">—</span>
-              </div>
             </div>
           </section>
 
@@ -110,5 +77,11 @@
   </main>
 
   <script src="../js/group.js"></script>
+  <script src="../js/load-user-sidebar.js"></script>
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/store.js"></script>
+
+
+
 </body>
 </html>
