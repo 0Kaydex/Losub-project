@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin Login — Losub</title>
+<link rel="stylesheet" href="../css/base.css" />
+<link rel="stylesheet" href="../css/auth.css" />
+<link rel="stylesheet" href="../css/admin-auth.css" />
+</head>
+<body class="auth-body admin-auth-body">
+
+  <header class="auth-topbar">
+    <span class="auth-logo">Losub <span class="admin-badge">Admin</span></span>
+  </header>
+
+  <main class="auth-main">
+    <div class="auth-card">
+      <h1>Admin sign in</h1>
+      <p class="auth-sub">Restricted access — Losub staff only.</p>
+      <div class="auth-message" id="adminAuthMessage" hidden></div>
+
+      <form id="admin-login-form" novalidate>
+        <label class="auth-field">
+          <span>Email</span>
+          <input type="email" name="email" placeholder="admin@losub.com" required />
+        </label>
+        <label class="auth-field">
+          <span>Password</span>
+          <input type="password" name="password" placeholder="••••••••" required />
+        </label>
+        <button type="submit" class="auth-submit">Sign in</button>
+      </form>
+    </div>
+  </main>
+
+<script src="../js/config.js"></script>
+<script src="../js/admin-auth.js"></script>
+</body>
+</html>

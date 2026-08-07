@@ -1,0 +1,63 @@
+.admin-shell .sidebar {
+  background: #14120E;
+  border-right: 1px solid #2A2823;
+}
+
+.admin-shell .sidebar__logo {
+  color: #F5F3EC;
+}
+
+.admin-shell .sidebar__collapse-btn {
+  color: #9C9A8F;
+}
+
+.admin-shell .sidebar__link {
+  color: #B5B3A6;
+}
+
+.admin-shell .sidebar__link:hover {
+  background: #1F1D18;
+  color: #F5F3EC;
+}
+
+.admin-shell .sidebar__link.is-active {
+  background: #2A2410;
+  color: #F2B84B;
+}
+
+.admin-shell .sidebar__badge {
+  background: #3A2E10;
+  color: #F2B84B;
+}
+
+.admin-shell .sidebar__user {
+  border-top: 1px solid #2A2823;
+}
+
+.admin-shell .sidebar__user:hover {
+  background: #1F1D18;
+}
+
+.admin-shell .sidebar__avatar {
+  background: #F2B84B;
+  color: #14120E;
+}
+
+.admin-shell .sidebar__label {
+  color: inherit;
+}
+
+.admin-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  background: #2A2410;
+  color: #F2B84B;
+  border-radius: var(--r-pill);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  margin-left: 10px;
+}

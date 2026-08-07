@@ -1,0 +1,116 @@
+.admin-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.admin-stat-card {
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.admin-stat-card--warn {
+  border: 1px solid #F2B84B;
+}
+
+.admin-stat-card__label {
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+
+.admin-stat-card__value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: var(--font-display);
+}
+
+.admin-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.admin-quick-action {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.admin-quick-action:hover { border-color: var(--ink-soft); }
+
+.admin-layout {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.admin-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
+}
+.admin-list li:last-child { border-bottom: none; }
+
+.admin-list__name { font-weight: 600; color: var(--ink); }
+.admin-list__meta { color: var(--ink-soft); font-size: 12px; }
+
+.admin-flag-pill {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background: var(--pastel-pink);
+  color: #8c2a3f;
+}
+
+.admin-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.admin-table th {
+  text-align: left;
+  font-size: 11px;
+  text-transform: uppercase;
+  color: var(--ink-soft);
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--line);
+}
+.admin-table td {
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink);
+}
+.admin-table tr:last-child td { border-bottom: none; }
+
+@media (max-width: 1000px) {
+  .admin-stat-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-quick-actions { grid-template-columns: 1fr; }
+}
+@media (max-width: 900px) {
+  .admin-layout { grid-template-columns: 1fr; }
+}
