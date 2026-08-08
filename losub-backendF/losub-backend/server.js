@@ -3,6 +3,7 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./db");
 const authRoutes = require("./routes/auth");
+const adminRoutes = require("./routes/admin");
 const { requireAuth } = require("./middleware/auth");
 
 const app = express();
@@ -27,6 +28,8 @@ app.get("/api/health", (req, res) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+
 
 // Example protected route — confirms the logged-in user's identity.
 // The frontend dashboard/account pages will call this once wired up.

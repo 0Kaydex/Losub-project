@@ -1,15 +1,25 @@
-const { requireAuth } = require("./auth");
+const db = require("../db");
 
 function requireAdmin(req, res, next) {
-  requireAuth(req, res, () => {
-    if (req.role !== "admin") {
-      return res.status(403).json({
-        error: "Admin access required."
-      });
-    }
+  const user = db
+    .prepare("SELECT id, role FROM users WHERE id = ?")
+    .get(req.userId);
 
-    next();
-  });
+  if (!user) {
+    return res.status(401).json({
+      error: "User not found."
+    });
+  }
+
+  if (user.role !== "admin" && user.role !== "owner") {
+    return res.status(403).json({
+      error: "Admin access required."
+    });
+  }
+
+  req.userRole = user.role;
+
+  next();
 }
 
 module.exports = { requireAdmin };

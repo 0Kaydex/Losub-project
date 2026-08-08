@@ -8,6 +8,7 @@ const path = require("path");
 // In production (Fly.io): set DB_PATH=/data/losub.db to write to the
 // persistent volume instead of the container's ephemeral filesystem.
 const dbPath = process.env.DB_PATH || path.join(__dirname, "losub.db");
+console.log("DATABASE PATH:", dbPath);
 const db = new DatabaseSync(dbPath);
 
 db.exec(`
