@@ -1,14 +1,47 @@
 const express = require("express");
+const db = require("../db");
+const { requireAuth } = require("../middleware/auth");
 const { requireOwner } = require("../middleware/requireOwner");
 
 const router = express.Router();
 
-// Test owner route
-router.get("/test", requireOwner, (req, res) => {
+router.use(requireAuth, requireOwner);
+
+router.get("/test", (req, res) => {
   res.json({
     message: "Owner access confirmed.",
     userId: req.userId,
     role: req.userRole
+  });
+});
+
+router.get("/users", (req, res) => {
+  const users = db
+    .prepare("SELECT id, fullname, email, role, auth_provider, email_verified, created_at FROM users ORDER BY id")
+    .all();
+  res.json({ users });
+});
+
+router.put("/users/:id/role", (req, res) => {
+  const { role } = req.body;
+  const validRoles = ["member", "admin", "owner"];
+
+  if (!validRoles.includes(role)) {
+    return res.status(400).json({ error: "Role must be one of: member, admin, owner." });
+  }
+
+  const target = db.prepare("SELECT id, email, role FROM users WHERE id = ?").get(req.params.id);
+  if (!target) {
+    return res.status(404).json({ error: "User not found." });
+  }
+
+  db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
+
+  res.json({
+    message: `${target.email} is now ${role}.`,
+    userId: target.id,
+    oldRole: target.role,
+    newRole: role
   });
 });
 

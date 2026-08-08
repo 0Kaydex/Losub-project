@@ -6,19 +6,13 @@ function requireOwner(req, res, next) {
     .get(req.userId);
 
   if (!user) {
-    return res.status(401).json({
-      error: "User not found."
-    });
+    return res.status(401).json({ error: "User not found." });
   }
-
   if (user.role !== "owner") {
-    return res.status(403).json({
-      error: "Owner access required."
-    });
+    return res.status(403).json({ error: "Owner access required." });
   }
 
   req.userRole = user.role;
-
   next();
 }
 

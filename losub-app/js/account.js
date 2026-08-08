@@ -46,12 +46,14 @@ if (!user) {
   renderProfileSummary();
 
   const roleSummary = document.getElementById("roleSummary");
-  roleSummary.innerHTML = user.groups.map(g => `
-    <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
-      ${g.plan} · ${g.role === 'manager' ? 'Manager' : 'Member'}
-    </span>
-  `).join("");
-
+const groups = user.groups || [];
+roleSummary.innerHTML = groups.length
+  ? groups.map(g => `
+      <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
+        ${g.plan} · ${g.role === 'manager' ? 'Manager' : 'Member'}
+      </span>
+    `).join("")
+  : `<span class="role-chip">${user.role || 'member'}</span>`;
   // Enable "Save changes" only once something actually changed
   function checkDirty() {
     const dirty = fullnameInput.value.trim() !== user.fullname
@@ -97,9 +99,10 @@ if (!user) {
     console.log("Password update submitted (front-end only, no backend yet).");
   });
 
-  document.getElementById("logoutBtn").addEventListener("click", () => {
-    // TODO: call backend to invalidate session
-    console.log("Logout requested (front-end only, no backend yet).");
+document.getElementById("logoutBtn").addEventListener("click", () => {
+    localStorage.removeItem("losub_user");
+    localStorage.removeItem("losub_token");
+    localStorage.removeItem("losub_my_groups");
     window.location.href = "index.html";
-  });
+});
 });

@@ -4,6 +4,7 @@ const cors = require("cors");
 const db = require("./db");
 const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
+const ownerRoutes = require("./routes/owner");
 const { requireAuth } = require("./middleware/auth");
 
 const app = express();
@@ -16,10 +17,9 @@ app.use(cors({
     "http://127.0.0.1:5500",
     "http://localhost:5500"
   ],
-methods: ["GET", "POST", "PUT"],
+  methods: ["GET", "POST", "PUT"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
-
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
@@ -29,15 +29,12 @@ app.get("/api/health", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/owner", ownerRoutes);
 
-
-// Example protected route — confirms the logged-in user's identity.
-// The frontend dashboard/account pages will call this once wired up.
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db
     .prepare("SELECT id, fullname, email, email_verified, created_at FROM users WHERE id = ?")
     .get(req.userId);
-
   if (!user) return res.status(404).json({ error: "User not found." });
   res.json({ user });
 });
@@ -45,6 +42,3 @@ app.get("/api/auth/me", requireAuth, (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`Losub backend running on port ${PORT}`);
 });
-
-const ownerRoutes = require("./routes/owner");
-app.use("/api/owner", ownerRoutes);

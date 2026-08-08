@@ -1,10 +1,11 @@
 const express = require("express");
+const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
-
 const router = express.Router();
 
-// Test admin route
-router.get("/test", requireAdmin, (req, res) => {
+router.use(requireAuth, requireAdmin);
+
+router.get("/test", (req, res) => {
   res.json({
     message: "Admin access confirmed.",
     userId: req.userId,
