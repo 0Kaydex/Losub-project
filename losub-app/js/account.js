@@ -46,15 +46,17 @@ if (!user) {
   renderProfileSummary();
 
 const roleSummary = document.getElementById("roleSummary");
-const groups = JSON.parse(localStorage.getItem("losub_my_groups") || "[]");
-roleSummary.innerHTML = groups.length
-  ? groups.map(g => `
-      <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
-        ${g.plan} · ${g.role === 'manager' ? 'Manager' : 'Member'}
-      </span>
-    `).join("")
-  : `<span class="role-chip">${user.role || 'member'}</span>`;
-  
+if (roleSummary) {
+  const groups = JSON.parse(localStorage.getItem("losub_my_groups") || "[]");
+  roleSummary.innerHTML = groups.length
+    ? groups.map(g => `
+        <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
+          ${g.plan} · ${g.role === 'manager' ? 'Manager' : 'Member'}
+        </span>
+      `).join("")
+    : `<span class="role-chip">${user.role || 'member'}</span>`;
+}
+
   // Enable "Save changes" only once something actually changed
   function checkDirty() {
     const dirty = fullnameInput.value.trim() !== user.fullname
