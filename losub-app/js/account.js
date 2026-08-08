@@ -45,8 +45,8 @@ if (!user) {
   emailInput.value = user.email;
   renderProfileSummary();
 
-  const roleSummary = document.getElementById("roleSummary");
-const groups = user.groups || [];
+const roleSummary = document.getElementById("roleSummary");
+const groups = JSON.parse(localStorage.getItem("losub_my_groups") || "[]");
 roleSummary.innerHTML = groups.length
   ? groups.map(g => `
       <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
@@ -54,6 +54,7 @@ roleSummary.innerHTML = groups.length
       </span>
     `).join("")
   : `<span class="role-chip">${user.role || 'member'}</span>`;
+  
   // Enable "Save changes" only once something actually changed
   function checkDirty() {
     const dirty = fullnameInput.value.trim() !== user.fullname
