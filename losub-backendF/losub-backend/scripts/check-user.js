@@ -1,4 +1,4 @@
-const db = require("./db");
+const db = require("../db");
 
 const users = db
   .prepare("SELECT id, fullname, email, role FROM users")
