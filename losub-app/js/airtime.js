@@ -116,7 +116,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
 
     list.innerHTML = plans.map(p => `
-      <div class="data-plan-item" data-code="${p.variationCode}">
+      <div class="data-plan-item" data-code="${p.code}">
         <div>
           <span class="data-plan-item__name">${p.name}</span>
         </div>
@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
       item.addEventListener("click", () => {
         list.querySelectorAll(".data-plan-item").forEach(i => i.classList.remove("is-active"));
         item.classList.add("is-active");
-        selectedDataPlan = plans.find(p => p.variationCode === item.dataset.code);
+        selectedDataPlan = plans.find(p => p.code === item.dataset.code);
         updateSummary();
       });
     });
@@ -171,8 +171,8 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const endpoint = currentType === "airtime" ? "/api/vtpass/airtime" : "/api/vtpass/data";
       const body = currentType === "airtime"
-        ? { network: currentNetwork, phone, amount: selectedAmount }
-        : { network: currentNetwork, phone, variationCode: selectedDataPlan.variationCode };
+  ? { network: currentNetwork, phone, amount: selectedAmount }
+  : { network: currentNetwork, phone, variation_code: selectedDataPlan.code };
 
       const res = await fetch(`${API_ORIGIN}${endpoint}`, {
         method: "POST",
