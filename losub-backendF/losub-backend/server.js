@@ -7,7 +7,8 @@ const adminRoutes = require("./routes/admin");
 const ownerRoutes = require("./routes/owner");
 const { requireAuth } = require("./middleware/auth");
 const walletRoutes = require("./routes/wallet");
-
+const plansRoutes = require("./routes/plans");
+const groupsRoutes = require("./routes/groups");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -32,6 +33,8 @@ app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/owner", ownerRoutes);
 app.use("/api/wallet", walletRoutes);
+app.use("/api/plans", plansRoutes);
+app.use("/api/groups", groupsRoutes);
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db

@@ -1,0 +1,138 @@
+const express = require("express");
+const db = require("../db");
+const { requireAuth } = require("../middleware/auth");
+
+const router = express.Router();
+router.use(requireAuth);
+
+// Shared helper — shape a raw group+plan row into what the frontend expects
+function formatGroup(row, userRoleInGroup, extra = {}) {
+  return {
+    id: row.group_id,
+    plan: row.plan_name,
+    logo: row.logo,
+    color: row.color,
+    soloPrice: row.solo_price / 100,
+    yourPrice: row.price_per_seat / 100,
+    seatsTotal: row.seats_total,
+    seatsFilled: row.seats_filled,
+    manager: row.manager_name,
+    role: userRoleInGroup,
+    ...extra,
+  };
+}
+
+// GET /api/groups/mine — groups the logged-in user belongs to
+router.get("/mine", (req, res) => {
+  const rows = db.prepare(`
+    SELECT
+      g.id AS group_id, g.seats_total, g.price_per_seat, g.status,
+      p.name AS plan_name, p.logo, p.color, p.solo_price,
+      m.fullname AS manager_name,
+      gm.role AS member_role, gm.payment_status, gm.next_payment_date,
+      (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
+    FROM group_members gm
+    JOIN groups g ON g.id = gm.group_id
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users m ON m.id = g.manager_id
+    WHERE gm.user_id = ?
+    ORDER BY gm.joined_at DESC
+  `).all(req.userId);
+
+  const groups = rows.map(row => formatGroup(row, row.member_role, {
+    paymentStatus: row.payment_status,
+    nextPaymentDate: row.next_payment_date,
+  }));
+
+  res.json({ groups });
+});
+
+// GET /api/groups/browse — open groups with free seats, excluding ones you're already in
+router.get("/browse", (req, res) => {
+  const rows = db.prepare(`
+    SELECT
+      g.id AS group_id, g.seats_total, g.price_per_seat, g.status,
+      p.name AS plan_name, p.logo, p.color, p.solo_price,
+      m.fullname AS manager_name,
+      (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
+    FROM groups g
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users m ON m.id = g.manager_id
+    WHERE g.status = 'active'
+      AND g.id NOT IN (SELECT group_id FROM group_members WHERE user_id = ?)
+    ORDER BY g.created_at DESC
+  `).all(req.userId);
+
+  const openGroups = rows
+    .filter(r => r.seats_filled < r.seats_total)
+    .map(row => formatGroup(row, null));
+
+  res.json({ groups: openGroups });
+});
+
+// POST /api/groups — create a new group as its manager
+router.post("/", (req, res) => {
+  const { plan_id, seats_total, price_per_seat } = req.body;
+
+  if (!plan_id || !seats_total || !price_per_seat) {
+    return res.status(400).json({ error: "plan_id, seats_total, and price_per_seat are required." });
+  }
+
+  const plan = db.prepare("SELECT id FROM plans WHERE id = ?").get(plan_id);
+  if (!plan) return res.status(404).json({ error: "Plan not found." });
+
+  const priceKobo = Math.round(Number(price_per_seat) * 100);
+
+  const result = db.prepare(
+    "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
+  ).run(plan_id, req.userId, seats_total, priceKobo);
+
+  // Manager automatically takes the first seat, marked as paid (they're not paying themselves).
+  db.prepare(
+    "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'manager', 'paid')"
+  ).run(result.lastInsertRowid, req.userId);
+
+  res.json({ id: result.lastInsertRowid, message: "Group created." });
+});
+
+// POST /api/groups/:id/join — take a seat, deducting price_per_seat from wallet
+router.post("/:id/join", (req, res) => {
+  const groupId = req.params.id;
+
+  const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(groupId);
+  if (!group || group.status !== "active") {
+    return res.status(404).json({ error: "Group not found or no longer open." });
+  }
+
+  const alreadyIn = db.prepare("SELECT id FROM group_members WHERE group_id = ? AND user_id = ?").get(groupId, req.userId);
+  if (alreadyIn) {
+    return res.status(400).json({ error: "You're already in this group." });
+  }
+
+  const seatsFilled = db.prepare("SELECT COUNT(*) AS n FROM group_members WHERE group_id = ?").get(groupId).n;
+  if (seatsFilled >= group.seats_total) {
+    return res.status(400).json({ error: "This group is full." });
+  }
+
+  const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  if (user.wallet_balance < group.price_per_seat) {
+    return res.status(400).json({ error: "Insufficient wallet balance. Fund your wallet first." });
+  }
+
+  const plan = db.prepare("SELECT name FROM plans WHERE id = ?").get(group.plan_id);
+
+  // Deduct + join + log transaction together — all or nothing in effect since node:sqlite
+  // runs synchronously and any thrown error here would leave earlier statements applied,
+  // so we order deduction first and only join after it succeeds.
+  db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(group.price_per_seat, req.userId);
+  db.prepare(
+    "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
+  ).run(groupId, req.userId);
+  db.prepare(
+    "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
+  ).run(req.userId, `${plan.name} seat payment`, -group.price_per_seat);
+
+  res.json({ message: `You joined the ${plan.name} group.` });
+});
+
+module.exports = router;

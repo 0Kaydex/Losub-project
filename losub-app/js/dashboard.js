@@ -1,6 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // Fallback logos for demo groups that predate the logo field (e.g. seeded data below)
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
+
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  // Fallback logos for plans that don't have one set in the database yet
   const LOGO_MAP = {
     Netflix: "https://cdn.simpleicons.org/netflix/E50914",
     Spotify: "https://cdn.simpleicons.org/spotify/1DB954",
@@ -18,29 +26,24 @@ document.addEventListener("DOMContentLoaded", () => {
     return g.logo || LOGO_MAP[g.plan] || "https://cdn.simpleicons.org/googleplay/34A853";
   }
 
-  // First-time visitors get two example groups so the dashboard isn't empty.
-  // Real accounts would just start with nothing here.
-  seedGroupsIfEmpty([
-    { id: "g1", plan: "Netflix", color: "#E50914", role: "member", seatsFilled: 3, seatsTotal: 4, paymentStatus: "paid", yourPrice: 1500, soloPrice: 5200, manager: "Tunde A.", nextPaymentDate: "Aug 12, 2026" },
-    { id: "g2", plan: "Spotify", color: "#1DB954", role: "manager", seatsFilled: 5, seatsTotal: 6, paymentStatus: "pending", yourPrice: 800, soloPrice: 3200, manager: "Ngozi E.", nextPaymentDate: "Aug 3, 2026" },
-  ]);
-
-  const groups = getMyGroups();
-
+  // ---------- STILL MOCK — no backend tables for these yet ----------
   const notifications = [
     { id: "n1", text: "Your Netflix payment was received.", time: "2h ago", read: false },
     { id: "n2", text: "A seat opened in Capcut — you're next on the waitlist.", time: "1d ago", read: false },
     { id: "n3", text: "Your Spotify group manager sent a reminder about seat renewal.", time: "3d ago", read: true },
   ];
-
   const waitlist = [
     { plan: "Capcut", position: 1 },
     { plan: "Prime Video", position: 4 },
   ];
+  // ---------- End mock section ----------
 
   const roleLabel = { member: "Member", manager: "Manager" };
   const statusLabel = { paid: "Paid", pending: "Pending", defaulted: "Defaulted" };
   const fmt = n => `₦${n.toLocaleString()}`;
+
+  let groups = [];
+  let walletBalance = 0;
 
   // ---------- Stats row ----------
   function renderStats() {
@@ -80,7 +83,7 @@ document.addEventListener("DOMContentLoaded", () => {
               <img src="${logoFor(g)}" alt="${g.plan}" class="group-card__logo" style="background:${(g.color || '#111827')}1A;" />
               <h3>${g.plan}</h3>
             </div>
-            <span class="group-card__role group-card__role--${g.role}">${roleLabel[g.role]}</span>
+            <span class="group-card__role group-card__role--${g.role}">${roleLabel[g.role] || g.role}</span>
           </div>
 
           <div>
@@ -105,7 +108,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join("");
   }
 
-  // ---------- Notifications ----------
+  // ---------- Notifications (mock) ----------
   function renderNotifications() {
     const list = document.getElementById("notifList");
     list.innerHTML = notifications.slice(0, 4).map(n => `
@@ -120,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
     updateBell();
   }
 
-  // ---------- Waitlist ----------
+  // ---------- Waitlist (mock) ----------
   function renderWaitlist() {
     const list = document.getElementById("waitlistList");
     const empty = document.getElementById("waitlistEmpty");
@@ -141,7 +144,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
-  // ---------- Notification bell (lives in the topbar now) ----------
   function updateBell() {
     const hasUnread = notifications.some(n => !n.read);
     const bellDot = document.getElementById("bellDot");
@@ -152,19 +154,49 @@ document.addEventListener("DOMContentLoaded", () => {
     notifications.forEach(n => n.read = true);
     renderNotifications();
     renderStats();
-    // TODO: call backend to persist read state
+    // TODO: call backend to persist read state once notifications table exists
   });
 
+  function renderWalletBalance() {
+    document.getElementById("dashWalletBalance").textContent = fmt(walletBalance);
+  }
+
+  // ---------- Real data loads ----------
+  async function loadGroups() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/mine`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      const data = await res.json();
+      groups = data.groups || [];
+    } catch {
+      groups = [];
+    }
+    renderStats();
+    renderGroups();
+  }
+
+  async function loadWallet() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/wallet`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      walletBalance = data.balance || 0;
+    } catch {
+      walletBalance = 0;
+    }
+    renderWalletBalance();
+  }
+
   // ---------- Initial render ----------
-  renderStats();
-  renderGroups();
+  loadGroups();
+  loadWallet();
   renderNotifications();
   renderWaitlist();
-  renderWalletBalance();
-  function renderWalletBalance() {
-    document.getElementById("dashWalletBalance").textContent = fmt(getWalletBalance());
-  }
-  // ---------- Greeting name (app-shell.js also fills the sidebar name/initial separately) ----------
+
+  // ---------- Greeting name ----------
   const storedUser = localStorage.getItem("losub_user");
   if (storedUser) {
     try {
