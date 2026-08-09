@@ -9,6 +9,7 @@ router.use(requireAuth);
 function formatGroup(row, userRoleInGroup, extra = {}) {
   return {
     id: row.group_id,
+    planId: row.plan_id,
     plan: row.plan_name,
     logo: row.logo,
     color: row.color,
@@ -49,9 +50,9 @@ router.get("/mine", (req, res) => {
 
 // GET /api/groups/browse — open groups with free seats, excluding ones you're already in
 router.get("/browse", (req, res) => {
-  const rows = db.prepare(`
+ const rows = db.prepare(`
     SELECT
-      g.id AS group_id, g.seats_total, g.price_per_seat, g.status,
+      g.id AS group_id, g.plan_id, g.seats_total, g.price_per_seat, g.status,
       p.name AS plan_name, p.logo, p.color, p.solo_price,
       m.fullname AS manager_name,
       (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled

@@ -1,11 +1,4 @@
-/* Force [hidden] to actually hide sidebar links, overriding .sidebar__link's display rule */
-.sidebar__link[hidden] {
-  display: none !important;
-}
-.sidebar__divider[hidden] {
-  display: none !important;
-  
-}/* ---------- Owner-only badge in topbar ---------- */
+/* ---------- Owner-only badge in topbar ---------- */
 .owner-page-badge {
   font-size: 11px;
   font-weight: 700;
@@ -83,6 +76,22 @@
   color: var(--ink-soft);
 }
 .owner-more-panel { margin-top: 20px; }
+
+.owner-plan-hint {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin-bottom: 16px;
+}
+.owner-plan-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 420px;
+}
+.owner-plan-optional {
+  font-weight: 400;
+  color: var(--ink-soft);
+}
 
 @media (max-width: 640px) {
   .owner-page-badge { display: none; }

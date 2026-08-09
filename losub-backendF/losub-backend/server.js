@@ -9,6 +9,7 @@ const { requireAuth } = require("./middleware/auth");
 const walletRoutes = require("./routes/wallet");
 const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
+const vtpassRoutes = require("./routes/vtpass");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -19,7 +20,7 @@ app.use(cors({
     "http://127.0.0.1:5500",
     "http://localhost:5500"
   ],
-  methods: ["GET", "POST", "PUT"],
+  methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
 app.use(express.json());
@@ -35,6 +36,7 @@ app.use("/api/owner", ownerRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/groups", groupsRoutes);
+app.use("/api/vtpass", vtpassRoutes);
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db
