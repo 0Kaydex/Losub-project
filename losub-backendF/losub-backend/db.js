@@ -40,7 +40,8 @@ db.exec(`
 const migrations = [
   "ALTER TABLE users ADD COLUMN google_id TEXT",
   "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'",
-  "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'"
+  "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'",
+  "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0"
 ];
 
 
@@ -57,5 +58,21 @@ for (const sql of migrations) {
 // lets unlimited email/password users have google_id = NULL, while
 // preventing two different users from ever sharing the same google_id.
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_users_google_id ON users(google_id)");
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS wallet_transactions (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    type TEXT NOT NULL,              -- 'fund', 'plan_payment', 'airtime', 'data'
+    description TEXT NOT NULL,
+    amount INTEGER NOT NULL,         -- kobo; positive = credit, negative = debit
+    status TEXT NOT NULL DEFAULT 'success',
+    reference TEXT,                  -- Paystack reference, for funding transactions
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
+
+db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_tx_reference ON wallet_transactions(reference) WHERE reference IS NOT NULL");
 
 module.exports = db;

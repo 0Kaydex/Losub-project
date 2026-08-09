@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage roles — Losub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/admin-shell.css" />
+  <link rel="stylesheet" href="../css/admin-common.css" />
+  <link rel="stylesheet" href="../css/owner.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell admin-shell">
+
+    <div id="adminSidebar"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Manage roles</h1>
+        <span class="owner-page-badge">👑 Owner only</span>
+      </header>
+
+      <main class="page-content">
+
+        <section class="page__header">
+          <h2>Users & roles</h2>
+          <p>Promote trusted people to admin, or hand off ownership. Changes take effect the next time that person logs in.</p>
+        </section>
+
+        <div class="admin-search">
+          <input type="search" id="userSearchInput" placeholder="Search by name or email…" />
+        </div>
+
+        <div id="ownerUsersError" class="auth-message auth-message--error" hidden></div>
+        <div id="ownerUsersLoading" class="owner-loading">Loading users…</div>
+
+        <section class="panel" id="ownerUsersPanel" hidden>
+          <table class="admin-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Email</th>
+                <th>Provider</th>
+                <th>Verified</th>
+                <th>Role</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="ownerUsersBody"></tbody>
+          </table>
+          <p class="owner-empty" id="ownerUsersEmpty" hidden>No users match your search.</p>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ============ CONFIRM ROLE CHANGE MODAL ============ -->
+  <div class="modal-overlay" id="roleConfirmOverlay" hidden>
+    <div class="modal">
+      <button class="modal__close" id="roleConfirmClose" aria-label="Close">×</button>
+      <h2>Change role?</h2>
+      <p class="modal__sub" id="roleConfirmText"></p>
+      <div class="modal__actions">
+        <button class="admin-action-btn admin-action-btn--primary" id="roleConfirmYes">Confirm change</button>
+        <button class="admin-action-btn" id="roleConfirmNo">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+<script src="../js/store.js"></script>
+<script src="../js/app-shell.js"></script>
+<script src="../js/owner-users.js"></script>
+<script src="../js/load-admin-sidebar.js"></script>
+</body>
+</html>

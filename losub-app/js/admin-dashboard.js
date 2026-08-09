@@ -82,11 +82,6 @@ document.addEventListener("DOMContentLoaded", () => {
     `).join("");
   }
 
-  document.getElementById("adminLogout").addEventListener("click", (e) => {
-    e.preventDefault();
-    // TODO: call backend to invalidate admin session
-    window.location.href = "auth.html";
-  });
 
   renderStats();
   renderFlaggedManagers();

@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>System settings — Losub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/admin-shell.css" />
+  <link rel="stylesheet" href="../css/admin-common.css" />
+  <link rel="stylesheet" href="../css/owner.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell admin-shell">
+
+    <div id="adminSidebar"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">System settings</h1>
+        <span class="owner-page-badge">👑 Owner only</span>
+      </header>
+
+      <main class="page-content">
+
+        <section class="page__header">
+          <h2>System status</h2>
+          <p>A quick read on whether Losub's backend is up and who you're signed in as.</p>
+        </section>
+
+        <div class="admin-layout">
+
+          <section class="panel">
+            <div class="section-header"><h2>Backend</h2></div>
+            <div class="owner-status-row">
+              <span class="owner-status-dot" id="healthDot"></span>
+              <span id="healthText">Checking…</span>
+            </div>
+            <p class="owner-status-meta" id="healthMeta"></p>
+          </section>
+
+          <section class="panel">
+            <div class="section-header"><h2>Your account</h2></div>
+            <ul class="admin-list" id="accountInfoList"></ul>
+          </section>
+
+        </div>
+
+        <section class="panel owner-more-panel">
+          <div class="section-header"><h2>More settings</h2></div>
+          <p class="owner-empty">Platform-wide configuration (fees, plan catalog, feature flags) isn't built yet — this section is reserved for that once it exists.</p>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+<script src="../js/store.js"></script>
+<script src="../js/app-shell.js"></script>
+<script src="../js/owner-settings.js"></script>
+<script src="../js/load-admin-sidebar.js"></script>
+</body>
+</html>

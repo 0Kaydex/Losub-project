@@ -1,38 +1,35 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  seedWalletIfEmpty(5000);
-  seedTransactionsIfEmpty([
-    { id: "tx1", type: "fund", description: "Wallet funded", amount: 5000, status: "success", date: new Date(Date.now() - 86400000 * 6).toISOString() },
-    { id: "tx2", type: "plan_payment", description: "Netflix seat payment", amount: -1500, status: "success", date: new Date(Date.now() - 86400000 * 3).toISOString() },
-    { id: "tx3", type: "airtime", description: "MTN airtime top-up", amount: -500, status: "success", date: new Date(Date.now() - 86400000).toISOString() },
-  ]);
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
+  const user = JSON.parse(localStorage.getItem("losub_user") || "null");
+
+  if (!user || !token) {
+    window.location.href = "auth.html";
+    return;
+  }
 
   const fmt = n => `₦${Math.abs(n).toLocaleString()}`;
   const typeIcon = { fund: "💰", plan_payment: "📦", airtime: "📱", data: "📶" };
 
+  let allTransactions = [];
   let visibleCount = 5;
   let currentRange = "all";
   let customFrom = null;
   let customTo = null;
+  let currentBalance = 0;
 
   function getFilteredTransactions() {
-    const all = getTransactions();
-    if (currentRange === "all" && !customFrom && !customTo) return all;
+    if (currentRange === "all" && !customFrom && !customTo) return allTransactions;
 
     const now = new Date();
     let start = null;
+    if (currentRange === "today") start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    else if (currentRange === "week") { start = new Date(now); start.setDate(now.getDate() - 7); }
+    else if (currentRange === "month") start = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    if (currentRange === "today") {
-      start = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    } else if (currentRange === "week") {
-      start = new Date(now);
-      start.setDate(now.getDate() - 7);
-    } else if (currentRange === "month") {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-    }
-
-    return all.filter(tx => {
-      const txDate = new Date(tx.date);
+    return allTransactions.filter(tx => {
+      const txDate = new Date(tx.created_at);
       if (customFrom && txDate < new Date(customFrom)) return false;
       if (customTo && txDate > new Date(customTo + "T23:59:59")) return false;
       if (start && !customFrom && !customTo && txDate < start) return false;
@@ -41,7 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   function renderBalance() {
-    document.getElementById("walletBalance").textContent = fmt(getWalletBalance());
+    document.getElementById("walletBalance").textContent = fmt(currentBalance);
   }
 
   function renderTransactions() {
@@ -60,10 +57,9 @@ document.addEventListener("DOMContentLoaded", () => {
     empty.hidden = true;
 
     const visible = filtered.slice(0, visibleCount);
-
     list.innerHTML = visible.map(tx => {
       const isIn = tx.amount > 0;
-      const dateStr = new Date(tx.date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+      const dateStr = new Date(tx.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
       return `
         <li class="tx-item">
           <span class="tx-item__icon ${isIn ? 'tx-item__icon--in' : 'tx-item__icon--out'}">${typeIcon[tx.type] || "💳"}</span>
@@ -77,6 +73,24 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join("");
 
     viewMoreBtn.hidden = filtered.length <= visibleCount;
+  }
+
+  async function loadWallet() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/wallet`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (!res.ok) throw new Error("Request failed");
+
+      const data = await res.json();
+      currentBalance = data.balance;
+      allTransactions = data.transactions;
+      renderBalance();
+      renderTransactions();
+    } catch (err) {
+      document.getElementById("walletBalance").textContent = "Unavailable";
+    }
   }
 
   document.getElementById("viewMoreBtn").addEventListener("click", () => {
@@ -108,7 +122,7 @@ document.addEventListener("DOMContentLoaded", () => {
     renderTransactions();
   });
 
-  // ---------- Fund wallet modal ----------
+  // ---------- Fund wallet modal (real Paystack) ----------
   let selectedFundAmount = null;
 
   document.getElementById("openFundModal").addEventListener("click", () => {
@@ -151,22 +165,63 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    // TODO: replace with a real payment gateway (Paystack/Flutterwave) charge,
-    // and only credit the wallet inside that gateway's success callback.
+    if (typeof PaystackPop === "undefined") {
+      messageBox.textContent = "Payment system failed to load. Refresh and try again.";
+      messageBox.className = "airtime-message airtime-message--error";
+      messageBox.hidden = false;
+      return;
+    }
+
     const btn = document.getElementById("confirmFundBtn");
     btn.disabled = true;
-    btn.textContent = "Processing…";
+    btn.textContent = "Opening payment…";
 
-    setTimeout(() => {
-      setWalletBalance(getWalletBalance() + selectedFundAmount);
-      addTransaction({ type: "fund", description: "Wallet funded", amount: selectedFundAmount, status: "success" });
-      btn.disabled = false;
-      btn.textContent = "Fund now";
-      closeFundModal();
-      renderBalance();
-      visibleCount = 5;
-      renderTransactions();
-    }, 700);
+    const handler = PaystackPop.setup({
+      key: PAYSTACK_PUBLIC_KEY,
+      email: user.email,
+      amount: selectedFundAmount * 100,
+      currency: "NGN",
+      ref: `losub_${user.id}_${Date.now()}`,
+      callback: function (response) {
+        btn.textContent = "Confirming…";
+        fetch(`${API_ORIGIN}/api/wallet/fund/verify`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({ reference: response.reference }),
+        })
+          .then(res => res.json())
+          .then(data => {
+            btn.disabled = false;
+            btn.textContent = "Fund now";
+            if (data.balance === undefined) {
+              messageBox.textContent = data.error || "Couldn't confirm the payment.";
+              messageBox.className = "airtime-message airtime-message--error";
+              messageBox.hidden = false;
+              return;
+            }
+            currentBalance = data.balance;
+            renderBalance();
+            closeFundModal();
+            loadWallet();
+          })
+          .catch(() => {
+            btn.disabled = false;
+            btn.textContent = "Fund now";
+            messageBox.textContent = "Payment succeeded but confirmation failed — contact support with your reference: " + response.reference;
+            messageBox.className = "airtime-message airtime-message--error";
+            messageBox.hidden = false;
+          });
+      },
+      onClose: function () {
+        btn.disabled = false;
+        btn.textContent = "Fund now";
+      },
+    });
+
+    handler.openIframe();
   });
 
   // ---------- Download PDF ----------
@@ -179,7 +234,7 @@ document.addEventListener("DOMContentLoaded", () => {
     doc.text("Losub — Wallet Statement", 14, 18);
     doc.setFontSize(10);
     doc.text(`Generated: ${new Date().toLocaleDateString()}`, 14, 25);
-    doc.text(`Balance: ${fmt(getWalletBalance())}`, 14, 31);
+    doc.text(`Balance: ${fmt(currentBalance)}`, 14, 31);
 
     let y = 42;
     doc.setFontSize(11);
@@ -191,7 +246,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     transactions.forEach(tx => {
       if (y > 280) { doc.addPage(); y = 20; }
-      const dateStr = new Date(tx.date).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+      const dateStr = new Date(tx.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
       const amountStr = `${tx.amount > 0 ? "+" : "-"}${fmt(tx.amount)}`;
       doc.text(dateStr, 14, y);
       doc.text(tx.description, 55, y);
@@ -202,7 +257,6 @@ document.addEventListener("DOMContentLoaded", () => {
     doc.save("losub-wallet-statement.pdf");
   });
 
-  // ---------- Initial render ----------
-  renderBalance();
-  renderTransactions();
+  // ---------- Initial load ----------
+  loadWallet();
 });

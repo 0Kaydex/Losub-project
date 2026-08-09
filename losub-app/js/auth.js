@@ -87,7 +87,15 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const data = await apiPost("/auth/login", { email, password });
       saveSession(data.token, data.user);
-      window.location.href = "dashboard.html";
+      redirectByRole(data.user);
+
+      function redirectByRole(user) {
+  if (user.role === "owner" || user.role === "admin") {
+    window.location.href = "admin-dashboard.html";
+  } else {
+    window.location.href = "dashboard.html";
+  }
+}
     } catch (err) {
       showMessage(signinForm, err.message);
       if (err.message.toLowerCase().includes("verify")) {
@@ -193,32 +201,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
   setupPasswordToggles();
 
-
-  // ---------- GOOGLE SIGN-IN ----------
-  // function initGoogle() {
-  //   if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-  //     console.warn("Google Sign-In not configured yet — set GOOGLE_CLIENT_ID in js/config.js");
-  //     return;
-  //   }
-
-  //   google.accounts.id.initialize({
-  //     client_id: GOOGLE_CLIENT_ID,
-  //     callback: handleGoogleCredential,
-  //   });
-
-  //   // Render Google's real button off-screen; our styled buttons forward clicks to it.
-  //   google.accounts.id.renderButton(document.getElementById("hiddenGoogleButton"), {
-  //     type: "standard",
-  //   });
-
-  //   document.querySelectorAll("[data-google-trigger]").forEach(btn => {
-  //     btn.addEventListener("click", () => {
-  //       const realButton = document.querySelector("#hiddenGoogleButton div[role=button]");
-  //       if (realButton) realButton.click();
-  //     });
-  //   });
-  // }
-
   function initGoogle() {
   console.log("Google init started");
 
@@ -259,7 +241,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const data = await apiPost("/auth/google", { credential: response.credential });
       saveSession(data.token, data.user);
-      window.location.href = "dashboard.html";
+      redirectByRole(data.user);
     } catch (err) {
       if (activeForm) showMessage(activeForm, err.message);
     }

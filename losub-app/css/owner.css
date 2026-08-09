@@ -1,0 +1,89 @@
+/* Force [hidden] to actually hide sidebar links, overriding .sidebar__link's display rule */
+.sidebar__link[hidden] {
+  display: none !important;
+}
+.sidebar__divider[hidden] {
+  display: none !important;
+  
+}/* ---------- Owner-only badge in topbar ---------- */
+.owner-page-badge {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 4px 10px;
+  border-radius: var(--r-pill);
+  background: var(--pastel-sand);
+  color: var(--ink);
+  white-space: nowrap;
+}
+
+/* ---------- Sidebar owner section ---------- */
+.sidebar__divider {
+  height: 1px;
+  background: var(--line);
+  margin: 10px 14px;
+}
+
+/* ---------- Role chips (users table + account page) ---------- */
+.role-chip {
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--pastel-sand);
+  color: var(--ink);
+  white-space: nowrap;
+}
+.role-chip--owner { background: #F2E4B8; color: #8a6d1c; }
+.role-chip--admin { background: var(--chip-blue, #D6E6FA); color: #2a5a8c; }
+.role-chip--member { background: var(--pastel-sand); color: var(--ink-soft); }
+.role-chip--manager { background: var(--chip-blue, #D6E6FA); color: #2a5a8c; }
+
+/* ---------- Owner users table ---------- */
+.owner-role-select {
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.owner-role-select:focus { outline: 2px solid var(--chip-blue); outline-offset: 1px; }
+
+.owner-users__actions { text-align: right; }
+
+.owner-loading,
+.owner-empty {
+  font-size: 13px;
+  color: var(--ink-soft);
+  padding: 20px 0;
+}
+
+/* ---------- Settings page status row ---------- */
+.owner-status-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+.owner-status-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--ink-soft);
+  flex-shrink: 0;
+}
+.owner-status-dot--ok { background: #3c9a5f; }
+.owner-status-dot--error { background: #b23a3a; }
+.owner-status-meta {
+  margin-top: 6px;
+  font-size: 12px;
+  color: var(--ink-soft);
+}
+.owner-more-panel { margin-top: 20px; }
+
+@media (max-width: 640px) {
+  .owner-page-badge { display: none; }
+}

@@ -6,6 +6,7 @@ const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const ownerRoutes = require("./routes/owner");
 const { requireAuth } = require("./middleware/auth");
+const walletRoutes = require("./routes/wallet");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -30,6 +31,7 @@ app.get("/api/health", (req, res) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/owner", ownerRoutes);
+app.use("/api/wallet", walletRoutes);
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db
