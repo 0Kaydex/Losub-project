@@ -41,7 +41,8 @@ const migrations = [
   "ALTER TABLE users ADD COLUMN google_id TEXT",
   "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'",
   "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'",
-  "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0"
+  "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0",
 ];
 
 

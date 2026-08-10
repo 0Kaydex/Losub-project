@@ -155,6 +155,10 @@ router.post("/login", async (req, res) => {
       return res.status(403).json({ error: "Please verify your email before logging in." });
     }
 
+    if (user.suspended) {
+  return res.status(403).json({ error: "This account has been suspended. Contact support." });
+}
+
     const token = jwt.sign(
   {
     userId: user.id,
@@ -260,6 +264,10 @@ router.post("/google", async (req, res) => {
     if (!googleVerified) {
       return res.status(400).json({ error: "Your Google email isn't verified. Please verify it with Google first." });
     }
+
+    if (user.suspended) {
+  return res.status(403).json({ error: "This account has been suspended. Contact support." });
+}
 
     let user = db.prepare("SELECT * FROM users WHERE google_id = ? OR email = ?").get(googleId, email.toLowerCase());
 
