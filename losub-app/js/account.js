@@ -1,11 +1,13 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
- const user = JSON.parse(localStorage.getItem("losub_user"));
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
+  const user = JSON.parse(localStorage.getItem("losub_user") || "null");
 
-if (!user) {
+  if (!user || !token) {
     window.location.href = "auth.html";
     return;
-}
+  }
 
   const fullnameInput = document.getElementById("fullname");
   const emailInput = document.getElementById("email");
@@ -45,17 +47,31 @@ if (!user) {
   emailInput.value = user.email;
   renderProfileSummary();
 
-const roleSummary = document.getElementById("roleSummary");
-if (roleSummary) {
-  const groups = JSON.parse(localStorage.getItem("losub_my_groups") || "[]");
-  roleSummary.innerHTML = groups.length
-    ? groups.map(g => `
-        <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
-          ${g.plan} · ${g.role === 'manager' ? 'Manager' : 'Member'}
-        </span>
-      `).join("")
-    : `<span class="role-chip">${user.role || 'member'}</span>`;
-}
+  // ---------- Real groups, from the backend, not localStorage ----------
+  const roleSummary = document.getElementById("roleSummary");
+  if (roleSummary) {
+    roleSummary.innerHTML = `<span class="role-chip">Loading…</span>`;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/mine`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+
+      const data = await res.json();
+      const groups = data.groups || [];
+
+      roleSummary.innerHTML = groups.length
+        ? groups.map(g => `
+            <span class="role-chip ${g.role === 'manager' ? 'role-chip--manager' : ''}">
+              ${g.plan} · ${g.role === 'manager' ? 'Manager' : 'Member'}
+            </span>
+          `).join("")
+        : `<span class="role-chip">${user.role || 'member'}</span>`;
+    } catch {
+      roleSummary.innerHTML = `<span class="role-chip">${user.role || 'member'}</span>`;
+    }
+  }
 
   // Enable "Save changes" only once something actually changed
   function checkDirty() {
@@ -68,7 +84,7 @@ if (roleSummary) {
 
   document.getElementById("profileForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    // TODO: call backend to update profile
+    // TODO: call backend to update profile (no PUT /api/auth/me endpoint yet)
     user.fullname = fullnameInput.value.trim();
     user.email = emailInput.value.trim();
     profileSubmit.disabled = true;
@@ -95,17 +111,36 @@ if (roleSummary) {
       showMessage(passwordMessage, "New password must be at least 8 characters.", "error");
       return;
     }
-    // TODO: call backend to update password
+    // TODO: call backend to update password (reset-password endpoint exists but needs a token flow, not wired here yet)
     e.target.reset();
     passwordHint.textContent = "Strength: —";
     showMessage(passwordMessage, "Password updated successfully.", "success");
     console.log("Password update submitted (front-end only, no backend yet).");
   });
 
-document.getElementById("logoutBtn").addEventListener("click", () => {
+  // Password show/hide toggle
+  function setupPasswordToggles() {
+    document.querySelectorAll(".auth-password-toggle").forEach(btn => {
+      const input = btn.closest(".auth-password-wrap").querySelector("input");
+      const eyeIcon = btn.querySelector(".icon-eye");
+      const eyeOffIcon = btn.querySelector(".icon-eye-off");
+
+      btn.addEventListener("click", () => {
+        const isHidden = input.type === "password";
+        input.type = isHidden ? "text" : "password";
+        eyeIcon.classList.toggle("is-visible", isHidden);
+        eyeOffIcon.classList.toggle("is-visible", !isHidden);
+        btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+      });
+    });
+  }
+  setupPasswordToggles();
+
+  // Logout — clears real session data, matches the fix already applied elsewhere
+  document.getElementById("logoutBtn").addEventListener("click", () => {
     localStorage.removeItem("losub_user");
     localStorage.removeItem("losub_token");
     localStorage.removeItem("losub_my_groups");
     window.location.href = "index.html";
-});
+  });
 });
