@@ -1,28 +1,27 @@
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
-  // ---- Mock data — replace with a real fetch keyed by group/plan id ----
-  const group = {
-    planId: "p4",
-    planName: "Netflix",
-    logo: "https://cdn.simpleicons.org/netflix/E50914",
-    color: "#E50914",
-    seatsTotal: 4,
-    pricePerSeat: 1500,
-    inviteLink: "https://losub.app/join/netflix-9F3A",
-  };
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
 
-  let members = [
-    { id: "m1", name: "Tunde A.", email: "tunde@email.com", status: "active", joined: "Jan 2026" },
-    { id: "m2", name: "Blessing U.", email: "blessing@email.com", status: "active", joined: "Feb 2026" },
-    { id: "m3", name: "Chika N.", email: "chika@email.com", status: "pending", joined: "Invited 2 days ago" },
-  ];
-  // ---- End mock data ----
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  const params = new URLSearchParams(window.location.search);
+  const groupId = params.get("id");
+
+  if (!groupId) {
+    window.location.href = "dashboard.html";
+    return;
+  }
 
   const fmt = n => `₦${n.toLocaleString()}`;
   const initials = name => name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
+  let group = null;
+  let members = [];
   let pendingRemoveId = null;
-  let targetSeatIndex = null; // which empty seat slot was clicked to invite into
 
   // ---------- Summary card ----------
   function renderSummary() {
@@ -30,9 +29,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const pct = Math.min(100, Math.round((filled / group.seatsTotal) * 100));
 
     document.getElementById("groupSummary").innerHTML = `
-      <img src="${group.logo}" alt="${group.planName}" class="group-summary__icon" style="background:${group.color}1A;" />
+      <img src="${group.logo || fallbackLogo(group.plan)}" alt="${group.plan}" class="group-summary__icon" style="background:${(group.color || '#111827')}1A;" />
       <div class="group-summary__info">
-        <div class="group-summary__name">${group.planName}</div>
+        <div class="group-summary__name">${group.plan}</div>
         <div class="group-summary__role">You're the account manager</div>
         <div class="group-summary__progress">
           <div class="group-summary__progress-bar" style="width:${pct}%;"></div>
@@ -40,35 +39,39 @@ document.addEventListener("DOMContentLoaded", () => {
         <div class="group-summary__seats-label">${filled}/${group.seatsTotal} seats filled</div>
       </div>
       <div class="group-summary__price">
-        <div class="group-summary__price-value">${fmt(group.pricePerSeat)}<small>/seat/mo</small></div>
+        <div class="group-summary__price-value">${fmt(group.yourPrice)}<small>/seat/mo</small></div>
         <div class="group-summary__price-label">Charged to each member</div>
       </div>
     `;
   }
 
-  // ---------- Seat grid (filled + empty slots) ----------
+  function fallbackLogo(name) {
+    return `https://cdn.simpleicons.org/${name.toLowerCase().replace(/\s+/g, "")}/6B7280`;
+  }
+
+  // ---------- Seat grid ----------
   function renderSeats() {
     const grid = document.getElementById("seatGrid");
     const emptySeats = group.seatsTotal - members.length;
 
     let html = members.map(m => `
       <div class="seat-card">
-        <span class="seat-card__avatar">${initials(m.name)}</span>
+        <span class="seat-card__avatar">${initials(m.fullname)}</span>
         <div class="seat-card__body">
-          <div class="seat-card__name">${m.name}</div>
-          <div class="seat-card__meta">${m.status === "pending" ? m.joined : `Joined ${m.joined} · ${m.email}`}</div>
-          <span class="seat-card__status seat-card__status--${m.status}">${m.status === "pending" ? "Pending" : "Active"}</span>
+          <div class="seat-card__name">${m.fullname}</div>
+          <div class="seat-card__meta">Joined ${new Date(m.joined_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} · ${m.email}</div>
+          <span class="seat-card__status seat-card__status--active">${m.payment_status === "paid" ? "Active" : m.payment_status}</span>
         </div>
-        <button type="button" class="seat-card__remove" data-id="${m.id}">Remove</button>
+        ${m.role === "manager" ? "" : `<button type="button" class="seat-card__remove" data-id="${m.user_id}">Remove</button>`}
       </div>
     `).join("");
 
     for (let i = 0; i < emptySeats; i++) {
       html += `
-        <div class="seat-card seat-card--empty" data-empty-index="${i}">
+        <div class="seat-card seat-card--empty">
           <div class="seat-card__body">
             <div class="seat-card__name">Empty seat</div>
-            <button type="button" class="seat-card__invite-btn" data-empty-index="${i}">Invite member</button>
+            <button type="button" class="seat-card__invite-btn" id="openInviteBtn">Share invite link</button>
           </div>
         </div>
       `;
@@ -76,11 +79,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
     grid.innerHTML = html;
     document.getElementById("seatCountLabel").textContent = `${members.length}/${group.seatsTotal} filled`;
-  }
 
-  function renderAll() {
-    renderSummary();
-    renderSeats();
+    const inviteBtn = document.getElementById("openInviteBtn");
+    if (inviteBtn) inviteBtn.addEventListener("click", openInviteModal);
   }
 
   // ---------- Toast ----------
@@ -93,23 +94,14 @@ document.addEventListener("DOMContentLoaded", () => {
     toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
   }
 
-  // ---------- Invite modal ----------
+  // ---------- Invite modal — real link to Browse plans, no fake email sending ----------
   const inviteOverlay = document.getElementById("inviteModalOverlay");
-  const inviteForm = document.getElementById("inviteForm");
-  const inviteInput = document.getElementById("inviteInput");
-  const inviteError = document.getElementById("inviteError");
 
-  function openInviteModal(seatIndex) {
-    targetSeatIndex = seatIndex;
-    inviteInput.value = "";
-    inviteError.hidden = true;
+  function openInviteModal() {
     inviteOverlay.hidden = false;
-    inviteInput.focus();
   }
-
   function closeInviteModal() {
     inviteOverlay.hidden = true;
-    targetSeatIndex = null;
   }
 
   document.getElementById("inviteModalClose").addEventListener("click", closeInviteModal);
@@ -117,60 +109,34 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "inviteModalOverlay") closeInviteModal();
   });
 
-  document.getElementById("seatGrid").addEventListener("click", (e) => {
-    const inviteBtn = e.target.closest("[data-empty-index]");
-    const removeBtn = e.target.closest(".seat-card__remove");
-
-    if (inviteBtn) {
-      openInviteModal(inviteBtn.dataset.emptyIndex);
-      return;
-    }
-    if (removeBtn) {
-      openRemoveModal(removeBtn.dataset.id);
-    }
-  });
-
-  inviteForm.addEventListener("submit", (e) => {
-    e.preventDefault();
-    const val = inviteInput.value.trim();
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
-    const isPhone = /^[0-9+()\-\s]{7,}$/.test(val);
-
-    if (!val || (!isEmail && !isPhone)) {
-      inviteError.hidden = false;
-      return;
-    }
-
-    members.push({
-      id: `m${Date.now()}`,
-      name: isEmail ? val.split("@")[0] : val,
-      email: isEmail ? val : "—",
-      status: "pending",
-      joined: "Invited just now",
-    });
-
-    closeInviteModal();
-    renderAll();
-    showToast(`Invite sent to ${val}`);
-  });
+  // The invite "form" now just copies a real, working link to Browse plans —
+  // there's no email/SMS invite system built yet, so we don't fake one.
+  const inviteForm = document.getElementById("inviteForm");
+  if (inviteForm) inviteForm.hidden = true;
 
   document.getElementById("copyInviteLink").addEventListener("click", () => {
-    navigator.clipboard?.writeText(group.inviteLink).then(() => {
+    const link = `${window.location.origin}/html/browse.html`;
+    navigator.clipboard?.writeText(link).then(() => {
       closeInviteModal();
-      showToast("Invite link copied to clipboard");
+      showToast("Invite link copied — share it so they can join and pay their own seat.");
     }).catch(() => {
       showToast("Couldn't copy link — try again");
     });
   });
 
-  // ---------- Remove member modal ----------
+  // ---------- Remove member ----------
+  document.getElementById("seatGrid").addEventListener("click", (e) => {
+    const removeBtn = e.target.closest(".seat-card__remove");
+    if (removeBtn) openRemoveModal(removeBtn.dataset.id);
+  });
+
   const removeOverlay = document.getElementById("removeModalOverlay");
 
-  function openRemoveModal(memberId) {
-    const member = members.find(m => m.id === memberId);
+  function openRemoveModal(userId) {
+    const member = members.find(m => String(m.user_id) === userId);
     if (!member) return;
-    pendingRemoveId = memberId;
-    document.getElementById("removeMemberName").textContent = member.name;
+    pendingRemoveId = userId;
+    document.getElementById("removeMemberName").textContent = member.fullname;
     removeOverlay.hidden = false;
   }
 
@@ -185,15 +151,63 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.target.id === "removeModalOverlay") closeRemoveModal();
   });
 
-  document.getElementById("confirmRemove").addEventListener("click", () => {
+  document.getElementById("confirmRemove").addEventListener("click", async () => {
     if (!pendingRemoveId) return;
-    const removed = members.find(m => m.id === pendingRemoveId);
-    members = members.filter(m => m.id !== pendingRemoveId);
+    const btn = document.getElementById("confirmRemove");
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/members/${pendingRemoveId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "Couldn't remove that member.");
+      } else {
+        const removed = members.find(m => String(m.user_id) === pendingRemoveId);
+        members = members.filter(m => String(m.user_id) !== pendingRemoveId);
+        renderSummary();
+        renderSeats();
+        showToast(`${removed.fullname} was removed from the group`);
+      }
+    } catch {
+      showToast("Network error — try again.");
+    }
+
+    btn.disabled = false;
     closeRemoveModal();
-    renderAll();
-    showToast(`${removed.name} was removed from the group`);
   });
 
-  // ---------- Initial render ----------
-  renderAll();
+  // ---------- Initial load ----------
+  async function loadGroup() {
+    try {
+      const [groupRes, membersRes] = await Promise.all([
+        fetch(`${API_ORIGIN}/api/groups/${groupId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_ORIGIN}/api/groups/${groupId}/members`, { headers: { Authorization: `Bearer ${token}` } }),
+      ]);
+
+      if (groupRes.status === 401 || membersRes.status === 401) {
+        window.location.href = "auth.html";
+        return;
+      }
+      if (groupRes.status === 403 || membersRes.status === 403) {
+        showToast("You don't manage this group.");
+        setTimeout(() => window.location.href = "dashboard.html", 1500);
+        return;
+      }
+
+      group = await groupRes.json();
+      const membersData = await membersRes.json();
+      members = membersData.members || [];
+
+      renderSummary();
+      renderSeats();
+    } catch (err) {
+      showToast("Couldn't load this group. Refresh to try again.");
+    }
+  }
+
+  loadGroup();
 });
