@@ -261,30 +261,30 @@ router.post("/google", async (req, res) => {
     const payload = ticket.getPayload();
     const { sub: googleId, email, name, email_verified: googleVerified } = payload;
 
-    if (!googleVerified) {
-      return res.status(400).json({ error: "Your Google email isn't verified. Please verify it with Google first." });
-    }
-
-    if (user.suspended) {
-  return res.status(403).json({ error: "This account has been suspended. Contact support." });
+   if (!googleVerified) {
+  return res.status(400).json({ error: "Your Google email isn't verified. Please verify it with Google first." });
 }
 
-    let user = db.prepare("SELECT * FROM users WHERE google_id = ? OR email = ?").get(googleId, email.toLowerCase());
+let user = db.prepare("SELECT * FROM users WHERE google_id = ? OR email = ?").get(googleId, email.toLowerCase());
 
-    if (!user) {
-      // Brand new user signing up via Google
-      const result = db
-        .prepare(
-          "INSERT INTO users (fullname, email, google_id, auth_provider, email_verified) VALUES (?, ?, ?, 'google', 1)"
-        )
-        .run(name, email.toLowerCase(), googleId);
-      user = db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid);
-    } else if (!user.google_id) {
-      // Existing email/password account signing in with Google for the first time —
-      // link the accounts rather than creating a duplicate.
-      db.prepare("UPDATE users SET google_id = ?, email_verified = 1 WHERE id = ?").run(googleId, user.id);
-      user = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
-    }
+if (!user) {
+  // Brand new user signing up via Google
+  const result = db
+    .prepare(
+      "INSERT INTO users (fullname, email, google_id, auth_provider, email_verified) VALUES (?, ?, ?, 'google', 1)"
+    )
+    .run(name, email.toLowerCase(), googleId);
+  user = db.prepare("SELECT * FROM users WHERE id = ?").get(result.lastInsertRowid);
+} else if (!user.google_id) {
+  // Existing email/password account signing in with Google for the first time —
+  // link the accounts rather than creating a duplicate.
+  db.prepare("UPDATE users SET google_id = ?, email_verified = 1 WHERE id = ?").run(googleId, user.id);
+  user = db.prepare("SELECT * FROM users WHERE id = ?").get(user.id);
+}
+
+if (user.suspended) {
+  return res.status(403).json({ error: "This account has been suspended. Contact support." });
+}
 
     const token = jwt.sign(
   {
