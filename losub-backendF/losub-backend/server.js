@@ -10,6 +10,8 @@ const walletRoutes = require("./routes/wallet");
 const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
 const vtpassRoutes = require("./routes/vtpass");
+const notificationsRoutes = require("./routes/notifications");
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -37,6 +39,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/groups", groupsRoutes);
 app.use("/api/vtpass", vtpassRoutes);
+app.use("/api/notifications", notificationsRoutes);
 
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db

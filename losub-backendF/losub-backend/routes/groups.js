@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../utils/notify");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -143,6 +144,7 @@ router.delete("/:id/members/:userId", (req, res) => {
   if (result.changes === 0) return res.status(404).json({ error: "That member isn't in this group." });
 
   res.json({ message: "Member removed." });
+  notify(req.params.userId, "You were removed from a group.", "group");
 });
 
 // POST /api/groups/:id/leave — a member leaves (managers can't leave their own group yet)
@@ -221,7 +223,11 @@ router.post("/:id/join", (req, res) => {
     "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
   ).run(req.userId, `${plan.name} seat payment`, -group.price_per_seat);
 
+  notify(req.userId, `You joined the ${plan.name} group.`, "group");
+  notify(group.manager_id, `Someone joined your ${plan.name} group.`, "group");
+
   res.json({ message: `You joined the ${plan.name} group.` });
+
 });
 
 module.exports = router;

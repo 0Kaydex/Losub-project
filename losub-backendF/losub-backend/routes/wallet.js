@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../utils/notify");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -53,6 +54,8 @@ router.post("/fund/verify", async (req, res) => {
     db.prepare(
       "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, 'fund', 'Wallet funded', ?, 'success', ?)"
     ).run(user.id, amountKobo, reference);
+
+    notify(user.id, `Your wallet was funded with ₦${(creditKobo / 100).toLocaleString()}.`, "wallet");
 
     const updated = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(user.id);
     res.json({ message: "Wallet funded.", balance: updated.wallet_balance / 100 });

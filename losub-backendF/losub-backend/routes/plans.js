@@ -28,21 +28,30 @@ router.post("/", requireAuth, requireAdmin, (req, res) => {
 
   res.json({ id: result.lastInsertRowid, message: `${name} added to the plan catalog.` });
 });
+// delete /api/plans/:id — delete a plan catalog entry (admin/owner only)
 
-// DELETE /api/plans/:id — remove a plan from the catalog (admin/owner only)
 router.delete("/:id", requireAuth, requireAdmin, (req, res) => {
   const plan = db.prepare("SELECT id, name FROM plans WHERE id = ?").get(req.params.id);
-  if (!plan) {
-    return res.status(404).json({ error: "Plan not found." });
+  if (!plan) return res.status(404).json({ error: "Plan not found." });
+
+  const groupIds = db.prepare("SELECT id FROM groups WHERE plan_id = ?").all(req.params.id).map(g => g.id);
+
+  if (groupIds.length > 0 && req.query.force !== "true") {
+    return res.status(400).json({
+      error: `${plan.name} has ${groupIds.length} group(s) using it. Deleting will remove those groups and kick out all their members — no refunds happen automatically.`,
+      groupCount: groupIds.length,
+    });
   }
 
-  const activeGroups = db.prepare("SELECT COUNT(*) AS n FROM groups WHERE plan_id = ?").get(req.params.id).n;
-  if (activeGroups > 0) {
-    return res.status(400).json({ error: `Can't delete ${plan.name} — it has ${activeGroups} group(s) using it. Remove those first.` });
+  if (groupIds.length > 0) {
+    const placeholders = groupIds.map(() => "?").join(",");
+    db.prepare(`DELETE FROM group_members WHERE group_id IN (${placeholders})`).run(...groupIds);
+    db.prepare(`DELETE FROM groups WHERE id IN (${placeholders})`).run(...groupIds);
   }
 
   db.prepare("DELETE FROM plans WHERE id = ?").run(req.params.id);
-  res.json({ message: `${plan.name} removed from the catalog.` });
+
+  res.json({ message: `${plan.name} and ${groupIds.length} linked group(s) deleted.` });
 });
 
 module.exports = router;

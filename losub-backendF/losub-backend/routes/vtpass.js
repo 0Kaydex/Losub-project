@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../utils/notify");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -145,6 +146,8 @@ async function purchaseAndRespond(req, res, { serviceID, amountNaira, phone, des
     db.prepare(
       "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, ?, ?, ?, 'success', ?)"
     ).run(req.userId, serviceID.includes("data") ? "data" : "airtime", description, -amountKobo, request_id);
+    
+    notify(req.userId, `You purchased ${description}.`, "wallet");
 
     const updated = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
     res.json({ message: "Purchase successful.", balance: updated.wallet_balance / 100, reference: request_id });
