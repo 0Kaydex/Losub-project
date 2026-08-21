@@ -82,14 +82,49 @@ document.addEventListener("DOMContentLoaded", async () => {
   fullnameInput.addEventListener("input", () => { checkDirty(); renderProfileSummary(); });
   emailInput.addEventListener("input", () => { checkDirty(); renderProfileSummary(); });
 
-  document.getElementById("profileForm").addEventListener("submit", (e) => {
+  document.getElementById("profileForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    // TODO: call backend to update profile (no PUT /api/auth/me endpoint yet)
-    user.fullname = fullnameInput.value.trim();
-    user.email = emailInput.value.trim();
     profileSubmit.disabled = true;
-    showMessage(profileMessage, "Profile updated successfully.", "success");
-    console.log("Profile update submitted (front-end only, no backend yet).");
+
+    const fullname = fullnameInput.value.trim();
+    const email = emailInput.value.trim();
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/auth/me`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ fullname, email }),
+      });
+
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMessage(profileMessage, data.error || "Couldn't update profile.", "error");
+        profileSubmit.disabled = false;
+        return;
+      }
+
+      user.fullname = data.user.fullname;
+      user.email = data.user.email;
+      localStorage.setItem("losub_user", JSON.stringify(user));
+
+      const emailChanged = data.user.email_verified === 0;
+      showMessage(
+        profileMessage,
+        emailChanged
+          ? "Profile updated. Please re-verify your new email address."
+          : "Profile updated successfully.",
+        "success"
+      );
+    } catch {
+      showMessage(profileMessage, "Couldn't reach the server. Please try again.", "error");
+      profileSubmit.disabled = false;
+    }
   });
 
   // Simple password strength feedback
@@ -104,18 +139,47 @@ document.addEventListener("DOMContentLoaded", async () => {
     passwordHint.textContent = val ? `Strength: ${label}` : "Strength: —";
   });
 
-  document.getElementById("passwordForm").addEventListener("submit", (e) => {
+  document.getElementById("passwordForm").addEventListener("submit", async (e) => {
     e.preventDefault();
-    const newpass = newPasswordInput.value;
-    if (newpass.length < 8) {
+    const currentPassword = document.getElementById("currentPassword").value;
+    const newPassword = newPasswordInput.value;
+
+    if (newPassword.length < 8) {
       showMessage(passwordMessage, "New password must be at least 8 characters.", "error");
       return;
     }
-    // TODO: call backend to update password (reset-password endpoint exists but needs a token flow, not wired here yet)
-    e.target.reset();
-    passwordHint.textContent = "Strength: —";
-    showMessage(passwordMessage, "Password updated successfully.", "success");
-    console.log("Password update submitted (front-end only, no backend yet).");
+
+    const submitBtn = e.target.querySelector('[type="submit"]');
+    if (submitBtn) submitBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/auth/me/password`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ currentPassword, newPassword }),
+      });
+
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMessage(passwordMessage, data.error || "Couldn't update password.", "error");
+        if (submitBtn) submitBtn.disabled = false;
+        return;
+      }
+
+      e.target.reset();
+      passwordHint.textContent = "Strength: —";
+      showMessage(passwordMessage, "Password updated successfully.", "success");
+    } catch {
+      showMessage(passwordMessage, "Couldn't reach the server. Please try again.", "error");
+    } finally {
+      if (submitBtn) submitBtn.disabled = false;
+    }
   });
 
   // Password show/hide toggle

@@ -1,4 +1,5 @@
 const express = require("express");
+const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
 const router = express.Router();
@@ -11,6 +12,22 @@ router.get("/test", (req, res) => {
     userId: req.userId,
     role: req.userRole
   });
+});
+
+// GET /api/admin/stats — platform-wide counts for the dashboard
+router.get("/stats", (req, res) => {
+  const totalUsers = db.prepare("SELECT COUNT(*) AS count FROM users").get().count;
+  const activeGroups = db.prepare("SELECT COUNT(*) AS count FROM groups WHERE status = 'active'").get().count;
+
+  res.json({ totalUsers, activeGroups });
+});
+
+// GET /api/admin/users — every user on the platform
+router.get("/users", (req, res) => {
+  const users = db
+    .prepare("SELECT id, fullname, email, role, suspended, created_at FROM users ORDER BY id DESC")
+    .all();
+  res.json({ users });
 });
 
 // PUT /api/admin/users/:id/suspend — toggle suspended status
@@ -30,6 +47,54 @@ router.put("/users/:id/suspend", (req, res) => {
     message: `${target.email} ${newValue ? "suspended" : "reinstated"}.`,
     suspended: !!newValue,
   });
+});
+
+// GET /api/admin/groups — every internal group, with plan/manager/seat/revenue info
+router.get("/groups", (req, res) => {
+  const rows = db.prepare(`
+    SELECT
+      g.id, g.seats_total, g.price_per_seat, g.status,
+      p.name AS plan_name,
+      m.fullname AS manager_name,
+      (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
+    FROM groups g
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users m ON m.id = g.manager_id
+    ORDER BY g.created_at DESC
+  `).all();
+
+  const groups = rows.map(row => ({
+    id: row.id,
+    plan: row.plan_name,
+    manager: row.manager_name,
+    seatsFilled: row.seats_filled,
+    seatsTotal: row.seats_total,
+    monthlyRevenue: (row.price_per_seat * row.seats_filled) / 100,
+    status: row.seats_filled >= row.seats_total ? "full" : row.status,
+  }));
+
+  res.json({ groups });
+});
+
+// GET /api/admin/transactions — platform-wide wallet activity, most recent first
+router.get("/transactions", (req, res) => {
+  const rows = db.prepare(`
+    SELECT wt.id, wt.type, wt.description, wt.amount, wt.created_at, u.fullname AS user_name
+    FROM wallet_transactions wt
+    JOIN users u ON u.id = wt.user_id
+    ORDER BY wt.created_at DESC
+    LIMIT 200
+  `).all();
+
+  const transactions = rows.map(tx => ({
+    date: tx.created_at,
+    user: tx.user_name,
+    type: tx.type,
+    description: tx.description,
+    amount: tx.amount / 100,
+  }));
+
+  res.json({ transactions });
 });
 
 module.exports = router;

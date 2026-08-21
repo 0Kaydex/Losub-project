@@ -1,91 +1,71 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // ---- Mock platform-wide data — replace with real admin API calls ----
-  const stats = { totalUsers: 1284, activeGroups: 96, flaggedManagers: 3, pendingVerifications: 5 };
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
 
-  const flaggedManagers = [
-    { name: "Tunde A.", plan: "Netflix", reason: "No login in 9 days" },
-    { name: "Samuel T.", plan: "Microsoft 365", reason: "Missed check-in deadline" },
-    { name: "Blessing U.", plan: "Amazon Music", reason: "Seat not filled in 6 days" },
-  ];
-
-  const recentGroups = [
-    { plan: "Spotify", manager: "Ngozi E.", seats: "5/6", status: "active" },
-    { plan: "Netflix", manager: "Tunde A.", seats: "3/4", status: "flagged" },
-    { plan: "Capcut", manager: "David O.", seats: "1/2", status: "active" },
-    { plan: "Disney+", manager: "Femi A.", seats: "3/6", status: "active" },
-  ];
-
-  const pendingVerifications = [
-    { name: "David O.", plan: "Capcut", submitted: "2h ago" },
-    { name: "Femi A.", plan: "Disney+", submitted: "1d ago" },
-    { name: "Yusuf B.", plan: "Duolingo", submitted: "2d ago" },
-  ];
-
-  const recentActions = [
-    { text: "Approved partner offer for Ngozi E. (Spotify)", time: "3h ago" },
-    { text: "Sent check-in message to Tunde A. (Netflix)", time: "1d ago" },
-    { text: "Reassigned Capcut group to David O.", time: "2d ago" },
-  ];
-  // ---- End mock data ----
-
-  function renderStats() {
-    document.getElementById("statTotalUsers").textContent = stats.totalUsers.toLocaleString();
-    document.getElementById("statActiveGroups").textContent = stats.activeGroups;
-    document.getElementById("statFlaggedManagers").textContent = stats.flaggedManagers;
-    document.getElementById("statPendingVerifications").textContent = stats.pendingVerifications;
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
   }
 
-  function renderFlaggedManagers() {
-    document.getElementById("flaggedManagersList").innerHTML = flaggedManagers.map(m => `
-      <li>
-        <div>
-          <div class="admin-list__name">${m.name} · ${m.plan}</div>
-          <div class="admin-list__meta">${m.reason}</div>
-        </div>
-        <span class="admin-flag-pill">Flagged</span>
-      </li>
-    `).join("");
+  const comingSoon = (label) => `<li class="admin-list__meta">${label} isn't built yet — coming in a future update.</li>`;
+
+  function renderNotBuiltYet() {
+    document.getElementById("statFlaggedManagers").textContent = "—";
+    document.getElementById("statPendingVerifications").textContent = "—";
+    document.getElementById("flaggedManagersList").innerHTML = comingSoon("Manager flagging");
+    document.getElementById("pendingVerificationsList").innerHTML = comingSoon("Verification review");
+    document.getElementById("recentActionsList").innerHTML = comingSoon("Audit log");
   }
 
-  function renderRecentGroups() {
-    const statusLabel = { active: "Active", flagged: "Flagged" };
-    document.getElementById("recentGroupsBody").innerHTML = recentGroups.map(g => `
-      <tr>
-        <td>${g.plan}</td>
-        <td>${g.manager}</td>
-        <td>${g.seats}</td>
-        <td><span class="status-pill status-pill--${g.status === 'flagged' ? 'defaulted' : 'paid'}">${statusLabel[g.status]}</span></td>
-      </tr>
-    `).join("");
+  async function loadStats() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/stats`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 403) { window.location.href = "index.html"; return; }
+
+      const data = await res.json();
+      document.getElementById("statTotalUsers").textContent = (data.totalUsers ?? 0).toLocaleString();
+      document.getElementById("statActiveGroups").textContent = data.activeGroups ?? 0;
+    } catch {
+      document.getElementById("statTotalUsers").textContent = "—";
+      document.getElementById("statActiveGroups").textContent = "—";
+    }
   }
 
-  function renderPendingVerifications() {
-    document.getElementById("pendingVerificationsList").innerHTML = pendingVerifications.map(v => `
-      <li>
-        <div>
-          <div class="admin-list__name">${v.name} · ${v.plan}</div>
-          <div class="admin-list__meta">Submitted ${v.submitted}</div>
-        </div>
-      </li>
-    `).join("");
+  async function loadRecentGroups() {
+    const statusLabel = { active: "Active", full: "Full" };
+    const statusClass = { active: "paid", full: "full" };
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/groups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401 || res.status === 403) return;
+
+      const data = await res.json();
+      const recent = (data.groups || []).slice(0, 5);
+      const body = document.getElementById("recentGroupsBody");
+
+      body.innerHTML = recent.length
+        ? recent.map(g => `
+            <tr>
+              <td>${g.plan}</td>
+              <td>${g.manager}</td>
+              <td>${g.seatsFilled}/${g.seatsTotal}</td>
+              <td><span class="status-pill status-pill--${statusClass[g.status] || 'paid'}">${statusLabel[g.status] || g.status}</span></td>
+            </tr>
+          `).join("")
+        : `<tr><td colspan="4" class="admin-list__meta">No groups yet.</td></tr>`;
+    } catch {
+      document.getElementById("recentGroupsBody").innerHTML =
+        `<tr><td colspan="4" class="admin-list__meta">Couldn't load groups.</td></tr>`;
+    }
   }
 
-  function renderRecentActions() {
-    document.getElementById("recentActionsList").innerHTML = recentActions.map(a => `
-      <li>
-        <div>
-          <div class="admin-list__name">${a.text}</div>
-          <div class="admin-list__meta">${a.time}</div>
-        </div>
-      </li>
-    `).join("");
-  }
-
-
-  renderStats();
-  renderFlaggedManagers();
-  renderRecentGroups();
-  renderPendingVerifications();
-  renderRecentActions();
+  loadStats();
+  loadRecentGroups();
+  renderNotBuiltYet();
 });

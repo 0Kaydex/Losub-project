@@ -439,7 +439,7 @@ router.put("/me/password", requireAuth, async (req, res) => {
 
         if (!correct) {
 
-            return res.status(401).json({
+            return res.status(400).json({
                 error: "Current password is incorrect."
             });
 
