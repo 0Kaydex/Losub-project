@@ -59,6 +59,14 @@ document.addEventListener("DOMContentLoaded", () => {
     localStorage.setItem("losub_user", JSON.stringify(user));
   }
 
+  function redirectByRole(user) {
+    if (user.role === "owner" || user.role === "admin") {
+      window.location.href = "admin-dashboard.html";
+    } else {
+      window.location.href = "dashboard.html";
+    }
+  }
+
   // ---------- Determine which tab to show on load ----------
   const params = new URLSearchParams(window.location.search);
   const requestedTab = params.get("tab");
@@ -88,14 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
       const data = await apiPost("/auth/login", { email, password });
       saveSession(data.token, data.user);
       redirectByRole(data.user);
-
-      function redirectByRole(user) {
-  if (user.role === "owner" || user.role === "admin") {
-    window.location.href = "admin-dashboard.html";
-  } else {
-    window.location.href = "dashboard.html";
-  }
-}
     } catch (err) {
       showMessage(signinForm, err.message);
       if (err.message.toLowerCase().includes("verify")) {
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-     // ---------- Password show/hide toggle ----------
+  // ---------- Password show/hide toggle ----------
   function setupPasswordToggles() {
     document.querySelectorAll(".auth-password-toggle").forEach(btn => {
       const input = btn.closest(".auth-password-wrap").querySelector("input");
@@ -190,51 +190,39 @@ document.addEventListener("DOMContentLoaded", () => {
       const eyeOffIcon = btn.querySelector(".icon-eye-off");
 
       btn.addEventListener("click", () => {
-      const isHidden = input.type === "password";
-      input.type = isHidden ? "text" : "password";
-      eyeIcon.classList.toggle("is-visible", isHidden);
-      eyeOffIcon.classList.toggle("is-visible", !isHidden);
-      btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-    });
+        const isHidden = input.type === "password";
+        input.type = isHidden ? "text" : "password";
+        eyeIcon.classList.toggle("is-visible", isHidden);
+        eyeOffIcon.classList.toggle("is-visible", !isHidden);
+        btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+      });
     });
   }
 
   setupPasswordToggles();
 
   function initGoogle() {
-  console.log("Google init started");
-
-  if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-    console.warn("Google Sign-In not configured yet");
-    return;
-  }
-
-  console.log("Google client:", GOOGLE_CLIENT_ID);
-
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredential,
-  });
-
-  console.log("Google initialized");
-
-  google.accounts.id.renderButton(
-    document.getElementById("hiddenGoogleButton"),
-    {
-      type: "standard",
+    if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+      console.warn("Google Sign-In not configured yet");
+      return;
     }
-  );
 
-  console.log("Google button rendered");
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+    });
 
-  document.querySelectorAll("[data-google-trigger]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    console.log("Custom Google button clicked");
+    google.accounts.id.renderButton(
+      document.getElementById("hiddenGoogleButton"),
+      { type: "standard" }
+    );
 
-    google.accounts.id.prompt();
-  });
-});
-}
+    document.querySelectorAll("[data-google-trigger]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        google.accounts.id.prompt();
+      });
+    });
+  }
 
   async function handleGoogleCredential(response) {
     const activeForm = document.querySelector(".auth-form.is-active");
@@ -247,14 +235,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-// Wait until Google Identity Services is available
-function waitForGoogle() {
-  if (window.google && google.accounts && google.accounts.id) {
-    initGoogle();
-  } else {
-    setTimeout(waitForGoogle, 100);
+  // Wait until Google Identity Services is available
+  function waitForGoogle() {
+    if (window.google && google.accounts && google.accounts.id) {
+      initGoogle();
+    } else {
+      setTimeout(waitForGoogle, 100);
+    }
   }
-}
 
-waitForGoogle();
+  waitForGoogle();
 });
