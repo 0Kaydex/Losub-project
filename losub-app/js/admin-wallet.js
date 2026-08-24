@@ -1,13 +1,14 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // TODO: replace with GET /api/admin/transactions (platform-wide, not just current user)
-  const transactions = [
-    { date: "Aug 5, 2026", user: "Chidinma A.", type: "fund", description: "Wallet funded", amount: 5000 },
-    { date: "Aug 4, 2026", user: "Ifeoma K.", type: "plan_payment", description: "Netflix seat payment", amount: -1500 },
-    { date: "Aug 4, 2026", user: "David O.", type: "airtime", description: "MTN airtime top-up", amount: -500 },
-    { date: "Aug 3, 2026", user: "Blessing U.", type: "fund", description: "Wallet funded", amount: 10000 },
-    { date: "Aug 2, 2026", user: "Yusuf B.", type: "plan_payment", description: "Duolingo seat payment", amount: -500 },
-  ];
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
+
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  let transactions = [];
 
   const fmt = n => `₦${Math.abs(n).toLocaleString()}`;
   let searchTerm = "";
@@ -84,6 +85,25 @@ document.addEventListener("DOMContentLoaded", () => {
     doc.save("losub-platform-wallet-report.pdf");
   });
 
-  renderStats();
-  renderTable();
+  async function loadTransactions() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/transactions`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 403) { window.location.href = "index.html"; return; }
+
+      const data = await res.json();
+      transactions = (data.transactions || []).map(t => ({
+        ...t,
+        date: new Date(t.date + "Z").toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" }),
+      }));
+    } catch {
+      transactions = [];
+    }
+    renderStats();
+    renderTable();
+  }
+
+  loadTransactions();
 });

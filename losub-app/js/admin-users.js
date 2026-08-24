@@ -1,27 +1,28 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // TODO: replace with GET /api/admin/users
-  const users = [
-    { id: "u1", name: "Chidinma Adaeze", email: "chidinma@example.com", roles: ["member"], joined: "Jun 2, 2026", status: "active" },
-    { id: "u2", name: "Ngozi E.", email: "ngozi@example.com", roles: ["manager"], joined: "May 14, 2026", status: "active" },
-    { id: "u3", name: "Tunde A.", email: "tunde@example.com", roles: ["manager"], joined: "Apr 30, 2026", status: "flagged" },
-    { id: "u4", name: "Ifeoma K.", email: "ifeoma@example.com", roles: ["member"], joined: "Jul 1, 2026", status: "active" },
-    { id: "u5", name: "David O.", email: "david@example.com", roles: ["member", "manager"], joined: "Mar 18, 2026", status: "active" },
-    { id: "u6", name: "Samuel T.", email: "samuel@example.com", roles: ["manager"], joined: "Feb 9, 2026", status: "suspended" },
-  ];
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
 
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  let allUsers = [];
   let searchTerm = "";
   let currentRole = "all";
   let activeUser = null;
 
-  const roleLabel = { member: "Member", manager: "Manager" };
-  const statusLabel = { active: "Active", flagged: "Flagged", suspended: "Suspended" };
-  const statusClass = { active: "paid", flagged: "defaulted", suspended: "defaulted" };
+  const roleLabel = { member: "Member", admin: "Admin", owner: "Owner" };
+  const statusLabel = { active: "Active", suspended: "Suspended" };
+  const statusClass = { active: "paid", suspended: "defaulted" };
 
   function getFiltered() {
-    return users.filter(u => {
-      const matchesRole = currentRole === "all" || u.roles.includes(currentRole);
-      const matchesSearch = u.name.toLowerCase().includes(searchTerm.toLowerCase()) || u.email.toLowerCase().includes(searchTerm.toLowerCase());
+    return allUsers.filter(u => {
+      const matchesRole = currentRole === "all" || u.role === currentRole;
+      const matchesSearch =
+        u.fullname.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        u.email.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesRole && matchesSearch;
     });
   }
@@ -39,20 +40,28 @@ document.addEventListener("DOMContentLoaded", () => {
     body.closest("table").hidden = false;
     empty.hidden = true;
 
-    body.innerHTML = visible.map(u => `
-      <tr>
-        <td>${u.name}</td>
-        <td>${u.email}</td>
-        <td>${u.roles.map(r => roleLabel[r]).join(" + ")}</td>
-        <td>${u.joined}</td>
-        <td><span class="status-pill status-pill--${statusClass[u.status]}">${statusLabel[u.status]}</span></td>
-        <td>
-          <button type="button" class="admin-action-btn ${u.status === 'suspended' ? '' : 'admin-action-btn--danger'}" data-id="${u.id}">
-            ${u.status === 'suspended' ? 'Reinstate' : 'Suspend'}
-          </button>
-        </td>
-      </tr>
-    `).join("");
+    body.innerHTML = visible.map(u => {
+      const status = u.suspended ? "suspended" : "active";
+      const joined = new Date(u.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" });
+      const canSuspend = u.role !== "owner";
+
+      return `
+        <tr>
+          <td>${u.fullname}</td>
+          <td>${u.email}</td>
+          <td>${roleLabel[u.role] || u.role}</td>
+          <td>${joined}</td>
+          <td><span class="status-pill status-pill--${statusClass[status]}">${statusLabel[status]}</span></td>
+          <td>
+            ${canSuspend
+              ? `<button type="button" class="admin-action-btn ${status === 'suspended' ? '' : 'admin-action-btn--danger'}" data-id="${u.id}">
+                   ${status === 'suspended' ? 'Reinstate' : 'Suspend'}
+                 </button>`
+              : `<span class="admin-list__meta">—</span>`}
+          </td>
+        </tr>
+      `;
+    }).join("");
   }
 
   document.getElementById("userSearch").addEventListener("input", (e) => {
@@ -72,12 +81,12 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("usersTableBody").addEventListener("click", (e) => {
     const btn = e.target.closest("[data-id]");
     if (!btn) return;
-    activeUser = users.find(u => u.id === btn.dataset.id);
-    const isSuspending = activeUser.status !== "suspended";
+    activeUser = allUsers.find(u => String(u.id) === btn.dataset.id);
+    const isSuspending = !activeUser.suspended;
     document.getElementById("userModalTitle").textContent = isSuspending ? "Suspend user" : "Reinstate user";
     document.getElementById("userModalSub").textContent = isSuspending
-      ? `${activeUser.name} won't be able to log in until reinstated.`
-      : `${activeUser.name} will regain full access immediately.`;
+      ? `${activeUser.fullname} won't be able to log in until reinstated.`
+      : `${activeUser.fullname} will regain full access immediately.`;
     document.getElementById("userModalConfirm").textContent = isSuspending ? "Suspend" : "Reinstate";
     document.getElementById("userModalOverlay").hidden = false;
   });
@@ -86,14 +95,48 @@ document.addEventListener("DOMContentLoaded", () => {
   document.getElementById("userModalClose").addEventListener("click", closeModal);
   document.getElementById("userModalCancel").addEventListener("click", closeModal);
 
-  document.getElementById("userModalConfirm").addEventListener("click", () => {
+  document.getElementById("userModalConfirm").addEventListener("click", async () => {
     if (!activeUser) return;
-    activeUser.status = activeUser.status === "suspended" ? "active" : "suspended";
-    // TODO: call POST /api/admin/users/:id/suspend (or /reinstate)
-    // TODO: log this action to the audit log
+    const btn = document.getElementById("userModalConfirm");
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/users/${activeUser.id}/suspend`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Couldn't update that user.");
+      } else {
+        activeUser.suspended = data.suspended ? 1 : 0;
+        render();
+      }
+    } catch {
+      alert("Network error — try again.");
+    }
+
+    btn.disabled = false;
     closeModal();
-    render();
   });
 
-  render();
+  async function loadUsers() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/users`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 403) { window.location.href = "index.html"; return; }
+
+      const data = await res.json();
+      allUsers = data.users || [];
+      render();
+    } catch {
+      document.getElementById("usersEmpty").hidden = false;
+      document.getElementById("usersEmpty").textContent = "Couldn't load users. Refresh to try again.";
+    }
+  }
+
+  loadUsers();
 });

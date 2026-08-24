@@ -26,17 +26,18 @@ document.addEventListener("DOMContentLoaded", () => {
     return g.logo || LOGO_MAP[g.plan] || "https://cdn.simpleicons.org/googleplay/34A853";
   }
 
-  // ---------- STILL MOCK — no backend tables for these yet ----------
-  const notifications = [
-    { id: "n1", text: "Your Netflix payment was received.", time: "2h ago", read: false },
-    { id: "n2", text: "A seat opened in Capcut — you're next on the waitlist.", time: "1d ago", read: false },
-    { id: "n3", text: "Your Spotify group manager sent a reminder about seat renewal.", time: "3d ago", read: true },
-  ];
-  const waitlist = [
-    { plan: "Capcut", position: 1 },
-    { plan: "Prime Video", position: 4 },
-  ];
-  // ---------- End mock section ----------
+  let notifications = [];
+
+  function timeAgo(isoString) {
+    const diffMs = Date.now() - new Date(isoString + "Z").getTime();
+    const mins = Math.floor(diffMs / 60000);
+    if (mins < 1) return "just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hours = Math.floor(mins / 60);
+    if (hours < 24) return `${hours}h ago`;
+    const days = Math.floor(hours / 24);
+    return `${days}d ago`;
+  }
 
   const roleLabel = { member: "Member", manager: "Manager" };
   const statusLabel = { paid: "Paid", pending: "Pending", defaulted: "Defaulted" };
@@ -108,40 +109,34 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join("");
   }
 
-  // ---------- Notifications (mock) ----------
+  // ---------- Notifications ----------
   function renderNotifications() {
     const list = document.getElementById("notifList");
+
+    if (!notifications.length) {
+      list.innerHTML = `<li class="dash__empty-inline">No notifications yet.</li>`;
+      updateBell();
+      return;
+    }
+
     list.innerHTML = notifications.slice(0, 4).map(n => `
       <li class="notif-item ${n.read ? 'is-read' : ''}" data-id="${n.id}">
         <span class="notif-item__dot"></span>
         <div class="notif-item__body">
           <p>${n.text}</p>
-          <span class="notif-item__time">${n.time}</span>
+          <span class="notif-item__time">${timeAgo(n.created_at)}</span>
         </div>
       </li>
     `).join("");
     updateBell();
   }
 
-  // ---------- Waitlist (mock) ----------
+  // ---------- Waitlist — no backend table for this yet, so honest empty state ----------
   function renderWaitlist() {
     const list = document.getElementById("waitlistList");
     const empty = document.getElementById("waitlistEmpty");
-
-    if (!waitlist.length) {
-      list.hidden = true;
-      empty.hidden = false;
-      return;
-    }
-    list.hidden = false;
-    empty.hidden = true;
-
-    list.innerHTML = waitlist.map(w => `
-      <li class="waitlist-item">
-        <span class="waitlist-item__plan">${w.plan}</span>
-        <span class="waitlist-item__pos">Position ${w.position}</span>
-      </li>
-    `).join("");
+    list.hidden = true;
+    empty.hidden = false;
   }
 
   function updateBell() {
@@ -150,11 +145,22 @@ document.addEventListener("DOMContentLoaded", () => {
     if (bellDot) bellDot.hidden = !hasUnread;
   }
 
-  document.getElementById("markAllRead").addEventListener("click", () => {
+  document.getElementById("markAllRead").addEventListener("click", async () => {
+    const previous = notifications.map(n => ({ ...n }));
     notifications.forEach(n => n.read = true);
     renderNotifications();
     renderStats();
-    // TODO: call backend to persist read state once notifications table exists
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/notifications/read-all`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("failed");
+    } catch {
+      notifications = previous;
+      renderNotifications();
+      renderStats();
+    }
   });
 
   function renderWalletBalance() {
@@ -190,10 +196,25 @@ document.addEventListener("DOMContentLoaded", () => {
     renderWalletBalance();
   }
 
+  async function loadNotifications() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      const data = await res.json();
+      notifications = (data.notifications || []).map(n => ({ ...n, read: !!n.read }));
+    } catch {
+      notifications = [];
+    }
+    renderNotifications();
+    renderStats();
+  }
+
   // ---------- Initial render ----------
   loadGroups();
   loadWallet();
-  renderNotifications();
+  loadNotifications();
   renderWaitlist();
 
   // ---------- Greeting name ----------

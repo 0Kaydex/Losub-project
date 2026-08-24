@@ -1,25 +1,26 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // TODO: replace with GET /api/admin/groups
-  const groups = [
-    { plan: "Spotify", manager: "Ngozi E.", seatsFilled: 5, seatsTotal: 6, price: 800, status: "active" },
-    { plan: "Netflix", manager: "Tunde A.", seatsFilled: 3, seatsTotal: 4, price: 1500, status: "flagged" },
-    { plan: "Capcut", manager: "David O.", seatsFilled: 1, seatsTotal: 2, price: 2700, status: "active" },
-    { plan: "youtube", manager: "Ifeoma K.", seatsFilled: 4, seatsTotal: 4, price: 900, status: "full" },
-    { plan: "Disney+", manager: "Femi A.", seatsFilled: 3, seatsTotal: 6, price: 1300, status: "active" },
-    { plan: "Microsoft 365", manager: "Samuel T.", seatsFilled: 5, seatsTotal: 5, price: 1200, status: "flagged" },
-  ];
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
 
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  let allGroups = [];
   let searchTerm = "";
   let currentStatus = "all";
   const fmt = n => `₦${n.toLocaleString()}`;
-  const statusClass = { active: "paid", flagged: "defaulted", full: "full" };
-  const statusLabel = { active: "Active", flagged: "Flagged", full: "Full" };
+  const statusClass = { active: "paid", full: "full" };
+  const statusLabel = { active: "Active", full: "Full" };
 
   function getFiltered() {
-    return groups.filter(g => {
+    return allGroups.filter(g => {
       const matchesStatus = currentStatus === "all" || g.status === currentStatus;
-      const matchesSearch = g.plan.toLowerCase().includes(searchTerm.toLowerCase()) || g.manager.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch =
+        g.plan.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        g.manager.toLowerCase().includes(searchTerm.toLowerCase());
       return matchesStatus && matchesSearch;
     });
   }
@@ -42,8 +43,8 @@ document.addEventListener("DOMContentLoaded", () => {
         <td>${g.plan}</td>
         <td>${g.manager}</td>
         <td>${g.seatsFilled}/${g.seatsTotal}</td>
-        <td>${fmt(g.price * g.seatsFilled)}</td>
-        <td><span class="status-pill status-pill--${statusClass[g.status]}">${statusLabel[g.status]}</span></td>
+        <td>${fmt(g.monthlyRevenue)}</td>
+        <td><span class="status-pill status-pill--${statusClass[g.status] || 'paid'}">${statusLabel[g.status] || g.status}</span></td>
       </tr>
     `).join("");
   }
@@ -62,5 +63,22 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   });
 
-  render();
+  async function loadGroups() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/groups`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 403) { window.location.href = "index.html"; return; }
+
+      const data = await res.json();
+      allGroups = data.groups || [];
+      render();
+    } catch {
+      document.getElementById("groupsEmpty").hidden = false;
+      document.getElementById("groupsEmpty").textContent = "Couldn't load groups. Refresh to try again.";
+    }
+  }
+
+  loadGroups();
 });

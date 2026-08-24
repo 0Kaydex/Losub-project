@@ -41,7 +41,8 @@ const migrations = [
   "ALTER TABLE users ADD COLUMN google_id TEXT",
   "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'",
   "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'",
-  "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0"
+  "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE users ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0",
 ];
 
 
@@ -110,5 +111,17 @@ db.exec(`
 
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_group_members_unique ON group_members(group_id, user_id)");
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_tx_reference ON wallet_transactions(reference) WHERE reference IS NOT NULL");
+
+db.exec(`
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_id INTEGER NOT NULL,
+    text TEXT NOT NULL,
+    type TEXT NOT NULL DEFAULT 'general',
+    read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (user_id) REFERENCES users(id)
+  );
+`);
 
 module.exports = db;

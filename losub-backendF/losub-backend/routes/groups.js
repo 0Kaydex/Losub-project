@@ -1,6 +1,7 @@
 const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
+const { notify } = require("../utils/notify");
 
 const router = express.Router();
 router.use(requireAuth);
@@ -71,6 +72,95 @@ router.get("/browse", (req, res) => {
   res.json({ groups: openGroups });
 });
 
+// GET /api/groups/:id — details for a group you belong to (member or manager)
+router.get("/:id", (req, res) => {
+  const group = db.prepare(`
+    SELECT g.id, g.seats_total, g.price_per_seat, g.status,
+           p.name AS plan_name, p.logo, p.color, p.solo_price,
+           m.fullname AS manager_name, m.id AS manager_id
+    FROM groups g
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users m ON m.id = g.manager_id
+    WHERE g.id = ?
+  `).get(req.params.id);
+
+  if (!group) return res.status(404).json({ error: "Group not found." });
+
+  const membership = db.prepare(
+    "SELECT role, payment_status, next_payment_date FROM group_members WHERE group_id = ? AND user_id = ?"
+  ).get(req.params.id, req.userId);
+
+  if (!membership) return res.status(403).json({ error: "You're not part of this group." });
+
+  const seatsFilled = db.prepare("SELECT COUNT(*) AS n FROM group_members WHERE group_id = ?").get(req.params.id).n;
+
+  res.json({
+    id: group.id,
+    plan: group.plan_name,
+    logo: group.logo,
+    color: group.color,
+    seatsTotal: group.seats_total,
+    seatsFilled,
+    yourPrice: group.price_per_seat / 100,
+    soloPrice: group.solo_price / 100,
+    manager: group.manager_name,
+    yourRole: membership.role,
+    paymentStatus: membership.payment_status,
+    nextPaymentDate: membership.next_payment_date,
+  });
+});
+
+// GET /api/groups/:id/members — manager-only roster
+router.get("/:id/members", (req, res) => {
+  const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id !== req.userId) {
+    return res.status(403).json({ error: "Only the group manager can view this." });
+  }
+
+  const members = db.prepare(`
+    SELECT u.id AS user_id, u.fullname, u.email, gm.role, gm.payment_status, gm.joined_at
+    FROM group_members gm
+    JOIN users u ON u.id = gm.user_id
+    WHERE gm.group_id = ?
+    ORDER BY gm.joined_at
+  `).all(req.params.id);
+
+  res.json({ members });
+});
+
+// DELETE /api/groups/:id/members/:userId — manager removes a member
+router.delete("/:id/members/:userId", (req, res) => {
+  const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id !== req.userId) {
+    return res.status(403).json({ error: "Only the group manager can remove members." });
+  }
+  if (String(req.params.userId) === String(group.manager_id)) {
+    return res.status(400).json({ error: "The manager can't remove themselves from their own group." });
+  }
+
+  const result = db.prepare("DELETE FROM group_members WHERE group_id = ? AND user_id = ?").run(req.params.id, req.params.userId);
+  if (result.changes === 0) return res.status(404).json({ error: "That member isn't in this group." });
+
+  res.json({ message: "Member removed." });
+  notify(req.params.userId, "You were removed from a group.", "group");
+});
+
+// POST /api/groups/:id/leave — a member leaves (managers can't leave their own group yet)
+router.post("/:id/leave", (req, res) => {
+  const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id === req.userId) {
+    return res.status(400).json({ error: "Managers can't leave their own group — that feature isn't built yet." });
+  }
+
+  const result = db.prepare("DELETE FROM group_members WHERE group_id = ? AND user_id = ?").run(req.params.id, req.userId);
+  if (result.changes === 0) return res.status(404).json({ error: "You're not in this group." });
+
+  res.json({ message: "You left the group." });
+});
+
 // POST /api/groups — create a new group as its manager
 router.post("/", (req, res) => {
   const { plan_id, seats_total, price_per_seat } = req.body;
@@ -133,7 +223,11 @@ router.post("/:id/join", (req, res) => {
     "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
   ).run(req.userId, `${plan.name} seat payment`, -group.price_per_seat);
 
+  notify(req.userId, `You joined the ${plan.name} group.`, "group");
+  notify(group.manager_id, `Someone joined your ${plan.name} group.`, "group");
+
   res.json({ message: `You joined the ${plan.name} group.` });
+
 });
 
 module.exports = router;

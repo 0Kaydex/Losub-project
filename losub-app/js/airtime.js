@@ -1,33 +1,33 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const DATA_PLANS = {
-    mtn: [
-      { id: "d1", name: "1GB", validity: "1 day", price: 350 },
-      { id: "d2", name: "2GB", validity: "30 days", price: 1200 },
-      { id: "d3", name: "5GB", validity: "30 days", price: 2500 },
-      { id: "d4", name: "10GB", validity: "30 days", price: 4500 },
-    ],
-    glo: [
-      { id: "d1", name: "1.5GB", validity: "30 days", price: 1000 },
-      { id: "d2", name: "3.5GB", validity: "30 days", price: 1500 },
-      { id: "d3", name: "7.5GB", validity: "30 days", price: 3000 },
-    ],
-    airtel: [
-      { id: "d1", name: "1GB", validity: "14 days", price: 800 },
-      { id: "d2", name: "3GB", validity: "30 days", price: 1500 },
-      { id: "d3", name: "10GB", validity: "30 days", price: 4000 },
-    ],
-    "9mobile": [
-      { id: "d1", name: "1GB", validity: "30 days", price: 900 },
-      { id: "d2", name: "2.5GB", validity: "30 days", price: 1600 },
-    ],
-  };
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
+  const user = JSON.parse(localStorage.getItem("losub_user") || "null");
+
+  if (!user || !token) {
+    window.location.href = "auth.html";
+    return;
+  }
 
   let currentType = "airtime";
   let currentNetwork = "mtn";
   let selectedAmount = null;
-  let selectedDataPlan = null;
+  let selectedDataPlan = null; // { variationCode, name, price }
+  let dataPlansCache = {}; // network -> plans[]
+
   const fmt = n => `₦${n.toLocaleString()}`;
+  const messageBox = document.getElementById("airtimeMessage");
+  const buyBtn = document.getElementById("buyBtn");
+
+  function showMessage(text, type = "error") {
+    messageBox.textContent = text;
+    messageBox.className = `airtime-message airtime-message--${type}`;
+    messageBox.hidden = false;
+  }
+
+  function hideMessage() {
+    messageBox.hidden = true;
+  }
 
   // ---------- Type toggle ----------
   document.querySelectorAll(".airtime-type-toggle__btn").forEach(btn => {
@@ -40,7 +40,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("summaryType").textContent = currentType === "airtime" ? "Airtime" : "Data";
       selectedAmount = null;
       selectedDataPlan = null;
-      if (currentType === "data") renderDataPlans();
+      hideMessage();
+      if (currentType === "data") loadDataPlans(currentNetwork);
       updateSummary();
     });
   });
@@ -53,12 +54,13 @@ document.addEventListener("DOMContentLoaded", () => {
     chip.classList.add("is-active");
     currentNetwork = chip.dataset.network;
     document.getElementById("summaryNetwork").textContent = chip.textContent;
-    if (currentType === "data") renderDataPlans();
     selectedDataPlan = null;
+    hideMessage();
+    if (currentType === "data") loadDataPlans(currentNetwork);
     updateSummary();
   });
 
-  // ---------- Amount quick-select ----------
+  // ---------- Amount quick-select (airtime) ----------
   document.querySelectorAll(".amount-chip").forEach(chip => {
     chip.addEventListener("click", () => {
       document.querySelectorAll(".amount-chip").forEach(c => c.classList.remove("is-active"));
@@ -75,15 +77,48 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSummary();
   });
 
-  // ---------- Data plan list ----------
-  function renderDataPlans() {
+  // ---------- Data plan list (live from VTPass, via our backend) ----------
+  async function loadDataPlans(network) {
     const list = document.getElementById("dataPlanList");
-    const plans = DATA_PLANS[currentNetwork] || [];
+
+    if (dataPlansCache[network]) {
+      renderDataPlans(dataPlansCache[network]);
+      return;
+    }
+
+    list.innerHTML = `<p class="airtime-loading">Loading ${network.toUpperCase()} plans…</p>`;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/vtpass/data-plans/${network}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      const data = await res.json();
+
+      if (!res.ok) {
+        list.innerHTML = `<p class="airtime-loading">${data.error || "Couldn't load plans."}</p>`;
+        return;
+      }
+
+      dataPlansCache[network] = data.plans;
+      renderDataPlans(data.plans);
+    } catch (err) {
+      list.innerHTML = `<p class="airtime-loading">Couldn't reach the server. Check your connection and try again.</p>`;
+    }
+  }
+
+  function renderDataPlans(plans) {
+    const list = document.getElementById("dataPlanList");
+
+    if (!plans.length) {
+      list.innerHTML = `<p class="airtime-loading">No plans available for this network right now.</p>`;
+      return;
+    }
+
     list.innerHTML = plans.map(p => `
-      <div class="data-plan-item" data-id="${p.id}">
+      <div class="data-plan-item" data-code="${p.code}">
         <div>
           <span class="data-plan-item__name">${p.name}</span>
-          <span class="data-plan-item__validity">${p.validity}</span>
         </div>
         <span class="data-plan-item__price">${fmt(p.price)}</span>
       </div>
@@ -93,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
       item.addEventListener("click", () => {
         list.querySelectorAll(".data-plan-item").forEach(i => i.classList.remove("is-active"));
         item.classList.add("is-active");
-        selectedDataPlan = plans.find(p => p.id === item.dataset.id);
+        selectedDataPlan = plans.find(p => p.code === item.dataset.code);
         updateSummary();
       });
     });
@@ -110,15 +145,65 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("summaryTotal").textContent = fmt(total);
   }
 
+  // ---------- Purchase ----------
+  buyBtn.addEventListener("click", async () => {
+    hideMessage();
+    const phone = document.getElementById("phoneNumber").value.trim();
 
+    if (!/^0\d{10}$/.test(phone)) {
+      showMessage("Enter a valid 11-digit phone number (e.g. 08012345678).");
+      return;
+    }
 
-    // TODO: replace with a real airtime/data provider API call (e.g. VTpass, Reloadly)
-    console.log("Airtime/data purchase requested (front-end only, no backend yet):", {
-      type: currentType, network: currentNetwork, phone,
-      amount: currentType === "airtime" ? selectedAmount : selectedDataPlan.price,
-    });
+    if (currentType === "airtime" && (!selectedAmount || selectedAmount < 50)) {
+      showMessage("Enter or select an airtime amount (minimum ₦50).");
+      return;
+    }
 
-    messageBox.textContent = "Purchase simulated — this isn't wired to a real provider yet.";
-    messageBox.className = "airtime-message airtime-message--success";
-    messageBox.hidden = false;
+    if (currentType === "data" && !selectedDataPlan) {
+      showMessage("Choose a data plan.");
+      return;
+    }
+
+    buyBtn.disabled = true;
+    buyBtn.textContent = "Processing…";
+
+    try {
+      const endpoint = currentType === "airtime" ? "/api/vtpass/airtime" : "/api/vtpass/data";
+      const body = currentType === "airtime"
+  ? { network: currentNetwork, phone, amount: selectedAmount }
+  : { network: currentNetwork, phone, variation_code: selectedDataPlan.code };
+
+      const res = await fetch(`${API_ORIGIN}${endpoint}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(body),
+      });
+
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      const data = await res.json();
+
+      if (!res.ok) {
+        showMessage(data.error || "Purchase failed. Please try again.");
+        return;
+      }
+
+      showMessage(data.message || "Purchase successful.", "success");
+
+      // Reset selection after a successful purchase.
+      selectedAmount = null;
+      selectedDataPlan = null;
+      document.getElementById("airtimeAmount").value = "";
+      document.querySelectorAll(".amount-chip, .data-plan-item").forEach(c => c.classList.remove("is-active"));
+      updateSummary();
+    } catch (err) {
+      showMessage("Couldn't reach the server. Check your connection and try again.");
+    } finally {
+      buyBtn.disabled = false;
+      buyBtn.textContent = "Buy now";
+    }
   });
+});
