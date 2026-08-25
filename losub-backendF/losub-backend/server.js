@@ -11,7 +11,6 @@ const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
 const vtpassRoutes = require("./routes/vtpass");
 const notificationsRoutes = require("./routes/notifications");
-
 const app = express();
 const PORT = process.env.PORT || 3000;
 
