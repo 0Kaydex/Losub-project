@@ -8,8 +8,8 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  const ICON_MAP = { wallet: "💳", group: "👥", general: "🔔" };
-  const LABEL_MAP = { wallet: "Wallet", group: "Group", general: "Losub" };
+  const ICON_MAP = { wallet: "💳", group: "👥", group_link: "🔗", general: "🔔" };
+  const LABEL_MAP = { wallet: "Wallet", group: "Group", group_link: "Access link", general: "Losub" };
 
   function timeAgo(isoString) {
     const diffMs = Date.now() - new Date(isoString + "Z").getTime();
@@ -45,7 +45,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <li class="full-notif-item ${n.read ? 'is-read' : ''}" data-id="${n.id}">
         <span class="full-notif-item__icon">${ICON_MAP[n.type] || ICON_MAP.general}</span>
         <div class="full-notif-item__body">
-          <p>${n.text}</p>
+          <p>${n.link ? `<a href="${n.link}" target="_blank" rel="noopener">${n.text}</a>` : n.text}</p>
           <div class="full-notif-item__meta">
             <span>${LABEL_MAP[n.type] || LABEL_MAP.general}</span>
             <span>·</span>

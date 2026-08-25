@@ -19,6 +19,39 @@ document.addEventListener("DOMContentLoaded", async () => {
   const statusLabel = { paid: "Paid", pending: "Pending", defaulted: "Defaulted" };
   const fmt = n => `₦${n.toLocaleString()}`;
 
+  async function loadGroupNotifications() {
+    // Notifications aren't tied to a specific group yet, so this shows your
+    // most recent notifications generally rather than filtered to this group.
+    const list = document.getElementById("groupNotifList");
+    const empty = document.getElementById("groupNotifEmpty");
+    try {
+      const notifRes = await fetch(`${API_ORIGIN}/api/notifications`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const notifData = await notifRes.json();
+      const recent = (notifData.notifications || []).slice(0, 3);
+
+      if (!recent.length) {
+        list.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+      list.hidden = false;
+      empty.hidden = true;
+      list.innerHTML = recent.map(n => `
+        <li class="notif-item ${n.read ? 'is-read' : ''}">
+          <span class="notif-item__dot"></span>
+          <div class="notif-item__body">
+            <p>${n.link ? `<a href="${n.link}" target="_blank" rel="noopener">${n.text}</a>` : n.text}</p>
+          </div>
+        </li>
+      `).join("");
+    } catch {
+      list.hidden = true;
+      empty.hidden = false;
+    }
+  }
+
   try {
     const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}`, {
       headers: { Authorization: `Bearer ${token}` },
@@ -50,9 +83,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("managerName").textContent = g.manager;
     document.getElementById("managerInitial").textContent = g.manager.charAt(0);
 
-    // No per-group notifications table exists yet — honest empty state rather than fake data.
-    document.getElementById("groupNotifList").hidden = true;
-    document.getElementById("groupNotifEmpty").hidden = false;
+    if (g.accessLink) {
+      document.getElementById("accessPanel").hidden = false;
+      document.getElementById("accessLinkOut").href = g.accessLink;
+    }
+
+    loadGroupNotifications();
 
     // Managers don't get a "leave" button here — that's not built yet (backend rejects it too).
     const leaveBtn = document.getElementById("leaveGroupBtn");

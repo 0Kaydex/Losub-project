@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", () => {
       <li class="notif-item ${n.read ? 'is-read' : ''}" data-id="${n.id}">
         <span class="notif-item__dot"></span>
         <div class="notif-item__body">
-          <p>${n.text}</p>
+          <p>${n.link ? `<a href="${n.link}" target="_blank" rel="noopener">${n.text}</a>` : n.text}</p>
           <span class="notif-item__time">${timeAgo(n.created_at)}</span>
         </div>
       </li>
