@@ -75,7 +75,7 @@ router.get("/browse", (req, res) => {
 // GET /api/groups/:id — details for a group you belong to (member or manager)
 router.get("/:id", (req, res) => {
   const group = db.prepare(`
-    SELECT g.id, g.seats_total, g.price_per_seat, g.status,
+    SELECT g.id, g.seats_total, g.price_per_seat, g.status, g.access_link,
            p.name AS plan_name, p.logo, p.color, p.solo_price,
            m.fullname AS manager_name, m.id AS manager_id
     FROM groups g
@@ -107,7 +107,33 @@ router.get("/:id", (req, res) => {
     yourRole: membership.role,
     paymentStatus: membership.payment_status,
     nextPaymentDate: membership.next_payment_date,
+    accessLink: group.access_link || null,
   });
+});
+
+// PUT /api/groups/:id/access-link — manager sets/updates the shared account's access link/credentials.
+// Members see this on their group page once it's set; everyone already in the group gets notified.
+router.put("/:id/access-link", (req, res) => {
+  const { link } = req.body;
+  if (!link || !link.trim()) {
+    return res.status(400).json({ error: "A link is required." });
+  }
+
+  const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id !== req.userId) {
+    return res.status(403).json({ error: "Only the group manager can set the access link." });
+  }
+
+  const trimmedLink = link.trim();
+  db.prepare("UPDATE groups SET access_link = ? WHERE id = ?").run(trimmedLink, req.params.id);
+
+  const members = db.prepare(
+    "SELECT user_id FROM group_members WHERE group_id = ? AND user_id != ?"
+  ).all(req.params.id, req.userId);
+  members.forEach(m => notify(m.user_id, "Your group manager shared/updated the account access link.", "group_link"));
+
+  res.json({ message: "Access link sent to the group.", accessLink: trimmedLink });
 });
 
 // GET /api/groups/:id/members — manager-only roster

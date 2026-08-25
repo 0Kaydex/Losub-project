@@ -11,6 +11,7 @@ const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
 const vtpassRoutes = require("./routes/vtpass");
 const notificationsRoutes = require("./routes/notifications");
+const webhooksRoutes = require("./routes/webhooks");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -24,6 +25,12 @@ app.use(cors({
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+// Mounted BEFORE express.json(): Paystack's webhook signature is computed over the
+// raw request body, so this route needs express.raw() instead of the parsed JSON
+// body the rest of the app uses.
+app.use("/api/webhooks", express.raw({ type: "application/json" }), webhooksRoutes);
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

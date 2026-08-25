@@ -6,6 +6,9 @@ const { notify } = require("../utils/notify");
 const router = express.Router();
 router.use(requireAuth);
 
+// Flat fee charged every time a user funds their wallet, in kobo (₦100).
+const FUNDING_FEE_KOBO = 10000;
+
 // GET /api/wallet — balance (naira) + recent transactions
 router.get("/", (req, res) => {
   const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
@@ -56,12 +59,27 @@ router.post("/fund/verify", async (req, res) => {
       return res.status(403).json({ error: "This payment doesn't match your account." });
     }
 
+    if (amountKobo <= FUNDING_FEE_KOBO) {
+      // Paystack has already collected this money — we can't silently keep it without
+      // crediting anything. Log it as a zero-net funding so support can see & refund it,
+      // but never insert a negative wallet_balance.
+      console.error(`Funding amount too small to cover fee: ref=${reference}, amountKobo=${amountKobo}, userId=${user.id}`);
+      return res.status(400).json({
+        error: `The minimum funding amount is ₦${(FUNDING_FEE_KOBO / 100) + 1} (to cover the ₦100 funding fee). Your payment went through — contact support with reference ${reference} for a refund.`,
+      });
+    }
+
+    const netKobo = amountKobo - FUNDING_FEE_KOBO;
+
     try {
       db.exec("BEGIN");
-      db.prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?").run(amountKobo, user.id);
+      db.prepare("UPDATE users SET wallet_balance = wallet_balance + ? WHERE id = ?").run(netKobo, user.id);
       db.prepare(
         "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, 'fund', 'Wallet funded', ?, 'success', ?)"
       ).run(user.id, amountKobo, reference);
+      db.prepare(
+        "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, 'fund_fee', 'Wallet funding fee', ?, 'success', ?)"
+      ).run(user.id, -FUNDING_FEE_KOBO, `${reference}_fee`);
       db.exec("COMMIT");
     } catch (txErr) {
       db.exec("ROLLBACK");
@@ -71,7 +89,7 @@ router.post("/fund/verify", async (req, res) => {
 
     // Notification failure must never make a successfully-credited wallet look like a failed payment.
     try {
-      notify(user.id, `Your wallet was funded with ₦${(amountKobo / 100).toLocaleString()}.`, "wallet");
+      notify(user.id, `Your wallet was funded with ₦${(amountKobo / 100).toLocaleString()} (₦100 funding fee applied — ₦${(netKobo / 100).toLocaleString()} credited).`, "wallet");
     } catch (notifyErr) {
       console.error("Wallet funded but notification failed:", notifyErr);
     }

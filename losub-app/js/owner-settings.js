@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------- Backend health check ----------
   try {
     const started = performance.now();
-    const res = await fetch(`${API_ORIGIN}/api/health`);
+    const res = await fetch(`${API_BASE}/health`);
     const elapsed = Math.round(performance.now() - started);
 
     if (!res.ok) throw new Error("Bad status");
