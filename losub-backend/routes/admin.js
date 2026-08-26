@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
+const { logAudit } = require("../utils/logAudit");
 const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
@@ -42,6 +43,14 @@ router.put("/users/:id/suspend", (req, res) => {
 
   const newValue = target.suspended ? 0 : 1;
   db.prepare("UPDATE users SET suspended = ? WHERE id = ?").run(newValue, req.params.id);
+
+  logAudit(
+    req.userId,
+    newValue ? "user.suspend" : "user.reinstate",
+    "user",
+    target.id,
+    `${newValue ? "Suspended" : "Reinstated"} ${target.email}`
+  );
 
   res.json({
     message: `${target.email} ${newValue ? "suspended" : "reinstated"}.`,
@@ -95,6 +104,31 @@ router.get("/transactions", (req, res) => {
   }));
 
   res.json({ transactions });
+});
+
+// GET /api/admin/audit-log — recent admin/owner actions, newest first
+router.get("/audit-log", (req, res) => {
+  const rows = db.prepare(`
+    SELECT al.id, al.action, al.target_type, al.target_id, al.details, al.created_at,
+           u.fullname AS actor_name, u.role AS actor_role
+    FROM audit_log al
+    JOIN users u ON u.id = al.actor_id
+    ORDER BY al.created_at DESC
+    LIMIT 200
+  `).all();
+
+  const entries = rows.map(row => ({
+    id: row.id,
+    actor: row.actor_name,
+    actorRole: row.actor_role,
+    action: row.action,
+    targetType: row.target_type,
+    targetId: row.target_id,
+    details: row.details,
+    date: row.created_at,
+  }));
+
+  res.json({ entries });
 });
 
 module.exports = router;

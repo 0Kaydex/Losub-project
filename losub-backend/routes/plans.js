@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
+const { logAudit } = require("../utils/logAudit");
 
 const router = express.Router();
 
@@ -25,6 +26,8 @@ router.post("/", requireAuth, requireAdmin, (req, res) => {
   const result = db
     .prepare("INSERT INTO plans (name, logo, color, solo_price) VALUES (?, ?, ?, ?)")
     .run(name, logo || null, color || null, soloPriceKobo);
+
+  logAudit(req.userId, "plan.create", "plan", result.lastInsertRowid, `Added "${name}" to the plan catalog (₦${solo_price}/mo solo price)`);
 
   res.json({ id: result.lastInsertRowid, message: `${name} added to the plan catalog.` });
 });
@@ -50,6 +53,8 @@ router.delete("/:id", requireAuth, requireAdmin, (req, res) => {
   }
 
   db.prepare("DELETE FROM plans WHERE id = ?").run(req.params.id);
+
+  logAudit(req.userId, "plan.delete", "plan", plan.id, `Deleted "${plan.name}" and ${groupIds.length} linked group(s)`);
 
   res.json({ message: `${plan.name} and ${groupIds.length} linked group(s) deleted.` });
 });

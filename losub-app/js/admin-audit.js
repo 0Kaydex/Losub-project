@@ -1,20 +1,34 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  // TODO: replace with GET /api/admin/audit-log
-  const logEntries = [
-    { time: "Aug 5, 2026 · 2:14 PM", admin: "Adaeze O.", type: "verification", action: "Approved partner offer", target: "Ngozi E. (Spotify)" },
-    { time: "Aug 5, 2026 · 11:02 AM", admin: "Adaeze O.", type: "user", action: "Suspended account", target: "Samuel T." },
-    { time: "Aug 4, 2026 · 6:40 PM", admin: "Kola B.", type: "reassignment", action: "Reassigned group", target: "Capcut → David O." },
-    { time: "Aug 4, 2026 · 3:15 PM", admin: "Adaeze O.", type: "verification", action: "Rejected submission", target: "Yusuf B. (Duolingo)" },
-    { time: "Aug 3, 2026 · 9:30 AM", admin: "Kola B.", type: "user", action: "Reinstated account", target: "Blessing U." },
-  ];
+  const API_ORIGIN = "https://api.losubapp.com";
+  const token = localStorage.getItem("losub_token");
 
+  if (!token) {
+    window.location.href = "auth.html";
+    return;
+  }
+
+  const ACTION_LABEL = {
+    "user.suspend": "Suspended account",
+    "user.reinstate": "Reinstated account",
+    "user.role_change": "Changed user role",
+    "plan.create": "Added plan",
+    "plan.delete": "Deleted plan",
+  };
+
+  let logEntries = [];
   let currentType = "all";
+
+  function formatTime(isoString) {
+    // created_at is stored as UTC "YYYY-MM-DD HH:MM:SS" (SQLite datetime('now'))
+    const d = new Date(isoString.replace(" ", "T") + "Z");
+    return d.toLocaleString("en-NG", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" });
+  }
 
   function render() {
     const body = document.getElementById("auditTableBody");
     const empty = document.getElementById("auditEmpty");
-    const visible = currentType === "all" ? logEntries : logEntries.filter(e => e.type === currentType);
+    const visible = currentType === "all" ? logEntries : logEntries.filter(e => e.targetType === currentType);
 
     if (!visible.length) {
       body.closest("table").hidden = true;
@@ -26,10 +40,10 @@ document.addEventListener("DOMContentLoaded", () => {
 
     body.innerHTML = visible.map(e => `
       <tr>
-        <td>${e.time}</td>
-        <td>${e.admin}</td>
-        <td>${e.action}</td>
-        <td>${e.target}</td>
+        <td>${formatTime(e.date)}</td>
+        <td>${e.actor}</td>
+        <td>${ACTION_LABEL[e.action] || e.action}</td>
+        <td>${e.details || "—"}</td>
       </tr>
     `).join("");
   }
@@ -43,5 +57,24 @@ document.addEventListener("DOMContentLoaded", () => {
     render();
   });
 
-  render();
+  async function loadAuditLog() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/admin/audit-log`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 403) { window.location.href = "index.html"; return; }
+      if (!res.ok) throw new Error("Request failed");
+
+      const data = await res.json();
+      logEntries = data.entries || [];
+      render();
+    } catch {
+      document.getElementById("auditEmpty").hidden = false;
+      document.getElementById("auditEmpty").textContent = "Couldn't load the audit log. Refresh to try again.";
+      document.getElementById("auditTableBody").closest("table").hidden = true;
+    }
+  }
+
+  loadAuditLog();
 });

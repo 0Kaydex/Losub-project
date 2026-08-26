@@ -136,4 +136,17 @@ db.exec(`
   );
 `);
 
+db.exec(`
+  CREATE TABLE IF NOT EXISTS audit_log (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    actor_id INTEGER NOT NULL,
+    action TEXT NOT NULL,            -- e.g. 'user.suspend', 'user.reinstate', 'user.role_change', 'plan.create', 'plan.delete'
+    target_type TEXT,                -- e.g. 'user', 'plan', 'group'
+    target_id INTEGER,
+    details TEXT,                    -- short human-readable summary, not raw JSON — shown directly in the admin UI
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (actor_id) REFERENCES users(id)
+  );
+`);
+
 module.exports = db;

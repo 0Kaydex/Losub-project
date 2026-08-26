@@ -2,6 +2,7 @@ const express = require("express");
 const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { requireOwner } = require("../middleware/requireOwner");
+const { logAudit } = require("../utils/logAudit");
 
 const router = express.Router();
 
@@ -36,6 +37,14 @@ router.put("/users/:id/role", (req, res) => {
   }
 
   db.prepare("UPDATE users SET role = ? WHERE id = ?").run(role, req.params.id);
+
+  logAudit(
+    req.userId,
+    "user.role_change",
+    "user",
+    target.id,
+    `Changed ${target.email} from ${target.role} to ${role}`
+  );
 
   res.json({
     message: `${target.email} is now ${role}.`,
