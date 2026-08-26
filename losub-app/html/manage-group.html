@@ -43,6 +43,19 @@
           <!-- populated by JS -->
         </section>
 
+        <!-- ============ ACCESS LINK ============ -->
+        <section class="mg-section">
+          <div class="mg-section__head">
+            <h2>Plan access link</h2>
+          </div>
+          <p class="mg-field__hint">Paste the invite/login link for this plan (e.g. the Netflix "Manage Access" link). Every current member gets notified when you send it.</p>
+          <form id="accessLinkForm" class="mg-access-form">
+            <input type="url" id="accessLinkInput" placeholder="https://…" required />
+            <button type="submit" class="auth-submit" id="accessLinkSubmit">Send to group</button>
+          </form>
+          <p class="mg-field__hint" id="accessLinkCurrent" hidden></p>
+        </section>
+
         <!-- ============ ROSTER ============ -->
         <section class="mg-section">
           <div class="mg-section__head">
@@ -99,6 +112,7 @@
   <!-- ============ TOAST ============ -->
   <div class="mg-toast" id="mgToast" hidden></div>
 
+  <script src="../js/store.js"></script>
   <script src="../js/app-shell.js"></script>
   <script src="../js/manage-group.js"></script>
   <script src="../js/load-user-sidebar.js"></script>

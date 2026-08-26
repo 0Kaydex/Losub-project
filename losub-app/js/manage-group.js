@@ -84,6 +84,55 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (inviteBtn) inviteBtn.addEventListener("click", openInviteModal);
   }
 
+  // ---------- Access link ----------
+  function renderAccessLink() {
+    const currentEl = document.getElementById("accessLinkCurrent");
+    const input = document.getElementById("accessLinkInput");
+    if (group.accessLink) {
+      currentEl.hidden = false;
+      currentEl.textContent = `Current link on file: ${group.accessLink}`;
+      input.value = group.accessLink;
+    } else {
+      currentEl.hidden = true;
+      input.value = "";
+    }
+  }
+
+  document.getElementById("accessLinkForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById("accessLinkInput");
+    const submitBtn = document.getElementById("accessLinkSubmit");
+    const link = input.value.trim();
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = "Sending…";
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/access-link`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ link }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "Couldn't send the link.");
+      } else {
+        group.accessLink = data.accessLink;
+        renderAccessLink();
+        showToast(data.message);
+      }
+    } catch {
+      showToast("Network error — try again.");
+    }
+
+    submitBtn.disabled = false;
+    submitBtn.textContent = "Send to group";
+  });
+
   // ---------- Toast ----------
   let toastTimer = null;
   function showToast(msg) {
@@ -204,6 +253,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       renderSummary();
       renderSeats();
+      renderAccessLink();
     } catch (err) {
       showToast("Couldn't load this group. Refresh to try again.");
     }

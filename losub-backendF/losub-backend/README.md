@@ -25,16 +25,21 @@ npm install
 ```bash
 cp .env.example .env
 ```
-Then fill in `.env`:
+Then fill in `.env` (see `.env.example` for the full list — this project uses **Resend**, not SendGrid):
 - `JWT_SECRET` — generate one with:
   ```bash
   node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
   ```
-- `SENDGRID_API_KEY` — from your SendGrid account (Settings → API Keys). Must start with `SG.`
-- `FROM_EMAIL` — an email address you've **verified as a sender** in SendGrid (Settings → Sender Authentication). SendGrid will reject sends from unverified senders.
-- `FRONTEND_URL` — wherever your Live Server is running (default assumes `http://127.0.0.1:5500/html`, matching your existing setup)
+  **The server will not boot without this set.**
+- `RESEND_API_KEY` — from resend.com/api-keys. **The server will not boot without this set** — `utils/mailer.js` throws synchronously at import time if it's missing.
+- `FROM_EMAIL` — an email address on a domain you've **verified as a sender** in Resend. Resend will reject sends from unverified senders.
+- `FRONTEND_URL` — wherever your frontend is served from (default assumes `http://127.0.0.1:5500/html`, matching local dev)
 - `BACKEND_URL` — wherever this server runs (default `http://localhost:3000`)
 - `GOOGLE_CLIENT_ID` — see step 5 below
+- `PAYSTACK_SECRET_KEY` — from your Paystack dashboard, live key for production
+- `VTPASS_API_KEY` / `VTPASS_SECRET_KEY` / `VTPASS_PUBLIC_KEY` / `VTPASS_BASE_URL` — from your VTPass account
+
+On Fly.io, set these with `fly secrets set KEY=value` — the `.env` file is gitignored and is **not** deployed by the Dockerfile.
 
 ## 4. Run it
 ```bash

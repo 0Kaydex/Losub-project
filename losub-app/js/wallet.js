@@ -10,7 +10,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   const fmt = n => `₦${Math.abs(n).toLocaleString()}`;
-  const typeIcon = { fund: "💰", plan_payment: "📦", airtime: "📱", data: "📶" };
+  const typeIcon = { fund: "💰", fund_fee: "🧾", plan_payment: "📦", airtime: "📱", data: "📶" };
+  const FUNDING_FEE = 100;
 
   let allTransactions = [];
   let visibleCount = 5;
@@ -140,6 +141,19 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("fundAmountInput").value = "";
     document.querySelectorAll(".amount-chip").forEach(c => c.classList.remove("is-active"));
     document.getElementById("fundMessage").hidden = true;
+    updateFeePreview();
+  }
+
+  // Shows "₦100 funding fee applies — you'll receive ₦X" under the amount input, if present in the HTML.
+  function updateFeePreview() {
+    const el = document.getElementById("fundFeePreview");
+    if (!el) return;
+    if (!selectedFundAmount || selectedFundAmount <= FUNDING_FEE) {
+      el.textContent = `A ₦${FUNDING_FEE} funding fee applies to every top-up.`;
+      return;
+    }
+    const net = selectedFundAmount - FUNDING_FEE;
+    el.textContent = `₦${FUNDING_FEE} funding fee applies — you'll receive ₦${net.toLocaleString()} in your wallet.`;
   }
 
   document.querySelectorAll(".amount-chip").forEach(chip => {
@@ -148,18 +162,20 @@ document.addEventListener("DOMContentLoaded", () => {
       chip.classList.add("is-active");
       selectedFundAmount = Number(chip.dataset.amount);
       document.getElementById("fundAmountInput").value = selectedFundAmount;
+      updateFeePreview();
     });
   });
 
   document.getElementById("fundAmountInput").addEventListener("input", (e) => {
     selectedFundAmount = Number(e.target.value) || null;
     document.querySelectorAll(".amount-chip").forEach(c => c.classList.remove("is-active"));
+    updateFeePreview();
   });
 
   document.getElementById("confirmFundBtn").addEventListener("click", () => {
     const messageBox = document.getElementById("fundMessage");
-    if (!selectedFundAmount || selectedFundAmount < 100) {
-      messageBox.textContent = "Enter a valid amount (minimum ₦100).";
+    if (!selectedFundAmount || selectedFundAmount <= FUNDING_FEE) {
+      messageBox.textContent = `Enter a valid amount above ₦${FUNDING_FEE} (a ₦${FUNDING_FEE} funding fee applies).`;
       messageBox.className = "airtime-message airtime-message--error";
       messageBox.hidden = false;
       return;

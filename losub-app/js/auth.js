@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
-  // ---------- Password show/hide toggle ----------
+     // ---------- Password show/hide toggle ----------
   function setupPasswordToggles() {
     document.querySelectorAll(".auth-password-toggle").forEach(btn => {
       const input = btn.closest(".auth-password-wrap").querySelector("input");
@@ -190,39 +190,41 @@ document.addEventListener("DOMContentLoaded", () => {
       const eyeOffIcon = btn.querySelector(".icon-eye-off");
 
       btn.addEventListener("click", () => {
-        const isHidden = input.type === "password";
-        input.type = isHidden ? "text" : "password";
-        eyeIcon.classList.toggle("is-visible", isHidden);
-        eyeOffIcon.classList.toggle("is-visible", !isHidden);
-        btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
-      });
+      const isHidden = input.type === "password";
+      input.type = isHidden ? "text" : "password";
+      eyeIcon.classList.toggle("is-visible", isHidden);
+      eyeOffIcon.classList.toggle("is-visible", !isHidden);
+      btn.setAttribute("aria-label", isHidden ? "Hide password" : "Show password");
+    });
     });
   }
 
   setupPasswordToggles();
 
   function initGoogle() {
-    if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-      console.warn("Google Sign-In not configured yet");
-      return;
-    }
-
-    google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: handleGoogleCredential,
-    });
-
-    google.accounts.id.renderButton(
-      document.getElementById("hiddenGoogleButton"),
-      { type: "standard" }
-    );
-
-    document.querySelectorAll("[data-google-trigger]").forEach(btn => {
-      btn.addEventListener("click", () => {
-        google.accounts.id.prompt();
-      });
-    });
+  if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+    console.warn("Google Sign-In not configured yet");
+    return;
   }
+
+  google.accounts.id.initialize({
+    client_id: GOOGLE_CLIENT_ID,
+    callback: handleGoogleCredential,
+  });
+
+  google.accounts.id.renderButton(
+    document.getElementById("hiddenGoogleButton"),
+    {
+      type: "standard",
+    }
+  );
+
+  document.querySelectorAll("[data-google-trigger]").forEach(btn => {
+  btn.addEventListener("click", () => {
+    google.accounts.id.prompt();
+  });
+});
+}
 
   async function handleGoogleCredential(response) {
     const activeForm = document.querySelector(".auth-form.is-active");
@@ -235,14 +237,14 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Wait until Google Identity Services is available
-  function waitForGoogle() {
-    if (window.google && google.accounts && google.accounts.id) {
-      initGoogle();
-    } else {
-      setTimeout(waitForGoogle, 100);
-    }
+// Wait until Google Identity Services is available
+function waitForGoogle() {
+  if (window.google && google.accounts && google.accounts.id) {
+    initGoogle();
+  } else {
+    setTimeout(waitForGoogle, 100);
   }
+}
 
-  waitForGoogle();
+waitForGoogle();
 });

@@ -27,7 +27,6 @@
       soloPrice: g.soloPrice,
       seatsFilled: g.seatsFilled,
       seatsTotal: g.seatsTotal,
-      manager: g.manager,
     }));
 
     const openPlanIds = new Set(openGroups.map(g => g.planId));
@@ -60,7 +59,7 @@
     row.innerHTML = featured.map(p => `
       <article class="offer-card">
         <img src="${p.logo || fallbackLogo(p.name)}" alt="${p.name}" class="offer-card__logo" style="background:${(p.color || '#111827')}1A;" />
-        <span class="offer-card__manager">${p.manager}</span>
+        <span class="offer-card__manager">Managed by Losub</span>
         <span class="offer-card__plan">Shares <strong>${p.name}</strong></span>
         <div class="offer-card__contribution">
           <span class="offer-card__contribution-label">Your contribution</span>

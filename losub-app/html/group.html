@@ -47,6 +47,28 @@
           </section>
 
           <section class="panel">
+            <div class="section-header"><h2>Your savings</h2></div>
+            <div class="status-row">
+              <span>Solo price</span>
+              <span id="soloPrice">—</span>
+            </div>
+            <div class="status-row">
+              <span>Your price</span>
+              <span id="miniYourPrice">—</span>
+            </div>
+            <div class="status-row">
+              <span>You save</span>
+              <span id="miniSaved">—</span>
+            </div>
+          </section>
+
+          <section class="panel" id="accessPanel" hidden>
+            <div class="section-header"><h2>Plan access</h2></div>
+            <p class="manager-note">Your manager shared the link to access this plan.</p>
+            <a href="#" id="accessLinkOut" target="_blank" rel="noopener" class="auth-submit" style="display:inline-block; text-decoration:none; text-align:center;">Open access link</a>
+          </section>
+
+          <section class="panel">
             <div class="section-header"><h2>Recent notifications</h2></div>
             <ul class="notif-list" id="groupNotifList"></ul>
             <p class="empty-state" id="groupNotifEmpty" hidden>No notifications for this group yet.</p>
@@ -74,13 +96,11 @@
         </aside>
       </div>
     </div>
-  </main>
+  </div>
 
   <script src="../js/group.js"></script>
   <script src="../js/load-user-sidebar.js"></script>
   <script src="../js/app-shell.js"></script>
-
-
 
 </body>
 </html>

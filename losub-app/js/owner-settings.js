@@ -29,7 +29,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------- Backend health check ----------
   try {
     const started = performance.now();
-    const res = await fetch(`${API_ORIGIN}/api/health`);
+    const res = await fetch(`${API_BASE}/health`);
     const elapsed = Math.round(performance.now() - started);
 
     if (!res.ok) throw new Error("Bad status");
@@ -134,49 +134,30 @@ document.addEventListener("DOMContentLoaded", async () => {
     addPlanSubmit.textContent = "Add plan";
   });
 
-  async function confirmDeletePlan(id, name, force = false) {
-    const confirmMsg = force
-      ? `This will PERMANENTLY delete "${name}", all its groups, and remove every member from them. This cannot be undone. Continue?`
-      : `Delete "${name}" from the plan catalog? This can't be undone.`;
-    if (!confirm(confirmMsg)) return;
+  async function confirmDeletePlan(id, name) {
+    if (!confirm(`Delete "${name}" from the plan catalog? This can't be undone.`)) return;
 
     try {
-      const url = `${API_BASE}/plans/${id}${force ? "?force=true" : ""}`;
-      const res = await fetch(url, {
+      const res = await fetch(`${API_BASE}/plans/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.groupCount && !force) {
-          addPlanMessage.textContent = `${data.error} Click Delete again to force it.`;
-          addPlanMessage.className = "auth-message auth-message--error";
-          addPlanMessage.hidden = false;
-          // Re-wire this same button to force-delete on next click
-          const btn = existingPlansList.querySelector(`[data-id="${id}"]`);
-          if (btn) {
-            btn.textContent = "Force delete";
-            btn.onclick = () => confirmDeletePlan(id, name, true);
-          }
-          return;
-        }
         addPlanMessage.textContent = data.error || "Couldn't delete that plan.";
         addPlanMessage.className = "auth-message auth-message--error";
         addPlanMessage.hidden = false;
         return;
       }
 
-      addPlanMessage.textContent = data.message || "Deleted.";
-      addPlanMessage.className = "auth-message auth-message--success";
-      addPlanMessage.hidden = false;
       loadPlans();
     } catch {
       addPlanMessage.textContent = "Network error — try again.";
       addPlanMessage.className = "auth-message auth-message--error";
       addPlanMessage.hidden = false;
     }
-}
+  }
 
   loadPlans();
 });
