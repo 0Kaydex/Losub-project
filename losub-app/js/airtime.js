@@ -141,6 +141,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- Summary ----------
   function updateSummary() {
+    // Airtime is charged at exact cost, no fee. Data plan prices already include the
+    // service fee (backend returns the marked-up price for data), so no adjustment needed here.
     const total = currentType === "airtime" ? (selectedAmount || 0) : (selectedDataPlan?.price || 0);
     document.getElementById("summaryTotal").textContent = fmt(total);
   }

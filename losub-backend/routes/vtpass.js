@@ -8,6 +8,17 @@ router.use(requireAuth);
 
 const VTPASS_BASE = process.env.VTPASS_BASE_URL || "https://sandbox.vtpass.com/api";
 
+// Service fee added on top of VTPass's wholesale price — DATA PURCHASES ONLY. Airtime is
+// charged at exact cost, no markup. VTPass still gets paid the wholesale amount for data
+// too; only the user's wallet deduction includes this markup. Easy to tune later, one
+// place on each side (this file, and js/airtime.js).
+const MARKUP_PERCENT = 3;
+
+function chargeKoboFor(costNaira) {
+  const costKobo = Math.round(costNaira * 100);
+  return Math.round(costKobo * (1 + MARKUP_PERCENT / 100));
+}
+
 function vtpassPayHeaders() {
   return {
     "Content-Type": "application/json",
@@ -47,7 +58,7 @@ router.get("/data-plans/:network", async (req, res) => {
     const plans = data.content.varations.map(v => ({
       code: v.variation_code,
       name: v.name,
-      price: Number(v.variation_amount),
+      price: chargeKoboFor(Number(v.variation_amount)) / 100, // marked-up price shown to the user
     }));
 
     res.json({ plans });
@@ -66,7 +77,7 @@ router.post("/airtime", async (req, res) => {
 
   await purchaseAndRespond(req, res, {
     serviceID: network,
-    amountNaira: Number(amount),
+    costNaira: Number(amount),
     phone,
     description: `${network.toUpperCase()} airtime — ${phone}`,
     extraFields: {},
@@ -102,7 +113,7 @@ router.post("/data", async (req, res) => {
 
   await purchaseAndRespond(req, res, {
     serviceID,
-    amountNaira,
+    costNaira: amountNaira,
     phone,
     description: `${network.toUpperCase()} data — ${phone}`,
     extraFields: { variation_code, billersCode: phone },
@@ -110,11 +121,16 @@ router.post("/data", async (req, res) => {
 });
 
 // Shared purchase logic: check wallet -> call VTPass -> deduct + log only on confirmed success
-async function purchaseAndRespond(req, res, { serviceID, amountNaira, phone, description, extraFields }) {
-  const amountKobo = Math.round(amountNaira * 100);
+async function purchaseAndRespond(req, res, { serviceID, costNaira, phone, description, extraFields }) {
+  // The service fee only applies to data — airtime is charged at exact wholesale cost,
+  // no markup, since users expect airtime top-ups to be penny-for-penny.
+  const isData = serviceID.includes("data");
+  const costKobo = Math.round(costNaira * 100);
+  const chargeKobo = isData ? chargeKoboFor(costNaira) : costKobo;
+  const feeKobo = chargeKobo - costKobo;
 
   const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
-  if (user.wallet_balance < amountKobo) {
+  if (user.wallet_balance < chargeKobo) {
     return res.status(400).json({ error: "Insufficient wallet balance. Fund your wallet first." });
   }
 
@@ -127,7 +143,7 @@ async function purchaseAndRespond(req, res, { serviceID, amountNaira, phone, des
       body: JSON.stringify({
         request_id,
         serviceID,
-        amount: amountNaira,
+        amount: costNaira, // VTPass gets paid wholesale — recipient still gets the full value
         phone,
         ...extraFields,
       }),
@@ -142,11 +158,30 @@ async function purchaseAndRespond(req, res, { serviceID, amountNaira, phone, des
       });
     }
 
-    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(amountKobo, req.userId);
-    db.prepare(
-      "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, ?, ?, ?, 'success', ?)"
-    ).run(req.userId, serviceID.includes("data") ? "data" : "airtime", description, -amountKobo, request_id);
-    
+    const type = isData ? "data" : "airtime";
+
+    try {
+      db.exec("BEGIN");
+      db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(chargeKobo, req.userId);
+      db.prepare(
+        "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, ?, ?, ?, 'success', ?)"
+      ).run(req.userId, type, description, -costKobo, request_id);
+      if (feeKobo > 0) {
+        db.prepare(
+          "INSERT INTO wallet_transactions (user_id, type, description, amount, status, reference) VALUES (?, ?, 'Service fee', ?, 'success', ?)"
+        ).run(req.userId, `${type}_fee`, -feeKobo, `${request_id}_fee`);
+      }
+      db.exec("COMMIT");
+    } catch (txErr) {
+      db.exec("ROLLBACK");
+      // VTPass has already delivered the airtime/data at this point — we can't undo that.
+      // Log loudly so support can manually reconcile the wallet instead of silently losing money.
+      console.error(`CRITICAL: VTPass delivered but wallet debit failed. ref=${request_id}, userId=${req.userId}, chargeKobo=${chargeKobo}`, txErr);
+      return res.status(500).json({
+        error: `Your ${type} was delivered, but we couldn't update your wallet balance. Contact support with reference ${request_id}.`,
+      });
+    }
+
     notify(req.userId, `You purchased ${description}.`, "wallet");
 
     const updated = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
