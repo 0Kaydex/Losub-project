@@ -33,7 +33,14 @@ app.use("/api/webhooks", express.raw({ type: "application/json" }), webhooksRout
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
+// cache control: no-store to prevent caching of sensitive data in the browser
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Losub backend is running." });
 });

@@ -1,5 +1,13 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
+  // If this page is restored from bfcache (phone back button), everything on screen
+  // is frozen exactly as it was — a group you left or that got deleted would still
+  // show. A full reload is the simplest safe fix here since this file does a lot of
+  // one-time DOM setup that isn't safe to just re-run in place.
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) window.location.reload();
+  });
+
   const API_ORIGIN = "https://api.losubapp.com";
   const token = localStorage.getItem("losub_token");
 

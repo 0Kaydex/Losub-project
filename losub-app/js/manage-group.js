@@ -260,4 +260,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   loadGroup();
+
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) loadGroup();
+  });
 });

@@ -95,6 +95,14 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   cancelEditBtn.addEventListener("click", exitEditMode);
 
+  // Load the existing plan catalog on page load — this was missing before, which is
+  // why the list looked empty until you added, edited, or deleted a plan.
+  loadPlans();
+
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) loadPlans();
+  });
+
   async function loadPlans() {
     try {
       const res = await fetch(`${API_BASE}/plans`, {
