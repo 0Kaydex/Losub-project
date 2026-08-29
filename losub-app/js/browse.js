@@ -1,4 +1,4 @@
- document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", () => {
 
   const API_ORIGIN = "https://api.losubapp.com";
   const token = localStorage.getItem("losub_token");
@@ -310,4 +310,8 @@
   }
 
   loadData();
+
+  window.addEventListener("pageshow", (event) => {
+    if (event.persisted) loadData();
+  });
 });
