@@ -40,6 +40,7 @@
           logo: p.logo,
           color: p.color,
           soloPrice: p.solo_price,
+          pricePerSeat: p.price_per_seat, // may be null if an admin hasn't set it yet
         });
       });
 
@@ -89,11 +90,14 @@
 
     grid.innerHTML = visible.map(p => {
       const isManagerCard = p.kind === "manager";
+      const priceUnset = isManagerCard && p.pricePerSeat == null;
       const cta = isManagerCard
-        ? `<button type="button" class="plan-card__cta plan-card__cta--full" data-plan-id="${p.planId}" data-become-manager="1">No group yet — Become manager</button>`
+        ? priceUnset
+          ? `<button type="button" class="plan-card__cta plan-card__cta--full" disabled>Price not set yet</button>`
+          : `<button type="button" class="plan-card__cta plan-card__cta--full" data-plan-id="${p.planId}" data-become-manager="1">No group yet — Become manager</button>`
         : `<button type="button" class="plan-card__cta" data-group-id="${p.groupId}">Join</button>`;
       const seatsLine = isManagerCard ? "No open group yet" : `${p.seatsFilled}/${p.seatsTotal} seats filled`;
-      const priceLine = isManagerCard ? fmt(p.soloPrice) : fmt(p.price);
+      const priceLine = isManagerCard ? (priceUnset ? "—" : fmt(p.pricePerSeat)) : fmt(p.price);
 
       return `
         <article class="plan-card ${isManagerCard ? 'plan-card--full' : ''}">
@@ -174,10 +178,21 @@
   document.getElementById("planGrid").addEventListener("click", handleGridClick);
 
   // ---------- Manager offer modal (real — creates a group) ----------
+  let selectedSeats = 4;
+
   function openManagerModal(plan) {
     activePlan = plan;
+    selectedSeats = 4;
+
     document.getElementById("modalPlanName").textContent = plan.name;
-    document.getElementById("modalManagerPrice").textContent = fmt(Math.round(plan.solo_price / 4));
+    document.getElementById("modalManagerPrice").textContent = `${fmt(Math.round(plan.price_per_seat / 2))}`;
+    document.getElementById("modalMemberPrice").textContent = fmt(plan.price_per_seat);
+
+    document.querySelectorAll("#seatCountPicker .seat-count-picker__btn").forEach(btn => {
+      btn.classList.toggle("is-active", Number(btn.dataset.seats) === selectedSeats);
+    });
+
+    document.getElementById("managerModalMessage").hidden = true;
     document.getElementById("managerModalOverlay").hidden = false;
   }
 
@@ -185,6 +200,15 @@
     document.getElementById("managerModalOverlay").hidden = true;
     activePlan = null;
   }
+
+  document.getElementById("seatCountPicker").addEventListener("click", (e) => {
+    const btn = e.target.closest(".seat-count-picker__btn");
+    if (!btn) return;
+    selectedSeats = Number(btn.dataset.seats);
+    document.querySelectorAll("#seatCountPicker .seat-count-picker__btn").forEach(b => {
+      b.classList.toggle("is-active", b === btn);
+    });
+  });
 
   document.getElementById("modalClose").addEventListener("click", closeManagerModal);
   document.getElementById("managerModalOverlay").addEventListener("click", (e) => {
@@ -194,6 +218,8 @@
   document.getElementById("acceptManagerOffer").addEventListener("click", async () => {
     if (!activePlan) return;
     const btn = document.getElementById("acceptManagerOffer");
+    const msgBox = document.getElementById("managerModalMessage");
+    msgBox.hidden = true;
     btn.disabled = true;
     btn.textContent = "Creating group…";
 
@@ -206,14 +232,15 @@
         },
         body: JSON.stringify({
           plan_id: activePlan.id,
-          seats_total: 4,
-          price_per_seat: Math.round(activePlan.solo_price / 4),
+          seats_total: selectedSeats,
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Couldn't create the group.");
+        msgBox.textContent = data.error || "Couldn't create the group.";
+        msgBox.className = "auth-message auth-message--error";
+        msgBox.hidden = false;
         btn.disabled = false;
         btn.textContent = "Accept and continue";
         return;
@@ -221,7 +248,9 @@
 
       window.location.href = "dashboard.html";
     } catch (err) {
-      alert("Network error — try again.");
+      msgBox.textContent = "Network error — try again.";
+      msgBox.className = "auth-message auth-message--error";
+      msgBox.hidden = false;
       btn.disabled = false;
       btn.textContent = "Accept and continue";
     }

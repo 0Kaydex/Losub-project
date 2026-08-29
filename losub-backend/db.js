@@ -123,6 +123,25 @@ for (const sql of groupMigrations) {
   }
 }
 
+const planMigrations = [
+  // group_price: what the shared/family plan actually costs from the provider (e.g. Spotify
+  // Family = ₦2,500) — informational only, for the admin's own margin visibility. Never
+  // used in the per-seat math.
+  "ALTER TABLE plans ADD COLUMN group_price INTEGER",
+  // price_per_seat: what each regular member actually pays for a seat in this plan's
+  // groups — set directly by the admin, NOT derived by dividing solo_price or group_price.
+  // The manager pays 50% of this. seats_total (chosen per-group) only controls capacity,
+  // it no longer affects price.
+  "ALTER TABLE plans ADD COLUMN price_per_seat INTEGER",
+];
+for (const sql of planMigrations) {
+  try {
+    db.exec(sql);
+  } catch (err) {
+    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
+  }
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS notifications (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

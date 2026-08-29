@@ -57,6 +57,30 @@
   border-color: var(--ink);
 }
 
+/* ---------- Seat count picker (manager modal) ---------- */
+.seat-count-picker {
+  display: flex;
+  gap: 8px;
+}
+
+.seat-count-picker__btn {
+  flex: 1;
+  padding: 10px 0;
+  border: 2px solid var(--line, #e5e7eb);
+  border-radius: var(--r-md, 10px);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.seat-count-picker__btn.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+}
+
 /* ---------- Horizontal scrolling row (Top Plans) ---------- */
 .plan-row {
   display: flex;

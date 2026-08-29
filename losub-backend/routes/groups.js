@@ -6,6 +6,14 @@ const { notify } = require("../utils/notify");
 const router = express.Router();
 router.use(requireAuth);
 
+// The manager pays 50% of the standard per-seat price — a perk for hosting/managing the
+// account. Everyone else pays the full per-seat price. This one function is the single
+// source of truth for that split; every endpoint below calls through it so the manager
+// discount can never drift out of sync between pages.
+function priceForRole(pricePerSeatKobo, role) {
+  return role === "manager" ? Math.round(pricePerSeatKobo / 2) : pricePerSeatKobo;
+}
+
 // Shared helper — shape a raw group+plan row into what the frontend expects
 function formatGroup(row, userRoleInGroup, extra = {}) {
   return {
@@ -15,7 +23,7 @@ function formatGroup(row, userRoleInGroup, extra = {}) {
     logo: row.logo,
     color: row.color,
     soloPrice: row.solo_price / 100,
-    yourPrice: row.price_per_seat / 100,
+    yourPrice: priceForRole(row.price_per_seat, userRoleInGroup) / 100,
     seatsTotal: row.seats_total,
     seatsFilled: row.seats_filled,
     manager: row.manager_name,
@@ -101,7 +109,7 @@ router.get("/:id", (req, res) => {
     color: group.color,
     seatsTotal: group.seats_total,
     seatsFilled,
-    yourPrice: group.price_per_seat / 100,
+    yourPrice: priceForRole(group.price_per_seat, membership.role) / 100,
     soloPrice: group.solo_price / 100,
     manager: group.manager_name,
     yourRole: membership.role,
@@ -189,27 +197,55 @@ router.post("/:id/leave", (req, res) => {
 
 // POST /api/groups — create a new group as its manager
 router.post("/", (req, res) => {
-  const { plan_id, seats_total, price_per_seat } = req.body;
+  const { plan_id, seats_total } = req.body;
 
-  if (!plan_id || !seats_total || !price_per_seat) {
-    return res.status(400).json({ error: "plan_id, seats_total, and price_per_seat are required." });
+  const seatsTotal = Number(seats_total);
+  if (!plan_id || !Number.isInteger(seatsTotal) || seatsTotal < 2 || seatsTotal > 8) {
+    return res.status(400).json({ error: "plan_id is required, and seats_total must be a whole number between 2 and 8." });
   }
 
-  const plan = db.prepare("SELECT id FROM plans WHERE id = ?").get(plan_id);
+  const plan = db.prepare("SELECT id, name, price_per_seat FROM plans WHERE id = ?").get(plan_id);
   if (!plan) return res.status(404).json({ error: "Plan not found." });
 
-  const priceKobo = Math.round(Number(price_per_seat) * 100);
+  // price_per_seat is set directly by the admin on the plan (e.g. Spotify Family = ₦650/seat),
+  // not derived from solo_price or seats_total — seats_total only controls capacity.
+  if (plan.price_per_seat == null) {
+    return res.status(400).json({ error: `${plan.name} doesn't have a per-seat price set yet. Ask an admin to edit the plan first.` });
+  }
 
-  const result = db.prepare(
-    "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
-  ).run(plan_id, req.userId, seats_total, priceKobo);
+  const pricePerSeatKobo = plan.price_per_seat;
+  const managerPriceKobo = priceForRole(pricePerSeatKobo, "manager");
 
-  // Manager automatically takes the first seat, marked as paid (they're not paying themselves).
-  db.prepare(
-    "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'manager', 'paid')"
-  ).run(result.lastInsertRowid, req.userId);
+  const manager = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  if (manager.wallet_balance < managerPriceKobo) {
+    return res.status(400).json({
+      error: `You need ₦${(managerPriceKobo / 100).toLocaleString()} to start this group as manager. Fund your wallet first.`,
+    });
+  }
 
-  res.json({ id: result.lastInsertRowid, message: "Group created." });
+  try {
+    db.exec("BEGIN");
+
+    const result = db.prepare(
+      "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
+    ).run(plan_id, req.userId, seatsTotal, pricePerSeatKobo);
+
+    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(managerPriceKobo, req.userId);
+    db.prepare(
+      "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'manager', 'paid')"
+    ).run(result.lastInsertRowid, req.userId);
+    db.prepare(
+      "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
+    ).run(req.userId, `${plan.name} manager seat payment`, -managerPriceKobo);
+
+    db.exec("COMMIT");
+
+    res.json({ id: result.lastInsertRowid, message: "Group created." });
+  } catch (err) {
+    db.exec("ROLLBACK");
+    console.error("Group creation failed, rolled back:", err);
+    res.status(500).json({ error: "Couldn't create the group. Please try again." });
+  }
 });
 
 // POST /api/groups/:id/join — take a seat, deducting price_per_seat from wallet

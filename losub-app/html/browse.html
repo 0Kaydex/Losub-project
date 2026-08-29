@@ -140,16 +140,29 @@
   <div class="modal-overlay" id="managerModalOverlay" hidden>
     <div class="modal">
       <button type="button" class="modal__close" id="modalClose" aria-label="Close">&times;</button>
-      <h2>This plan is full</h2>
+      <h2>Start a new <span id="modalPlanName">plan</span> group</h2>
       <p class="modal__sub">
-        Be the first to start a new <span id="modalPlanName">plan</span> group and pay
-        <strong id="modalManagerPrice">less</strong> as manager.
+        As manager, you pay <strong id="modalManagerPrice">—</strong>/mo — 50% off the regular
+        <span id="modalMemberPrice">—</span>/mo seat price. You'll be charged when you confirm below.
       </p>
+
+      <label class="auth-field">
+        <span>How many seats (including yours)?</span>
+        <div class="seat-count-picker" id="seatCountPicker">
+          <button type="button" class="seat-count-picker__btn" data-seats="2">2</button>
+          <button type="button" class="seat-count-picker__btn" data-seats="3">3</button>
+          <button type="button" class="seat-count-picker__btn is-active" data-seats="4">4</button>
+          <button type="button" class="seat-count-picker__btn" data-seats="5">5</button>
+          <button type="button" class="seat-count-picker__btn" data-seats="6">6</button>
+        </div>
+      </label>
+
       <ul class="modal__terms">
         <li>You'll add and remove members whenever Losub instructs.</li>
         <li>You must stay active — inactivity may lead to reassignment.</li>
         <li>Losub handles all billing; you never collect payments.</li>
       </ul>
+      <div id="managerModalMessage" class="auth-message" hidden></div>
       <div class="modal__actions">
         <button type="button" class="auth-submit" id="acceptManagerOffer">Accept and continue</button>
         <button type="button" class="link-btn" id="declineManagerOffer">Join the waitlist instead</button>
