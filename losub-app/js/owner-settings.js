@@ -190,7 +190,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (editingPlanId === null) addPlanSubmit.textContent = "Add plan";
   });
 
-async function confirmDeletePlan(id, name) {
+ async function confirmDeletePlan(id, name) {
   if (!confirm(`Delete "${name}" from the plan catalog? This can't be undone.`)) return;
 
   try {
@@ -198,19 +198,13 @@ async function confirmDeletePlan(id, name) {
       method: "DELETE",
       headers: { Authorization: `Bearer ${token}` },
     });
-
-    let data = {};
-    try {
-      data = await res.json();
-    } catch {
-      data = {};
-    }
+    const data = await res.json();
 
     if (res.ok) {
       addPlanMessage.textContent = data.message || "Plan deleted.";
       addPlanMessage.className = "auth-message auth-message--success";
       addPlanMessage.hidden = false;
-      await loadPlans();
+      loadPlans();
       return;
     }
 
@@ -229,13 +223,7 @@ async function confirmDeletePlan(id, name) {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-
-      let forceData = {};
-      try {
-        forceData = await forceRes.json();
-      } catch {
-        forceData = {};
-      }
+      const forceData = await forceRes.json();
 
       if (!forceRes.ok) {
         addPlanMessage.textContent = forceData.error || "Couldn't delete that plan.";
@@ -247,17 +235,17 @@ async function confirmDeletePlan(id, name) {
       addPlanMessage.textContent = forceData.message || "Plan and its groups deleted.";
       addPlanMessage.className = "auth-message auth-message--success";
       addPlanMessage.hidden = false;
-      await loadPlans();
+      loadPlans();
       return;
     }
 
     addPlanMessage.textContent = data.error || "Couldn't delete that plan.";
     addPlanMessage.className = "auth-message auth-message--error";
     addPlanMessage.hidden = false;
-  } catch (error) {
-    console.error("Delete plan failed:", error);
+  } catch {
     addPlanMessage.textContent = "Network error — try again.";
     addPlanMessage.className = "auth-message auth-message--error";
     addPlanMessage.hidden = false;
   }
-}});
+}
+});
