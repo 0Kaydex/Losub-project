@@ -144,12 +144,18 @@
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const data = await res.json();
+           const data = await res.json();
 
       if (!res.ok) {
-        alert(data.error || "Couldn't join this group.");
+        if (res.status === 404) {
+          alert("This plan was just removed by Losub. Refreshing the list…");
+          closeManagerModal();
+          loadData();
+          return;
+        }
+        alert(data.error || "Couldn't create the group.");
         btn.disabled = false;
-        btn.textContent = originalText;
+        btn.textContent = "Accept and continue";
         return;
       }
 
