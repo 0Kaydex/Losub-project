@@ -217,17 +217,6 @@ document.addEventListener("DOMContentLoaded", () => {
   loadNotifications();
   renderWaitlist();
 
-  // If the phone's back/forward button restores this page from bfcache, the DOM comes
-  // back exactly as it was — stale — without re-running any of the fetches above.
-  // Force a refresh whenever that happens so deleted/changed data can't linger on screen.
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) {
-      loadGroups();
-      loadWallet();
-      loadNotifications();
-    }
-  });
-
   // ---------- Greeting name ----------
   const storedUser = localStorage.getItem("losub_user");
   if (storedUser) {

@@ -9,7 +9,7 @@ const { requireAuth } = require("./middleware/auth");
 const walletRoutes = require("./routes/wallet");
 const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
-const vtpassRoutes = require("./routes/vtpass");
+const gsubzRoutes = require("./routes/gsubz");
 const notificationsRoutes = require("./routes/notifications");
 const webhooksRoutes = require("./routes/webhooks");
 const app = express();
@@ -33,14 +33,7 @@ app.use("/api/webhooks", express.raw({ type: "application/json" }), webhooksRout
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
-// cache control: no-store to prevent caching of sensitive data in the browser
-app.use((req, res, next) => {
-  res.set("Cache-Control", "no-store");
-  next();
-});
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Losub backend is running." });
 });
@@ -51,7 +44,7 @@ app.use("/api/owner", ownerRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/groups", groupsRoutes);
-app.use("/api/vtpass", vtpassRoutes);
+app.use("/api/gsubz", gsubzRoutes);
 app.use("/api/notifications", notificationsRoutes);
 
 app.get("/api/auth/me", requireAuth, (req, res) => {

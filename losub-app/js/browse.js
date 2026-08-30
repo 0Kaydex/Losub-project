@@ -1,4 +1,4 @@
-document.addEventListener("DOMContentLoaded", () => {
+ document.addEventListener("DOMContentLoaded", () => {
 
   const API_ORIGIN = "https://api.losubapp.com";
   const token = localStorage.getItem("losub_token");
@@ -144,18 +144,12 @@ document.addEventListener("DOMContentLoaded", () => {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
-           const data = await res.json();
+      const data = await res.json();
 
       if (!res.ok) {
-        if (res.status === 404) {
-          alert("This plan was just removed by Losub. Refreshing the list…");
-          closeManagerModal();
-          loadData();
-          return;
-        }
-        alert(data.error || "Couldn't create the group.");
+        alert(data.error || "Couldn't join this group.");
         btn.disabled = false;
-        btn.textContent = "Accept and continue";
+        btn.textContent = originalText;
         return;
       }
 
@@ -310,8 +304,4 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   loadData();
-
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) loadData();
-  });
 });

@@ -89,7 +89,7 @@ document.addEventListener("DOMContentLoaded", () => {
     list.innerHTML = `<p class="airtime-loading">Loading ${network.toUpperCase()} plans…</p>`;
 
     try {
-      const res = await fetch(`${API_ORIGIN}/api/vtpass/data-plans/${network}`, {
+      const res = await fetch(`${API_ORIGIN}/api/gsubz/data-plans/${network}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "auth.html"; return; }
@@ -171,7 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
     buyBtn.textContent = "Processing…";
 
     try {
-      const endpoint = currentType === "airtime" ? "/api/vtpass/airtime" : "/api/vtpass/data";
+      const endpoint = currentType === "airtime" ? "/api/gsubz/airtime" : "/api/gsubz/data";
       const body = currentType === "airtime"
   ? { network: currentNetwork, phone, amount: selectedAmount }
   : { network: currentNetwork, phone, variation_code: selectedDataPlan.code };

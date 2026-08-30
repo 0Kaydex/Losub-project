@@ -95,14 +95,6 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   cancelEditBtn.addEventListener("click", exitEditMode);
 
-  // Load the existing plan catalog on page load — this was missing before, which is
-  // why the list looked empty until you added, edited, or deleted a plan.
-  loadPlans();
-
-  window.addEventListener("pageshow", (event) => {
-    if (event.persisted) loadPlans();
-  });
-
   async function loadPlans() {
     try {
       const res = await fetch(`${API_BASE}/plans`, {
@@ -198,62 +190,27 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (editingPlanId === null) addPlanSubmit.textContent = "Add plan";
   });
 
- async function confirmDeletePlan(id, name) {
-  if (!confirm(`Delete "${name}" from the plan catalog? This can't be undone.`)) return;
+  async function confirmDeletePlan(id, name) {
+    if (!confirm(`Delete "${name}" from the plan catalog? This can't be undone.`)) return;
 
-  try {
-    const res = await fetch(`${API_BASE}/plans/${id}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const data = await res.json();
-
-    if (res.ok) {
-      addPlanMessage.textContent = data.message || "Plan deleted.";
-      addPlanMessage.className = "auth-message auth-message--success";
-      addPlanMessage.hidden = false;
-      loadPlans();
-      return;
-    }
-
-    // Backend blocks a plain delete if groups are actively using this plan.
-    // Surface that clearly and let the owner explicitly force it through.
-    if (data.groupCount) {
-      const reallyDelete = confirm(
-        `"${name}" has ${data.groupCount} active group(s) with real members on it.\n\n` +
-        `Deleting will remove ${data.groupCount} group(s) and kick out every member in them. ` +
-        `No refunds happen automatically — you'll need to handle that manually.\n\n` +
-        `Type OK to permanently delete "${name}" and all linked groups.`
-      );
-      if (!reallyDelete) return;
-
-      const forceRes = await fetch(`${API_BASE}/plans/${id}?force=true`, {
+    try {
+      const res = await fetch(`${API_BASE}/plans/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
-      const forceData = await forceRes.json();
+      const data = await res.json();
 
-      if (!forceRes.ok) {
-        addPlanMessage.textContent = forceData.error || "Couldn't delete that plan.";
-        addPlanMessage.className = "auth-message auth-message--error";
-        addPlanMessage.hidden = false;
+      if (!res.ok) {
+        showMessage(data.error || "Couldn't delete that plan.");
         return;
       }
 
-      addPlanMessage.textContent = forceData.message || "Plan and its groups deleted.";
-      addPlanMessage.className = "auth-message auth-message--success";
-      addPlanMessage.hidden = false;
+      if (editingPlanId === id) exitEditMode();
       loadPlans();
-      return;
+    } catch {
+      showMessage("Network error — try again.");
     }
-
-    addPlanMessage.textContent = data.error || "Couldn't delete that plan.";
-    addPlanMessage.className = "auth-message auth-message--error";
-    addPlanMessage.hidden = false;
-  } catch {
-    addPlanMessage.textContent = "Network error — try again.";
-    addPlanMessage.className = "auth-message auth-message--error";
-    addPlanMessage.hidden = false;
   }
-}
+
+  loadPlans();
 });
