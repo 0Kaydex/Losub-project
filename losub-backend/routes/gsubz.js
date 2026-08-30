@@ -16,14 +16,15 @@ const TEST_MODE = process.env.GSUBZ_TEST_MODE === "true";
 // GET /api/category then GET /api/service?service=mtn against your account) and override
 // via env vars below if your account's actual serviceIDs differ.
 const DATA_SERVICE_IDS = { 
-  mtn: process.env.GSUBZ_MTN_DATA_SERVICE_ID || "mtn-sme",
-  mtn_gifting: process.env.GSUBZ_MTN_GIFTING_SERVICE_ID || "mtn-gifting",
+  mtn: process.env.GSUBZ_MTN_DATA_SERVICE_ID || "mtn_sme",
+  mtn_gifting: process.env.GSUBZ_MTN_GIFTING_SERVICE_ID || "mtn_gifting",
   mtn_cg: process.env.GSUBZ_MTN_CG_SERVICE_ID || "mtncg",
-  airtel: process.env.GSUBZ_AIRTEL_DATA_SERVICE_ID || "airtel_cg",
+  airtel: process.env.GSUBZ_AIRTEL_DATA_SERVICE_ID || "airtel_sme", // airtel_cg returns 403 on this account; airtel_sme confirmed working
   airtel_gifting: process.env.GSUBZ_AIRTEL_GIFTING_SERVICE_ID || "airtel_sme",
   glo: process.env.GSUBZ_GLO_DATA_SERVICE_ID || "glo_data",
   glo_gifting: process.env.GSUBZ_GLO_GIFTING_SERVICE_ID || "glo_sme",
   etisalat: process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data",
+  "9mobile": process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data", // frontend sends "9mobile", not "etisalat"
 };
 
 // Service fee added on top of Gsubz's wholesale price — DATA PURCHASES ONLY. Airtime is
@@ -35,11 +36,22 @@ function chargeKoboFor(costNaira) {
   return Math.round(costKobo * (1 + MARKUP_PERCENT / 100));
 }
 
+// Cloudflare (which fronts gsubz.com) blocks requests carrying Node's default fetch
+// User-Agent as likely bot traffic (returns a 403 challenge page instead of JSON).
+// Sending a normal browser-style User-Agent avoids that block. Confirmed via curl:
+// same request 403s with curl's default UA, 200s with a browser UA.
+const GSUBZ_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36";
+
 function gsubzHeaders() {
   return {
     "Content-Type": "application/x-www-form-urlencoded",
     Authorization: `Bearer ${process.env.GSUBZ_API_KEY}`,
+    "User-Agent": GSUBZ_USER_AGENT,
   };
+}
+
+function gsubzGetHeaders() {
+  return { "User-Agent": GSUBZ_USER_AGENT };
 }
 
 function makeRequestId() {
@@ -70,8 +82,9 @@ router.get("/data-plans/:network", async (req, res) => {
   }
 
   try {
-    // Public lookup endpoint — no auth required per Gsubz's docs.
-    const gsRes = await fetch(`${GSUBZ_BASE}/plans/?service=${serviceID}`);
+    // Public lookup endpoint — no auth required per Gsubz's docs, but Cloudflare still
+    // blocks requests without a browser-like User-Agent (see GSUBZ_USER_AGENT above).
+    const gsRes = await fetch(`${GSUBZ_BASE}/plans/?service=${serviceID}`, { headers: gsubzGetHeaders() });
     const data = await gsRes.json();
 
     if (!Array.isArray(data.plans)) {
@@ -124,7 +137,7 @@ router.post("/data", async (req, res) => {
   // plan from Gsubz ourselves, so the wallet deduction always matches reality.
   let amountNaira;
   try {
-    const planRes = await fetch(`${GSUBZ_BASE}/plans/?service=${serviceID}`);
+    const planRes = await fetch(`${GSUBZ_BASE}/plans/?service=${serviceID}`, { headers: gsubzGetHeaders() });
     const planData = await planRes.json();
     const match = planData.plans?.find(p => p.value === variation_code);
     if (!match) {
