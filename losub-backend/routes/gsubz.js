@@ -71,7 +71,7 @@ router.get("/data-plans/:network", async (req, res) => {
 
   try {
     // Public lookup endpoint — no auth required per Gsubz's docs.
-    const gsRes = await fetch(`${GSUBZ_BASE}/plans?service=${serviceID}`);
+    const gsRes = await fetch(`${GSUBZ_BASE}/plans/?service=${serviceID}`);
     const data = await gsRes.json();
 
     if (!Array.isArray(data.plans)) {
@@ -124,7 +124,7 @@ router.post("/data", async (req, res) => {
   // plan from Gsubz ourselves, so the wallet deduction always matches reality.
   let amountNaira;
   try {
-    const planRes = await fetch(`${GSUBZ_BASE}/plans?service=${serviceID}`);
+    const planRes = await fetch(`${GSUBZ_BASE}/plans/?service=${serviceID}`);
     const planData = await planRes.json();
     const match = planData.plans?.find(p => p.value === variation_code);
     if (!match) {
@@ -158,7 +158,11 @@ async function purchaseAndRespond(req, res, { serviceID, isData, costNaira, phon
   }
 
   const requestID = makeRequestId();
-  const payPath = TEST_MODE ? "/testpay" : "/pay";
+  // IMPORTANT: Gsubz 301-redirects /pay -> /pay/ (trailing slash). fetch() follows
+  // redirects automatically but converts POST -> GET when it does, silently dropping
+  // the request body — Gsubz then (correctly, from its side) rejects the request as
+  // "not POST". Hitting the trailing-slash URL directly avoids the redirect entirely.
+  const payPath = TEST_MODE ? "/testpay/" : "/pay/";
 
   try {
     const body = new URLSearchParams({
