@@ -76,15 +76,53 @@ const DATA_SERVICE_IDS = {
  * DATA PURCHASES ONLY.
  *
  * Airtime remains at exact cost.
+ *
+ * TEMPORARILY DISABLED — selling at exact GSUBZ price for now.
+ * See chargeKoboFor() below.
  */
 const MARKUP_PERCENT = 3;
 
 function chargeKoboFor(costNaira) {
   const costKobo = Math.round(Number(costNaira) * 100);
 
-  return Math.round(
-    costKobo * (1 + MARKUP_PERCENT / 100)
-  );
+  // Markup disabled for now — selling at exact GSUBZ price.
+  // return Math.round(
+  //   costKobo * (1 + MARKUP_PERCENT / 100)
+  // );
+
+  return costKobo;
+}
+
+/*
+ * Pulls a usable price out of a GSUBZ plan object.
+ *
+ * We don't yet have confirmed docs for GSUBZ's exact field name,
+ * and different GSUBZ endpoints/services have been seen to vary
+ * (price / amount / cost / sellingPrice / variation_amount are all
+ * common naming choices for wholesale reseller APIs). This checks
+ * the likely candidates in order and returns the first one that's
+ * a genuine positive finite number, so a plan doesn't silently
+ * show ₦0 just because the primary field name guess is wrong.
+ */
+function extractProviderPrice(p) {
+  const candidates = [
+    p?.price,
+    p?.amount,
+    p?.cost,
+    p?.sellingPrice,
+    p?.selling_price,
+    p?.variation_amount,
+    p?.plan_amount,
+  ];
+
+  for (const raw of candidates) {
+    const num = Number(raw);
+    if (Number.isFinite(num) && num > 0) {
+      return num;
+    }
+  }
+
+  return null;
 }
 
 /*
@@ -188,6 +226,12 @@ router.get("/data-plans/:network", async (req, res) => {
             };
           }
 
+          // TEMP DEBUG — remove once GSUBZ's real price field is confirmed.
+          console.log(
+            `RAW GSUBZ plan sample for ${serviceID}:`,
+            JSON.stringify(data?.plans?.[0], null, 2)
+          );
+
           return {
             serviceID,
             plans: Array.isArray(data?.plans)
@@ -219,9 +263,13 @@ router.get("/data-plans/:network", async (req, res) => {
           continue;
         }
 
-        const providerPrice = Number(p.price);
+        const providerPrice = extractProviderPrice(p);
 
-        if (!Number.isFinite(providerPrice)) {
+        if (providerPrice === null) {
+          console.warn(
+            `Skipping plan with no usable price field (service=${result.serviceID}):`,
+            JSON.stringify(p)
+          );
           continue;
         }
 
@@ -245,7 +293,8 @@ router.get("/data-plans/:network", async (req, res) => {
           providerPrice,
 
           /*
-           * Losub customer price after 3% markup.
+           * Losub customer price (currently == provider price,
+           * markup disabled — see chargeKoboFor).
            */
           price:
             chargeKoboFor(providerPrice) / 100,
@@ -494,12 +543,9 @@ router.post("/data", async (req, res) => {
       });
     }
 
-    amountNaira = Number(match.price);
+    amountNaira = extractProviderPrice(match);
 
-    if (
-      !Number.isFinite(amountNaira) ||
-      amountNaira <= 0
-    ) {
+    if (amountNaira === null) {
       return res.status(400).json({
         error:
           "Invalid provider price for this data plan.",
