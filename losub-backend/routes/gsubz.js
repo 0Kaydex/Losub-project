@@ -17,12 +17,11 @@ const TEST_MODE = process.env.GSUBZ_TEST_MODE === "true";
 // via env vars below if your account's actual serviceIDs differ.
 const DATA_SERVICE_IDS = { 
   mtn: process.env.GSUBZ_MTN_DATA_SERVICE_ID || "mtn_sme",
-  mtn_gifting: process.env.GSUBZ_MTN_GIFTING_SERVICE_ID || "mtn_gifting",
-  mtn_cg: process.env.GSUBZ_MTN_CG_SERVICE_ID || "mtncg",
+  mtn: process.env.GSUBZ_MTN_CG_SERVICE_ID || "mtncg",
   airtel: process.env.GSUBZ_AIRTEL_DATA_SERVICE_ID || "airtel_sme", // airtel_cg returns 403 on this account; airtel_sme confirmed working
-  airtel_gifting: process.env.GSUBZ_AIRTEL_GIFTING_SERVICE_ID || "airtel_sme",
+  airtel: process.env.GSUBZ_AIRTEL_GIFTING_SERVICE_ID || "airtel_cg",
   glo: process.env.GSUBZ_GLO_DATA_SERVICE_ID || "glo_data",
-  glo_gifting: process.env.GSUBZ_GLO_GIFTING_SERVICE_ID || "glo_sme",
+  glo: process.env.GSUBZ_GLO_GIFTING_SERVICE_ID || "glo_sme",
   etisalat: process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data",
   "9mobile": process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data", // frontend sends "9mobile", not "etisalat"
 };
