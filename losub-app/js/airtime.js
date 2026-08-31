@@ -18,7 +18,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let selectedAmount = null;
 
   /*
-   * Selected data plan:
+   * Selected data plan now looks like:
    *
    * {
    *   code: "257",
@@ -30,7 +30,9 @@ document.addEventListener("DOMContentLoaded", () => {
    */
   let selectedDataPlan = null;
 
-  // network -> plans[]
+  /*
+   * network -> plans[]
+   */
   const dataPlansCache = {};
 
   const fmt = (n) =>
@@ -42,7 +44,10 @@ document.addEventListener("DOMContentLoaded", () => {
   const buyBtn =
     document.getElementById("buyBtn");
 
-  function showMessage(text, type = "error") {
+  function showMessage(
+    text,
+    type = "error"
+  ) {
     messageBox.textContent = text;
 
     messageBox.className =
@@ -55,568 +60,655 @@ document.addEventListener("DOMContentLoaded", () => {
     messageBox.hidden = true;
   }
 
-  // ============================================================
-  // TYPE TOGGLE
-  // ============================================================
-
+  /*
+   * ============================================================
+   * TYPE TOGGLE
+   * ============================================================
+   */
   document
-    .querySelectorAll(".airtime-type-toggle__btn")
+    .querySelectorAll(
+      ".airtime-type-toggle__btn"
+    )
     .forEach((btn) => {
-      btn.addEventListener("click", () => {
-        document
-          .querySelectorAll(".airtime-type-toggle__btn")
-          .forEach((b) =>
-            b.classList.remove("is-active")
+      btn.addEventListener(
+        "click",
+        () => {
+          document
+            .querySelectorAll(
+              ".airtime-type-toggle__btn"
+            )
+            .forEach((b) =>
+              b.classList.remove(
+                "is-active"
+              )
+            );
+
+          btn.classList.add("is-active");
+
+          currentType =
+            btn.dataset.type;
+
+          document.getElementById(
+            "airtimeSection"
+          ).hidden =
+            currentType !== "airtime";
+
+          document.getElementById(
+            "dataSection"
+          ).hidden =
+            currentType !== "data";
+
+          document.getElementById(
+            "summaryType"
+          ).textContent =
+            currentType === "airtime"
+              ? "Airtime"
+              : "Data";
+
+          selectedAmount = null;
+          selectedDataPlan = null;
+
+          hideMessage();
+
+          if (
+            currentType === "data"
+          ) {
+            loadDataPlans(
+              currentNetwork
+            );
+          }
+
+          updateSummary();
+        }
+      );
+    });
+
+  /*
+   * ============================================================
+   * NETWORK SELECTOR
+   * ============================================================
+   */
+  document
+    .getElementById("networkGrid")
+    .addEventListener(
+      "click",
+      (e) => {
+        const chip =
+          e.target.closest(
+            ".network-chip"
           );
 
-        btn.classList.add("is-active");
+        if (!chip) return;
 
-        currentType = btn.dataset.type;
+        document
+          .querySelectorAll(
+            ".network-chip"
+          )
+          .forEach((c) =>
+            c.classList.remove(
+              "is-active"
+            )
+          );
+
+        chip.classList.add(
+          "is-active"
+        );
+
+        currentNetwork =
+          chip.dataset.network;
 
         document.getElementById(
-          "airtimeSection"
-        ).hidden = currentType !== "airtime";
-
-        document.getElementById(
-          "dataSection"
-        ).hidden = currentType !== "data";
-
-        document.getElementById(
-          "summaryType"
+          "summaryNetwork"
         ).textContent =
-          currentType === "airtime"
-            ? "Airtime"
-            : "Data";
+          chip.textContent;
 
-        selectedAmount = null;
         selectedDataPlan = null;
 
         hideMessage();
 
-        if (currentType === "data") {
-          loadDataPlans(currentNetwork);
+        if (
+          currentType === "data"
+        ) {
+          loadDataPlans(
+            currentNetwork
+          );
         }
 
         updateSummary();
-      });
-    });
-
-  // ============================================================
-  // NETWORK SELECTOR
-  // ============================================================
-
-  document
-    .getElementById("networkGrid")
-    .addEventListener("click", (e) => {
-      const chip = e.target.closest(".network-chip");
-
-      if (!chip) return;
-
-      document
-        .querySelectorAll(".network-chip")
-        .forEach((c) =>
-          c.classList.remove("is-active")
-        );
-
-      chip.classList.add("is-active");
-
-      currentNetwork = chip.dataset.network;
-
-      document.getElementById(
-        "summaryNetwork"
-      ).textContent = chip.textContent;
-
-      selectedDataPlan = null;
-
-      hideMessage();
-
-      if (currentType === "data") {
-        loadDataPlans(currentNetwork);
       }
+    );
 
-      updateSummary();
-    });
-
-  // ============================================================
-  // AIRTIME AMOUNT QUICK SELECT
-  // ============================================================
-
+  /*
+   * ============================================================
+   * AIRTIME AMOUNT QUICK SELECT
+   * ============================================================
+   */
   document
     .querySelectorAll(".amount-chip")
     .forEach((chip) => {
-      chip.addEventListener("click", () => {
-        document
-          .querySelectorAll(".amount-chip")
-          .forEach((c) =>
-            c.classList.remove("is-active")
+      chip.addEventListener(
+        "click",
+        () => {
+          document
+            .querySelectorAll(
+              ".amount-chip"
+            )
+            .forEach((c) =>
+              c.classList.remove(
+                "is-active"
+              )
+            );
+
+          chip.classList.add(
+            "is-active"
           );
 
-        chip.classList.add("is-active");
+          selectedAmount =
+            Number(
+              chip.dataset.amount
+            );
 
-        selectedAmount =
-          Number(chip.dataset.amount);
+          document.getElementById(
+            "airtimeAmount"
+          ).value =
+            selectedAmount;
 
-        document.getElementById(
-          "airtimeAmount"
-        ).value = selectedAmount;
-
-        updateSummary();
-      });
+          updateSummary();
+        }
+      );
     });
 
   document
-    .getElementById("airtimeAmount")
-    .addEventListener("input", (e) => {
-      selectedAmount =
-        Number(e.target.value) || null;
+    .getElementById(
+      "airtimeAmount"
+    )
+    .addEventListener(
+      "input",
+      (e) => {
+        selectedAmount =
+          Number(e.target.value) ||
+          null;
 
-      document
-        .querySelectorAll(".amount-chip")
-        .forEach((c) =>
-          c.classList.remove("is-active")
-        );
+        document
+          .querySelectorAll(
+            ".amount-chip"
+          )
+          .forEach((c) =>
+            c.classList.remove(
+              "is-active"
+            )
+          );
 
-      updateSummary();
-    });
+        updateSummary();
+      }
+    );
 
-  // ============================================================
-  // LOAD DATA PLANS
-  // ============================================================
-
-  async function loadDataPlans(network) {
+  /*
+   * ============================================================
+   * LOAD DATA PLANS
+   * ============================================================
+   *
+   * Backend handles multiple GSUBZ services.
+   *
+   * Example:
+   *
+   * Airtel:
+   *   airtel_sme
+   *   airtel_gifting
+   *
+   * The frontend receives one combined list.
+   */
+  async function loadDataPlans(
+    network
+  ) {
     const list =
-      document.getElementById("dataPlanList");
+      document.getElementById(
+        "dataPlanList"
+      );
 
-    if (dataPlansCache[network]) {
+    if (
+      dataPlansCache[network]
+    ) {
       renderDataPlans(
         dataPlansCache[network]
       );
+
       return;
     }
 
-    list.innerHTML = `
-      <p class="airtime-loading">
+    list.innerHTML =
+      `<p class="airtime-loading">
         Loading ${network.toUpperCase()} plans…
-      </p>
-    `;
+      </p>`;
 
     try {
-      const res = await fetch(
-        `${API_ORIGIN}/api/gsubz/data-plans/${encodeURIComponent(
-          network
-        )}`,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const res =
+        await fetch(
+          `${API_ORIGIN}/api/gsubz/data-plans/${encodeURIComponent(
+            network
+          )}`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
 
-      if (res.status === 401) {
-        window.location.href = "auth.html";
+      if (
+        res.status === 401
+      ) {
+        window.location.href =
+          "auth.html";
+
         return;
       }
 
-      const data = await res.json();
+      const data =
+        await res.json();
 
       if (!res.ok) {
-        list.innerHTML = `
-          <p class="airtime-loading">
-            ${
-              data.error ||
-              "Couldn't load plans."
-            }
-          </p>
-        `;
+        list.innerHTML =
+          `<p class="airtime-loading">
+            ${data.error ||
+            "Couldn't load plans."}
+          </p>`;
 
         return;
       }
 
-      if (!Array.isArray(data.plans)) {
-        list.innerHTML = `
-          <p class="airtime-loading">
+      if (
+        !Array.isArray(
+          data.plans
+        )
+      ) {
+        list.innerHTML =
+          `<p class="airtime-loading">
             No plans available for this network right now.
-          </p>
-        `;
+          </p>`;
 
         return;
       }
 
-      dataPlansCache[network] = data.plans;
+      dataPlansCache[network] =
+        data.plans;
 
-      renderDataPlans(data.plans);
+      renderDataPlans(
+        data.plans
+      );
     } catch (err) {
       console.error(
         "Load data plans error:",
         err
       );
 
-      list.innerHTML = `
-        <p class="airtime-loading">
+      list.innerHTML =
+        `<p class="airtime-loading">
           Couldn't reach the server. Check your connection and try again.
-        </p>
-      `;
+        </p>`;
     }
   }
 
-  // ============================================================
-  // RENDER DATA PLANS
-  // ============================================================
-
-  function renderDataPlans(plans) {
+  /*
+   * ============================================================
+   * RENDER DATA PLANS
+   * ============================================================
+   */
+  function renderDataPlans(
+    plans
+  ) {
     const list =
-      document.getElementById("dataPlanList");
+      document.getElementById(
+        "dataPlanList"
+      );
 
-    if (!plans || !plans.length) {
-      list.innerHTML = `
-        <p class="airtime-loading">
+    if (
+      !plans ||
+      !plans.length
+    ) {
+      list.innerHTML =
+        `<p class="airtime-loading">
           No plans available for this network right now.
-        </p>
-      `;
+        </p>`;
 
       return;
     }
 
-    list.innerHTML = plans
-      .map(
-        (p, index) => `
-          <div
-            class="data-plan-item"
-            data-code="${escapeHtml(p.code)}"
-            data-service="${escapeHtml(
-              p.serviceID
-            )}"
-            data-index="${index}"
-          >
-            <div>
-              <span class="data-plan-item__name">
-                ${escapeHtml(p.name)}
+    list.innerHTML =
+      plans
+        .map(
+          (p, index) => `
+            <div
+              class="data-plan-item"
+              data-code="${escapeHtml(
+                p.code
+              )}"
+              data-service="${escapeHtml(
+                p.serviceID
+              )}"
+              data-index="${index}"
+            >
+              <div>
+                <span class="data-plan-item__name">
+                  ${escapeHtml(
+                    p.name
+                  )}
+                </span>
+              </div>
+
+              <span class="data-plan-item__price">
+                ${fmt(p.price)}
               </span>
             </div>
-
-            <span class="data-plan-item__price">
-              ${fmt(p.price)}
-            </span>
-          </div>
-        `
-      )
-      .join("");
+          `
+        )
+        .join("");
 
     list
-      .querySelectorAll(".data-plan-item")
+      .querySelectorAll(
+        ".data-plan-item"
+      )
       .forEach((item) => {
-        item.addEventListener("click", () => {
-          list
-            .querySelectorAll(".data-plan-item")
-            .forEach((i) =>
-              i.classList.remove("is-active")
+        item.addEventListener(
+          "click",
+          () => {
+            list
+              .querySelectorAll(
+                ".data-plan-item"
+              )
+              .forEach((i) =>
+                i.classList.remove(
+                  "is-active"
+                )
+              );
+
+            item.classList.add(
+              "is-active"
             );
 
-          item.classList.add("is-active");
+            const index =
+              Number(
+                item.dataset.index
+              );
 
-          const index =
-            Number(item.dataset.index);
+            selectedDataPlan =
+              plans[index] || null;
 
-          selectedDataPlan =
-            plans[index] || null;
-
-          updateSummary();
-        });
+            updateSummary();
+          }
+        );
       });
   }
 
-  // ============================================================
-  // HTML ESCAPING
-  // ============================================================
-
+  /*
+   * Basic HTML escaping so provider data cannot inject
+   * arbitrary HTML into the page.
+   */
   function escapeHtml(value) {
     return String(value ?? "")
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
+      .replace(
+        /&/g,
+        "&amp;"
+      )
+      .replace(
+        /</g,
+        "&lt;"
+      )
+      .replace(
+        />/g,
+        "&gt;"
+      )
+      .replace(
+        /"/g,
+        "&quot;"
+      )
+      .replace(
+        /'/g,
+        "&#039;"
+      );
   }
 
-  // ============================================================
-  // PHONE NUMBER
-  // ============================================================
-
+  /*
+   * ============================================================
+   * PHONE NUMBER
+   * ============================================================
+   */
   document
-    .getElementById("phoneNumber")
-    .addEventListener("input", (e) => {
-      document.getElementById(
-        "summaryPhone"
-      ).textContent =
-        e.target.value || "—";
-    });
+    .getElementById(
+      "phoneNumber"
+    )
+    .addEventListener(
+      "input",
+      (e) => {
+        document.getElementById(
+          "summaryPhone"
+        ).textContent =
+          e.target.value || "—";
+      }
+    );
 
-  // ============================================================
-  // SUMMARY
-  // ============================================================
-
+  /*
+   * ============================================================
+   * SUMMARY
+   * ============================================================
+   */
   function updateSummary() {
     const total =
       currentType === "airtime"
         ? selectedAmount || 0
-        : selectedDataPlan?.price || 0;
+        : selectedDataPlan?.price ||
+          0;
 
     document.getElementById(
       "summaryTotal"
-    ).textContent = fmt(total);
+    ).textContent =
+      fmt(total);
   }
 
-  // ============================================================
-  // RESET SELECTION
-  // ============================================================
+  /*
+   * ============================================================
+   * PURCHASE
+   * ============================================================
+   */
+  buyBtn.addEventListener(
+    "click",
+    async () => {
+      hideMessage();
 
-  function resetSelection() {
-    selectedAmount = null;
-    selectedDataPlan = null;
+      const phone =
+        document
+          .getElementById(
+            "phoneNumber"
+          )
+          .value.trim();
 
-    document.getElementById(
-      "airtimeAmount"
-    ).value = "";
-
-    document
-      .querySelectorAll(
-        ".amount-chip, .data-plan-item"
-      )
-      .forEach((c) =>
-        c.classList.remove("is-active")
-      );
-
-    updateSummary();
-  }
-
-  // ============================================================
-  // PURCHASE
-  // ============================================================
-
-  buyBtn.addEventListener("click", async () => {
-    hideMessage();
-
-    const phone =
-      document
-        .getElementById("phoneNumber")
-        .value.trim();
-
-    if (!/^0\d{10}$/.test(phone)) {
-      showMessage(
-        "Enter a valid 11-digit phone number (e.g. 08012345678)."
-      );
-
-      return;
-    }
-
-    if (
-      currentType === "airtime" &&
-      (!selectedAmount || selectedAmount < 50)
-    ) {
-      showMessage(
-        "Enter or select an airtime amount (minimum ₦50)."
-      );
-
-      return;
-    }
-
-    if (
-      currentType === "data" &&
-      !selectedDataPlan
-    ) {
-      showMessage("Choose a data plan.");
-      return;
-    }
-
-    if (
-      currentType === "data" &&
-      !selectedDataPlan.serviceID
-    ) {
-      showMessage(
-        "This data plan is missing its provider service. Reload the plans and try again."
-      );
-
-      return;
-    }
-
-    buyBtn.disabled = true;
-    buyBtn.textContent = "Processing…";
-
-    try {
-      const endpoint =
-        currentType === "airtime"
-          ? "/api/gsubz/airtime"
-          : "/api/gsubz/data";
-
-      const body =
-        currentType === "airtime"
-          ? {
-              network: currentNetwork,
-              phone,
-              amount: selectedAmount,
-            }
-          : {
-              network: currentNetwork,
-              phone,
-
-              // GSUBZ service
-              serviceID:
-                selectedDataPlan.serviceID,
-
-              // GSUBZ plan/variation
-              variation_code:
-                selectedDataPlan.code,
-            };
-
-      const res = await fetch(
-        `${API_ORIGIN}${endpoint}`,
-        {
-          method: "POST",
-
-          headers: {
-            "Content-Type":
-              "application/json",
-
-            Authorization:
-              `Bearer ${token}`,
-          },
-
-          body: JSON.stringify(body),
-        }
-      );
-
-      if (res.status === 401) {
-        window.location.href = "auth.html";
-        return;
-      }
-
-      const data = await res.json();
-
-      if (!res.ok) {
+      if (
+        !/^0\d{10}$/.test(
+          phone
+        )
+      ) {
         showMessage(
-          data.error ||
-            "Purchase failed. Please try again."
+          "Enter a valid 11-digit phone number (e.g. 08012345678)."
         );
 
         return;
       }
 
-      if (data.status === "pending") {
+      if (
+        currentType ===
+          "airtime" &&
+        (!selectedAmount ||
+          selectedAmount < 50)
+      ) {
+        showMessage(
+          "Enter or select an airtime amount (minimum ₦50)."
+        );
+
+        return;
+      }
+
+      if (
+        currentType === "data" &&
+        !selectedDataPlan
+      ) {
+        showMessage(
+          "Choose a data plan."
+        );
+
+        return;
+      }
+
+      /*
+       * Make sure the selected plan has a service.
+       *
+       * This prevents an old/corrupt cached plan from
+       * being purchased without knowing the GSUBZ service.
+       */
+      if (
+        currentType === "data" &&
+        !selectedDataPlan.serviceID
+      ) {
+        showMessage(
+          "This data plan is missing its provider service. Reload the plans and try again."
+        );
+
+        return;
+      }
+
+      buyBtn.disabled = true;
+      buyBtn.textContent =
+        "Processing…";
+
+      try {
+        const endpoint =
+          currentType === "airtime"
+            ? "/api/gsubz/airtime"
+            : "/api/gsubz/data";
+
+        const body =
+          currentType === "airtime"
+            ? {
+                network:
+                  currentNetwork,
+                phone,
+                amount:
+                  selectedAmount,
+              }
+            : {
+                network:
+                  currentNetwork,
+
+                phone,
+
+                /*
+                 * GSUBZ service that owns this plan.
+                 */
+                serviceID:
+                  selectedDataPlan.serviceID,
+
+                /*
+                 * GSUBZ plan/variation value.
+                 */
+                variation_code:
+                  selectedDataPlan.code,
+              };
+
+        const res =
+          await fetch(
+            `${API_ORIGIN}${endpoint}`,
+            {
+              method: "POST",
+
+              headers: {
+                "Content-Type":
+                  "application/json",
+
+                Authorization:
+                  `Bearer ${token}`,
+              },
+
+              body:
+                JSON.stringify(
+                  body
+                ),
+            }
+          );
+
+        if (
+          res.status === 401
+        ) {
+          window.location.href =
+            "auth.html";
+
+          return;
+        }
+
+        const data =
+          await res.json();
+
+        if (!res.ok) {
+          showMessage(
+            data.error ||
+              "Purchase failed. Please try again."
+          );
+
+          return;
+        }
+
         showMessage(
           data.message ||
-            "Your purchase is processing…",
+            "Purchase successful.",
           "success"
         );
 
-        pollPurchaseStatus(
-          data.reference
+        /*
+         * Reset selection after successful purchase.
+         */
+        selectedAmount = null;
+        selectedDataPlan = null;
+
+        document.getElementById(
+          "airtimeAmount"
+        ).value = "";
+
+        document
+          .querySelectorAll(
+            ".amount-chip, .data-plan-item"
+          )
+          .forEach((c) =>
+            c.classList.remove(
+              "is-active"
+            )
+          );
+
+        updateSummary();
+      } catch (err) {
+        console.error(
+          "Purchase error:",
+          err
         );
 
-        return;
+        showMessage(
+          "Couldn't reach the server. Check your connection and try again."
+        );
+      } finally {
+        buyBtn.disabled = false;
+        buyBtn.textContent =
+          "Buy now";
       }
-
-      showMessage(
-        data.message ||
-          "Purchase successful.",
-        "success"
-      );
-
-      resetSelection();
-    } catch (err) {
-      console.error(
-        "Purchase error:",
-        err
-      );
-
-      showMessage(
-        "Couldn't reach the server. Check your connection and try again."
-      );
-    } finally {
-      buyBtn.disabled = false;
-      buyBtn.textContent = "Buy now";
     }
-  });
+  );
 
-  // ============================================================
-  // POLL PURCHASE STATUS
-  // ============================================================
-
-  async function pollPurchaseStatus(
-    reference,
-    attempt = 0
+  /*
+   * Load the current network's data plans if the page
+   * initially starts in data mode.
+   */
+  if (
+    currentType === "data"
   ) {
-    if (attempt >= 10) {
-      showMessage(
-        "Still processing — check your wallet history in a bit for the final result.",
-        "success"
-      );
-
-      return;
-    }
-
-    await new Promise((resolve) =>
-      setTimeout(resolve, 3000)
+    loadDataPlans(
+      currentNetwork
     );
-
-    try {
-      const res = await fetch(
-        `${API_ORIGIN}/api/gsubz/status/${encodeURIComponent(
-          reference
-        )}`,
-        {
-          headers: {
-            Authorization:
-              `Bearer ${token}`,
-          },
-        }
-      );
-
-      const data = await res.json();
-
-      if (data.status === "success") {
-        showMessage(
-          "Purchase successful.",
-          "success"
-        );
-
-        resetSelection();
-
-        return;
-      }
-
-      if (data.status === "failed") {
-        showMessage(
-          data.error ||
-            "Purchase failed. Your wallet was not charged."
-        );
-
-        return;
-      }
-
-      // Still pending
-      pollPurchaseStatus(
-        reference,
-        attempt + 1
-      );
-    } catch (err) {
-      console.error(
-        "Polling error:",
-        err
-      );
-
-      pollPurchaseStatus(
-        reference,
-        attempt + 1
-      );
-    }
-  }
-
-  // ============================================================
-  // INITIAL LOAD
-  // ============================================================
-
-  if (currentType === "data") {
-    loadDataPlans(currentNetwork);
   }
 
   updateSummary();
