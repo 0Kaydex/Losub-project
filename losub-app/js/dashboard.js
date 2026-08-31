@@ -171,6 +171,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadGroups() {
     try {
       const res = await fetch(`${API_ORIGIN}/api/groups/mine`, {
+        cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "auth.html"; return; }
@@ -186,6 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadWallet() {
     try {
       const res = await fetch(`${API_ORIGIN}/api/wallet`, {
+        cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
@@ -199,6 +201,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadNotifications() {
     try {
       const res = await fetch(`${API_ORIGIN}/api/notifications`, {
+        cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "auth.html"; return; }

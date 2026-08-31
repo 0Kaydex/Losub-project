@@ -9,11 +9,22 @@ const { requireAuth } = require("./middleware/auth");
 const walletRoutes = require("./routes/wallet");
 const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
-const gsubzRoutes = require("./routes/gsubz");
+const vtpassRoutes = require("./routes/vtpass");
 const notificationsRoutes = require("./routes/notifications");
 const webhooksRoutes = require("./routes/webhooks");
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Every response here is dynamic (wallet balances, groups, notifications, etc). Express
+// enables ETag generation by default, which makes browsers send conditional GETs and can
+// let a client hang on to an old cached body if a proxy/browser gets a stale 304 in a race
+// with a write. There's no static content to benefit from caching here, so turn it off and
+// tell every client explicitly never to cache API responses.
+app.set("etag", false);
+app.use((req, res, next) => {
+  res.set("Cache-Control", "no-store");
+  next();
+});
 
 app.use(cors({
   origin: [
@@ -44,9 +55,9 @@ app.use("/api/owner", ownerRoutes);
 app.use("/api/wallet", walletRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/groups", groupsRoutes);
-app.use("/api/gsubz", gsubzRoutes);
+app.use("/api/vtpass", vtpassRoutes);
 app.use("/api/notifications", notificationsRoutes);
-
+app.use("/api/webhooks", webhooksRoutes);
 app.get("/api/auth/me", requireAuth, (req, res) => {
   const user = db
     .prepare("SELECT id, fullname, email, email_verified, created_at FROM users WHERE id = ?")

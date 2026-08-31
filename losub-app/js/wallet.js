@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadWallet() {
     try {
       const res = await fetch(`${API_ORIGIN}/api/wallet`, {
+        cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.status === 401) { window.location.href = "auth.html"; return; }

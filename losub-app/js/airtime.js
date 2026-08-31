@@ -507,6 +507,35 @@ document.addEventListener("DOMContentLoaded", () => {
 
   /*
    * ============================================================
+   * RESET SELECTION
+   * ============================================================
+   *
+   * Shared by the immediate-success path and the polling
+   * success path so both end up in the same clean state.
+   */
+  function resetSelection() {
+    selectedAmount = null;
+    selectedDataPlan = null;
+
+    document.getElementById(
+      "airtimeAmount"
+    ).value = "";
+
+    document
+      .querySelectorAll(
+        ".amount-chip, .data-plan-item"
+      )
+      .forEach((c) =>
+        c.classList.remove(
+          "is-active"
+        )
+      );
+
+    updateSummary();
+  }
+
+  /*
+   * ============================================================
    * PURCHASE
    * ============================================================
    */
@@ -655,33 +684,37 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
+        if (
+          data.status === "pending"
+        ) {
+          /*
+           * The provider hasn't confirmed yet (this is
+           * normal — delivery can lag the response by a
+           * few seconds). Keep checking instead of leaving
+           * the user with a stale "processing" message or,
+           * worse, a misleading error while it's actually
+           * still going through.
+           */
+          showMessage(
+            data.message ||
+              "Your purchase is processing…",
+            "success"
+          );
+
+          pollPurchaseStatus(
+            data.reference
+          );
+
+          return;
+        }
+
         showMessage(
           data.message ||
             "Purchase successful.",
           "success"
         );
 
-        /*
-         * Reset selection after successful purchase.
-         */
-        selectedAmount = null;
-        selectedDataPlan = null;
-
-        document.getElementById(
-          "airtimeAmount"
-        ).value = "";
-
-        document
-          .querySelectorAll(
-            ".amount-chip, .data-plan-item"
-          )
-          .forEach((c) =>
-            c.classList.remove(
-              "is-active"
-            )
-          );
-
-        updateSummary();
+        resetSelection();
       } catch (err) {
         console.error(
           "Purchase error:",
@@ -698,6 +731,88 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     }
   );
+
+  /*
+   * ============================================================
+   * POLL PURCHASE STATUS
+   * ============================================================
+   *
+   * Polls GET /api/gsubz/status/:reference until the provider
+   * confirms the purchase either way, then shows the real
+   * outcome. Stops after ~30s so a genuinely stuck request
+   * doesn't poll forever — the transaction stays "pending"
+   * server-side and support can reconcile it.
+   */
+  async function pollPurchaseStatus(
+    reference,
+    attempt = 0
+  ) {
+    if (attempt >= 10) {
+      showMessage(
+        "Still processing — check your wallet history in a bit for the final result.",
+        "success"
+      );
+
+      return;
+    }
+
+    await new Promise((resolve) =>
+      setTimeout(resolve, 3000)
+    );
+
+    try {
+      const res =
+        await fetch(
+          `${API_ORIGIN}/api/gsubz/status/${encodeURIComponent(
+            reference
+          )}`,
+          {
+            headers: {
+              Authorization:
+                `Bearer ${token}`,
+            },
+          }
+        );
+
+      const data =
+        await res.json();
+
+      if (
+        data.status === "success"
+      ) {
+        showMessage(
+          "Purchase successful.",
+          "success"
+        );
+
+        resetSelection();
+
+        return;
+      }
+
+      if (
+        data.status === "failed"
+      ) {
+        showMessage(
+          data.error ||
+            "Purchase failed. Your wallet was not charged."
+        );
+
+        return;
+      }
+
+      // Still pending — keep polling.
+      pollPurchaseStatus(
+        reference,
+        attempt + 1
+      );
+    } catch {
+      pollPurchaseStatus(
+        reference,
+        attempt + 1
+      );
+    }
+  }
 
   /*
    * Load the current network's data plans if the page

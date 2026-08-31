@@ -54,6 +54,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   try {
     const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}`, {
+      cache: "no-store",
       headers: { Authorization: `Bearer ${token}` },
     });
 

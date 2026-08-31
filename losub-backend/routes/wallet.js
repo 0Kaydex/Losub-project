@@ -12,8 +12,12 @@ const FUNDING_FEE_KOBO = 10000;
 // GET /api/wallet — balance (naira) + recent transactions
 router.get("/", (req, res) => {
   const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  // Exclude 'pending' rows (e.g. an airtime/data purchase VTPass hasn't confirmed yet — see
+  // routes/vtpass.js). The wallet balance above hasn't been touched for those yet either,
+  // so listing them here would show a debit that doesn't match the balance shown next to it.
+  // They'll appear once /api/vtpass/status finalizes them to 'success' or 'failed'.
   const rows = db
-    .prepare("SELECT id, type, description, amount, status, created_at FROM wallet_transactions WHERE user_id = ? ORDER BY created_at DESC LIMIT 50")
+    .prepare("SELECT id, type, description, amount, status, created_at FROM wallet_transactions WHERE user_id = ? AND status != 'pending' ORDER BY created_at DESC LIMIT 50")
     .all(req.userId);
 
   res.json({
@@ -83,6 +87,24 @@ router.post("/fund/verify", async (req, res) => {
       db.exec("COMMIT");
     } catch (txErr) {
       db.exec("ROLLBACK");
+
+      // The Paystack webhook (routes/webhooks.js) can land on this exact reference at
+      // almost the same instant as this request — whichever one loses the race hits the
+      // UNIQUE constraint on wallet_transactions.reference here. That's not a real
+      // failure: the *other* path already credited the wallet correctly. Treat it as
+      // "already processed" (same as the idempotency check above) instead of telling the
+      // user their successful payment failed.
+      const isDuplicateReference =
+        txErr.code === "ERR_SQLITE_ERROR" && /UNIQUE constraint failed.*reference/i.test(txErr.message || "");
+
+      if (isDuplicateReference) {
+        const already = db.prepare("SELECT id FROM wallet_transactions WHERE reference = ?").get(reference);
+        if (already) {
+          const current = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(user.id);
+          return res.json({ message: "Wallet funded.", balance: current.wallet_balance / 100 });
+        }
+      }
+
       console.error("Wallet credit failed, rolled back:", txErr);
       return res.status(500).json({ error: "Couldn't complete wallet funding. Please try again or contact support with your reference." });
     }

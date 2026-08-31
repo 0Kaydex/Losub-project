@@ -6,14 +6,6 @@ const { notify } = require("../utils/notify");
 const router = express.Router();
 router.use(requireAuth);
 
-// The manager pays 50% of the standard per-seat price — a perk for hosting/managing the
-// account. Everyone else pays the full per-seat price. This one function is the single
-// source of truth for that split; every endpoint below calls through it so the manager
-// discount can never drift out of sync between pages.
-function priceForRole(pricePerSeatKobo, role) {
-  return role === "manager" ? Math.round(pricePerSeatKobo / 2) : pricePerSeatKobo;
-}
-
 // Shared helper — shape a raw group+plan row into what the frontend expects
 function formatGroup(row, userRoleInGroup, extra = {}) {
   return {
@@ -23,7 +15,7 @@ function formatGroup(row, userRoleInGroup, extra = {}) {
     logo: row.logo,
     color: row.color,
     soloPrice: row.solo_price / 100,
-    yourPrice: priceForRole(row.price_per_seat, userRoleInGroup) / 100,
+    yourPrice: row.price_per_seat / 100,
     seatsTotal: row.seats_total,
     seatsFilled: row.seats_filled,
     manager: row.manager_name,
@@ -109,7 +101,7 @@ router.get("/:id", (req, res) => {
     color: group.color,
     seatsTotal: group.seats_total,
     seatsFilled,
-    yourPrice: priceForRole(group.price_per_seat, membership.role) / 100,
+    yourPrice: group.price_per_seat / 100,
     soloPrice: group.solo_price / 100,
     manager: group.manager_name,
     yourRole: membership.role,
@@ -195,57 +187,111 @@ router.post("/:id/leave", (req, res) => {
   res.json({ message: "You left the group." });
 });
 
-// POST /api/groups — create a new group as its manager
-router.post("/", (req, res) => {
-  const { plan_id, seats_total } = req.body;
+// Groups always split into this many seats. Kept server-side (not trusted from the client)
+// so the manager's price_per_seat is always computed the same way as everyone else's.
+const SEATS_PER_GROUP = 4;
 
-  const seatsTotal = Number(seats_total);
-  if (!plan_id || !Number.isInteger(seatsTotal) || seatsTotal < 2 || seatsTotal > 8) {
-    return res.status(400).json({ error: "plan_id is required, and seats_total must be a whole number between 2 and 8." });
+// POST /api/groups — become the account manager for a plan (creates its group + pays your
+// own seat, exactly like a member would when they join). Eligibility, pricing, and the wallet
+// deduction are all decided here, server-side — never trust plan_id-adjacent numbers the
+// client sends, and never create a group before the payment for it is confirmed to succeed.
+router.post("/", (req, res) => {
+  const { plan_id } = req.body;
+
+  if (!plan_id) {
+    return res.status(400).json({ error: "plan_id is required." });
   }
 
-  const plan = db.prepare("SELECT id, name, price_per_seat FROM plans WHERE id = ?").get(plan_id);
+  const plan = db.prepare("SELECT id, name, solo_price FROM plans WHERE id = ?").get(plan_id);
   if (!plan) return res.status(404).json({ error: "Plan not found." });
 
-  // price_per_seat is set directly by the admin on the plan (e.g. Spotify Family = ₦650/seat),
-  // not derived from solo_price or seats_total — seats_total only controls capacity.
-  if (plan.price_per_seat == null) {
-    return res.status(400).json({ error: `${plan.name} doesn't have a per-seat price set yet. Ask an admin to edit the plan first.` });
+  // Eligibility: you can't become manager of a plan you already manage an active group for.
+  const alreadyManaging = db.prepare(`
+    SELECT g.id FROM groups g
+    WHERE g.plan_id = ? AND g.manager_id = ? AND g.status = 'active'
+  `).get(plan_id, req.userId);
+  if (alreadyManaging) {
+    return res.status(400).json({ error: "You're already the manager of a group for this plan." });
   }
 
-  const pricePerSeatKobo = plan.price_per_seat;
-  const managerPriceKobo = priceForRole(pricePerSeatKobo, "manager");
-
-  const manager = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
-  if (manager.wallet_balance < managerPriceKobo) {
-    return res.status(400).json({
-      error: `You need ₦${(managerPriceKobo / 100).toLocaleString()} to start this group as manager. Fund your wallet first.`,
-    });
+  // Eligibility / race guard: if an open group with free seats already exists for this plan
+  // (e.g. someone else became manager a moment ago, or two tabs raced each other), there's
+  // nothing to create — the user should join that one instead of us creating a duplicate.
+  const openGroup = db.prepare(`
+    SELECT g.id, g.seats_total, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
+    FROM groups g
+    WHERE g.plan_id = ? AND g.status = 'active'
+  `).all(plan_id).find(g => g.seats_filled < g.seats_total);
+  if (openGroup) {
+    return res.status(409).json({ error: "A group for this plan just opened up — join it instead of starting a new one.", groupId: openGroup.id });
   }
 
+  const priceKobo = Math.round(plan.solo_price / SEATS_PER_GROUP);
+
+  // Wallet balance verification — the manager pays their own seat up front, same as any
+  // member joining a group does. Checked before touching anything else.
+  const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  if (user.wallet_balance < priceKobo) {
+    return res.status(400).json({ error: "Insufficient wallet balance to become manager. Fund your wallet first." });
+  }
+
+  // Everything below must happen together: create the group, seat the manager, and deduct
+  // payment — or none of it does. node:sqlite runs synchronously on a single connection, so
+  // wrapping in BEGIN/COMMIT with a rollback on any failure gives us that atomicity; nothing
+  // is deducted unless the group and membership rows both land.
+  let groupId;
   try {
     db.exec("BEGIN");
 
     const result = db.prepare(
       "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
-    ).run(plan_id, req.userId, seatsTotal, pricePerSeatKobo);
+    ).run(plan_id, req.userId, SEATS_PER_GROUP, priceKobo);
+    groupId = result.lastInsertRowid;
 
-    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(managerPriceKobo, req.userId);
+    // Manager takes the first seat, and pays for it — matches "Losub handles all billing;
+    // you never collect payments" from the offer terms: managers pay in the same way members do.
     db.prepare(
       "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'manager', 'paid')"
-    ).run(result.lastInsertRowid, req.userId);
+    ).run(groupId, req.userId);
+
+    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(priceKobo, req.userId);
     db.prepare(
       "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
-    ).run(req.userId, `${plan.name} manager seat payment`, -managerPriceKobo);
+    ).run(req.userId, `${plan.name} — became account manager`, -priceKobo);
 
     db.exec("COMMIT");
-
-    res.json({ id: result.lastInsertRowid, message: "Group created." });
-  } catch (err) {
+  } catch (txErr) {
     db.exec("ROLLBACK");
-    console.error("Group creation failed, rolled back:", err);
-    res.status(500).json({ error: "Couldn't create the group. Please try again." });
+    console.error("Group creation failed, rolled back (nothing was deducted):", txErr);
+    return res.status(500).json({ error: "Couldn't create the group. Your wallet was not charged. Please try again." });
   }
+
+  notify(req.userId, `You're now the account manager for ${plan.name}.`, "group");
+
+  // Return the fully-formed group (shaped like GET /api/groups/mine's rows) plus the new
+  // balance, so the frontend can drop it straight into the dashboard's in-memory state
+  // instead of waiting on a fresh GET — that's what makes it show up without a manual refresh.
+  const updatedUser = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  const row = db.prepare(`
+    SELECT
+      g.id AS group_id, g.seats_total, g.price_per_seat, g.status,
+      p.name AS plan_name, p.logo, p.color, p.solo_price,
+      m.fullname AS manager_name,
+      gm.role AS member_role, gm.payment_status, gm.next_payment_date,
+      (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
+    FROM group_members gm
+    JOIN groups g ON g.id = gm.group_id
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users m ON m.id = g.manager_id
+    WHERE g.id = ? AND gm.user_id = ?
+  `).get(groupId, req.userId);
+
+  const group = formatGroup(row, row.member_role, {
+    paymentStatus: row.payment_status,
+    nextPaymentDate: row.next_payment_date,
+  });
+
+  res.json({ id: groupId, message: "Group created.", group, balance: updatedUser.wallet_balance / 100 });
 });
 
 // POST /api/groups/:id/join — take a seat, deducting price_per_seat from wallet
@@ -274,16 +320,28 @@ router.post("/:id/join", (req, res) => {
 
   const plan = db.prepare("SELECT name FROM plans WHERE id = ?").get(group.plan_id);
 
-  // Deduct + join + log transaction together — all or nothing in effect since node:sqlite
-  // runs synchronously and any thrown error here would leave earlier statements applied,
-  // so we order deduction first and only join after it succeeds.
-  db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(group.price_per_seat, req.userId);
-  db.prepare(
-    "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
-  ).run(groupId, req.userId);
-  db.prepare(
-    "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
-  ).run(req.userId, `${plan.name} seat payment`, -group.price_per_seat);
+  // Deduct + join + log transaction together, wrapped in a real transaction. Without an
+  // explicit BEGIN/COMMIT, node:sqlite auto-commits each statement individually — so if the
+  // membership insert below failed on its own (e.g. two tabs racing to take the last seat,
+  // tripping the group_members unique index) after the deduction had already run, the user
+  // would lose money with no seat to show for it. Wrapping it means either both happen or
+  // neither does.
+  try {
+    db.exec("BEGIN");
+    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(group.price_per_seat, req.userId);
+    db.prepare(
+      "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
+    ).run(groupId, req.userId);
+    db.prepare(
+      "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
+    ).run(req.userId, `${plan.name} seat payment`, -group.price_per_seat);
+    db.exec("COMMIT");
+  } catch (txErr) {
+    db.exec("ROLLBACK");
+    console.error("Group join failed, rolled back (nothing was deducted):", txErr);
+    // The most common real cause here is losing a race for the last seat.
+    return res.status(409).json({ error: "That seat was just taken — try another group. Your wallet was not charged." });
+  }
 
   notify(req.userId, `You joined the ${plan.name} group.`, "group");
   notify(group.manager_id, `Someone joined your ${plan.name} group.`, "group");

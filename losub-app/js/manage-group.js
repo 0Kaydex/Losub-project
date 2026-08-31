@@ -233,8 +233,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   async function loadGroup() {
     try {
       const [groupRes, membersRes] = await Promise.all([
-        fetch(`${API_ORIGIN}/api/groups/${groupId}`, { headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_ORIGIN}/api/groups/${groupId}/members`, { headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_ORIGIN}/api/groups/${groupId}`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+        fetch(`${API_ORIGIN}/api/groups/${groupId}/members`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (groupRes.status === 401 || membersRes.status === 401) {
