@@ -15,17 +15,27 @@ const TEST_MODE = process.env.GSUBZ_TEST_MODE === "true";
 // data). These are best-guess defaults; log into your Gsubz dashboard (or call
 // GET /api/category then GET /api/service?service=mtn against your account) and override
 // via env vars below if your account's actual serviceIDs differ.
-const DATA_SERVICE_IDS = { 
-  mtn: process.env.GSUBZ_MTN_DATA_SERVICE_ID || "mtn_sme",
-  mtn: process.env.GSUBZ_MTN_CG_SERVICE_ID || "mtncg",
-  airtel: process.env.GSUBZ_AIRTEL_DATA_SERVICE_ID || "airtel_sme", // airtel_cg returns 403 on this account; airtel_sme confirmed working
-  airtel: process.env.GSUBZ_AIRTEL_GIFTING_SERVICE_ID || "airtel_cg",
-  glo: process.env.GSUBZ_GLO_DATA_SERVICE_ID || "glo_data",
-  glo: process.env.GSUBZ_GLO_GIFTING_SERVICE_ID || "glo_sme",
-  etisalat: process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data",
-  "9mobile": process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data", // frontend sends "9mobile", not "etisalat"
-};
+ const DATA_SERVICE_IDS = {
+  mtn: {
+    sme: process.env.GSUBZ_MTN_SME_SERVICE_ID || "mtn_sme",
+    gifting: process.env.GSUBZ_MTN_GIFTING_SERVICE_ID || "mtn_gifting",
+    awoof: process.env.GSUBZ_MTN_AWOOF_SERVICE_ID || "mtn_awoof",
+  },
 
+  airtel: {
+    sme: process.env.GSUBZ_AIRTEL_SME_SERVICE_ID || "airtel_sme",
+    gifting: process.env.GSUBZ_AIRTEL_GIFTING_SERVICE_ID || "airtel_gifting",
+  },
+
+  glo: {
+    sme: process.env.GSUBZ_GLO_SME_SERVICE_ID || "glo_sme",
+    corporate: process.env.GSUBZ_GLO_CORPORATE_SERVICE_ID || "glo_cg",
+  },
+
+  "9mobile": {
+    data: process.env.GSUBZ_9MOBILE_DATA_SERVICE_ID || "etisalat_data",
+  },
+};
 // Service fee added on top of Gsubz's wholesale price — DATA PURCHASES ONLY. Airtime is
 // charged at exact cost, no markup. Same model as the old VTPass integration.
 const MARKUP_PERCENT = 3;
