@@ -10,6 +10,7 @@ const walletRoutes = require("./routes/wallet");
 const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
 const vtpassRoutes = require("./routes/vtpass");
+const gsubzRoutes = require("./routes/gsubz");
 const notificationsRoutes = require("./routes/notifications");
 const webhooksRoutes = require("./routes/webhooks");
 const app = express();
@@ -56,6 +57,7 @@ app.use("/api/wallet", walletRoutes);
 app.use("/api/plans", plansRoutes);
 app.use("/api/groups", groupsRoutes);
 app.use("/api/vtpass", vtpassRoutes);
+app.use("/api/gsubz", gsubzRoutes);
 app.use("/api/notifications", notificationsRoutes);
 app.use("/api/webhooks", webhooksRoutes);
 app.get("/api/auth/me", requireAuth, (req, res) => {
