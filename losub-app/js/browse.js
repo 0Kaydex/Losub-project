@@ -40,6 +40,7 @@
           logo: p.logo,
           color: p.color,
           soloPrice: p.solo_price,
+          pricePerSeat: p.price_per_seat,
         });
       });
 
@@ -93,7 +94,14 @@
         ? `<button type="button" class="plan-card__cta plan-card__cta--full" data-plan-id="${p.planId}" data-become-manager="1">No group yet — Become manager</button>`
         : `<button type="button" class="plan-card__cta" data-group-id="${p.groupId}">Join</button>`;
       const seatsLine = isManagerCard ? "No open group yet" : `${p.seatsFilled}/${p.seatsTotal} seats filled`;
-      const priceLine = isManagerCard ? fmt(p.soloPrice) : fmt(p.price);
+      // Always show what a member actually pays for a seat (price_per_seat), never the
+      // original solo subscription price — that's true whether there's already an open
+      // group to join (p.price, from g.yourPrice) or not yet (p.pricePerSeat, straight
+      // from the plan catalog). Falls back to solo_price only for older plans that were
+      // created before price_per_seat existed and haven't been re-saved yet.
+      const priceLine = isManagerCard
+        ? fmt(p.pricePerSeat ?? p.soloPrice)
+        : fmt(p.price);
 
       return `
         <article class="plan-card ${isManagerCard ? 'plan-card--full' : ''}">
