@@ -16,6 +16,7 @@
   <link rel="stylesheet" href="../css/shared.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
   <link rel="stylesheet" href="../css/manage-group.css" />
+  <link rel="stylesheet" href="../css/messaging-widget.css" />
 </head>
 <body class="app-shell-page">
 
@@ -66,6 +67,34 @@
           <div class="seat-grid" id="seatGrid">
             <!-- populated by JS -->
           </div>
+        </section>
+
+        <!-- ============ MESSAGE YOUR GROUP ============ -->
+        <section class="mg-section">
+          <div class="mg-section__head">
+            <h2>Message your group</h2>
+          </div>
+          <p class="mg-field__hint">Post announcements to everyone in this group, or reply to what a member sent you.</p>
+          <div class="mw-thread" id="groupMsgThread"></div>
+          <p class="mw-empty" id="groupMsgEmpty" hidden>No messages yet.</p>
+          <form class="mw-composer" id="groupMsgForm">
+            <input type="text" id="groupMsgInput" placeholder="Write a message to your group…" maxlength="2000" required />
+            <button type="submit" id="groupMsgSend">Send</button>
+          </form>
+        </section>
+
+        <!-- ============ MESSAGES FROM LOSUB ============ -->
+        <section class="mg-section">
+          <div class="mg-section__head">
+            <h2>Messages from Losub</h2>
+          </div>
+          <p class="mg-field__hint">Direct line to the Losub admin/owner team — check-ins, disputes, or anything else about this account.</p>
+          <div class="mw-thread" id="adminMsgThread"></div>
+          <p class="mw-empty" id="adminMsgEmpty" hidden>No messages yet — send one below if you need anything.</p>
+          <form class="mw-composer" id="adminMsgForm">
+            <input type="text" id="adminMsgInput" placeholder="Message Losub admin/owner…" maxlength="2000" required />
+            <button type="submit" id="adminMsgSend">Send</button>
+          </form>
         </section>
 
       </main>

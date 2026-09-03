@@ -3,9 +3,43 @@ const db = require("../db");
 const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
 const { logAudit } = require("../utils/logAudit");
+const { notify } = require("../utils/notify");
+const { runPaymentReminders } = require("../scripts/payment-reminders");
 const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
+
+// POST /api/admin/updates/broadcast — send a platform-wide "new update" notification to
+// every user (e.g. new feature, maintenance notice, policy change). This is the "new
+// updates" trigger from the notifications requirements — previously there was no way
+// for admins/owner to push anything to the whole user base at once.
+router.post("/updates/broadcast", (req, res) => {
+  const { text } = req.body;
+  if (!text || !text.trim()) return res.status(400).json({ error: "Update text is required." });
+
+  const trimmed = text.trim().slice(0, 500);
+  const users = db.prepare("SELECT id FROM users").all();
+  users.forEach(u => notify(u.id, trimmed, "update"));
+
+  logAudit(req.userId, "update.broadcast", null, null, `Broadcast update to ${users.length} user(s): ${trimmed}`);
+
+  res.json({ message: `Update sent to ${users.length} user(s).` });
+});
+
+// POST /api/admin/run-payment-reminders — manually trigger the daily payment-reminder
+// job (see scripts/payment-reminders.js). Useful for testing, and as a target an
+// external cron/uptime pinger can hit if you don't set up a native cron on the host —
+// the internal setInterval scheduler in server.js only runs while the machine is awake,
+// and fly.toml here has auto_stop_machines enabled.
+router.post("/run-payment-reminders", async (req, res) => {
+  try {
+    const result = await runPaymentReminders();
+    res.json({ message: "Payment reminders job completed.", ...result });
+  } catch (err) {
+    console.error("Manual payment reminders run failed:", err);
+    res.status(500).json({ error: "Job failed — check server logs." });
+  }
+});
 
 router.get("/test", (req, res) => {
   res.json({

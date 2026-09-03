@@ -5,11 +5,20 @@ const { requireAuth } = require("../middleware/auth");
 const router = express.Router();
 router.use(requireAuth);
 
-// GET /api/notifications — the logged-in user's own notifications, newest first
+// GET /api/notifications — the logged-in user's own notifications, newest first.
+// Pass ?groupId=123 to scope this down to just one group's notifications (used by
+// group.html, which previously showed the user's whole feed instead of this group's).
 router.get("/", (req, res) => {
-  const notifications = db
-    .prepare("SELECT id, text, type, link, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 100")
-    .all(req.userId);
+  const { groupId } = req.query;
+
+  const notifications = groupId
+    ? db.prepare(
+        "SELECT id, text, type, link, read, created_at FROM notifications WHERE user_id = ? AND group_id = ? ORDER BY created_at DESC LIMIT 100"
+      ).all(req.userId, groupId)
+    : db.prepare(
+        "SELECT id, text, type, link, read, created_at FROM notifications WHERE user_id = ? ORDER BY created_at DESC LIMIT 100"
+      ).all(req.userId);
+
   res.json({ notifications });
 });
 

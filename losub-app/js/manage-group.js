@@ -23,6 +23,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   let members = [];
   let invites = [];
   let pendingRemoveId = null;
+  let myUserFullname = null;
 
   // ---------- Summary card ----------
   function renderSummary() {
@@ -62,7 +63,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="seat-card__body">
           <div class="seat-card__name">${m.fullname}</div>
           <div class="seat-card__meta">Joined ${new Date(m.joined_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} · ${m.email}</div>
-          <span class="seat-card__status seat-card__status--active">${m.payment_status === "paid" ? "Active" : m.payment_status}</span>
+          <span class="seat-card__status seat-card__status--active">${{ paid: "Active", overdue: "Overdue", pending: "Pending" }[m.payment_status] || m.payment_status}</span>
         </div>
         ${m.role === "manager" ? "" : `<button type="button" class="seat-card__remove" data-id="${m.user_id}">Remove</button>`}
       </div>
@@ -156,6 +157,120 @@ document.addEventListener("DOMContentLoaded", async () => {
     clearTimeout(toastTimer);
     toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
   }
+
+  // ---------- Message your group (manager <-> members) ----------
+  async function loadGroupMessages() {
+    const thread = document.getElementById("groupMsgThread");
+    const empty = document.getElementById("groupMsgEmpty");
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/messages/group/${groupId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const messages = data.messages || [];
+
+      if (!messages.length) {
+        thread.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+      thread.hidden = false;
+      empty.hidden = true;
+      thread.innerHTML = messages.map(m => `
+        <div class="mw-msg ${m.sender_name === myUserFullname ? 'mw-msg--mine' : 'mw-msg--theirs'}">
+          <span class="mw-msg__meta">${m.sender_name} · ${m.sender_role}</span>
+          ${m.text}
+        </div>
+      `).join("");
+      thread.scrollTop = thread.scrollHeight;
+    } catch {
+      thread.hidden = true;
+      empty.hidden = false;
+    }
+  }
+
+  document.getElementById("groupMsgForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById("groupMsgInput");
+    const btn = document.getElementById("groupMsgSend");
+    const text = input.value.trim();
+    if (!text) return;
+
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/messages/group/${groupId}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        input.value = "";
+        loadGroupMessages();
+      } else {
+        showToast("Couldn't send that message.");
+      }
+    } catch {
+      showToast("Network error — try again.");
+    }
+    btn.disabled = false;
+  });
+
+  // ---------- Messages from Losub (manager <-> admin/owner) ----------
+  async function loadAdminMessages() {
+    const thread = document.getElementById("adminMsgThread");
+    const empty = document.getElementById("adminMsgEmpty");
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/messages/manager`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+      const messages = data.messages || [];
+
+      if (!messages.length) {
+        thread.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+      thread.hidden = false;
+      empty.hidden = true;
+      thread.innerHTML = messages.map(m => `
+        <div class="mw-msg ${m.sender_role === 'manager' ? 'mw-msg--mine' : 'mw-msg--theirs'}">
+          <span class="mw-msg__meta">${m.sender_role === "manager" ? "You" : `${m.sender_name} · Losub ${m.sender_role}`}</span>
+          ${m.text}
+        </div>
+      `).join("");
+      thread.scrollTop = thread.scrollHeight;
+    } catch {
+      thread.hidden = true;
+      empty.hidden = false;
+    }
+  }
+
+  document.getElementById("adminMsgForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const input = document.getElementById("adminMsgInput");
+    const btn = document.getElementById("adminMsgSend");
+    const text = input.value.trim();
+    if (!text) return;
+
+    btn.disabled = true;
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/messages/manager`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ text }),
+      });
+      if (res.ok) {
+        input.value = "";
+        loadAdminMessages();
+      } else {
+        showToast("Couldn't send that message.");
+      }
+    } catch {
+      showToast("Network error — try again.");
+    }
+    btn.disabled = false;
+  });
 
   // ---------- Invite modal — real link to Browse plans, no fake email sending ----------
   const inviteOverlay = document.getElementById("inviteModalOverlay");
@@ -315,6 +430,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------- Initial load ----------
   async function loadGroup() {
     try {
+      try {
+        const meRes = await fetch(`${API_ORIGIN}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
+        const meData = await meRes.json();
+        myUserFullname = meData.user?.fullname || null;
+      } catch {
+        myUserFullname = null;
+      }
+
       const [groupRes, membersRes] = await Promise.all([
         fetch(`${API_ORIGIN}/api/groups/${groupId}`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
         fetch(`${API_ORIGIN}/api/groups/${groupId}/members`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
@@ -338,6 +461,8 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderSummary();
       renderSeats();
       renderAccessLink();
+      loadGroupMessages();
+      loadAdminMessages();
     } catch (err) {
       showToast("Couldn't load this group. Refresh to try again.");
     }

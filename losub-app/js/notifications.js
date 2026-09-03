@@ -8,8 +8,14 @@ document.addEventListener("DOMContentLoaded", () => {
     return;
   }
 
-  const ICON_MAP = { wallet: "💳", group: "👥", group_link: "🔗", general: "🔔" };
-  const LABEL_MAP = { wallet: "Wallet", group: "Group", group_link: "Access link", general: "Losub" };
+  const ICON_MAP = {
+    wallet: "💳", group: "👥", group_link: "🔗", general: "🔔",
+    group_invite: "✉️", payment: "✅", payment_reminder: "⏰", message: "💬", update: "📢",
+  };
+  const LABEL_MAP = {
+    wallet: "Wallet", group: "Group", group_link: "Access link", general: "Losub",
+    group_invite: "Invite", payment: "Payment", payment_reminder: "Payment due", message: "Message", update: "Update",
+  };
 
   function timeAgo(isoString) {
     const diffMs = Date.now() - new Date(isoString + "Z").getTime();

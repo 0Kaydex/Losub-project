@@ -6,6 +6,16 @@ const { notify } = require("../utils/notify");
 const router = express.Router();
 router.use(requireAuth);
 
+// Every seat's billing cycle is a flat 28 days from the date it was last paid for —
+// not "monthly" (which drifts across 28/30/31-day months). Used at initial join/invite
+// -accept/manager-creation, and again every time a seat is renewed via POST /:id/pay.
+const CYCLE_DAYS = 28;
+function nextCycleDate(from = new Date()) {
+  const d = new Date(from);
+  d.setDate(d.getDate() + CYCLE_DAYS);
+  return d.toISOString().slice(0, 10); // YYYY-MM-DD, matches what the frontend already renders
+}
+
 // Shared helper — shape a raw group+plan row into what the frontend expects
 function formatGroup(row, userRoleInGroup, extra = {}) {
   return {
@@ -134,7 +144,7 @@ router.put("/:id/access-link", (req, res) => {
   const members = db.prepare(
     "SELECT user_id FROM group_members WHERE group_id = ? AND user_id != ?"
   ).all(req.params.id, req.userId);
-  members.forEach(m => notify(m.user_id, "Your group manager shared/updated the account access link.", "group_link"));
+  members.forEach(m => notify(m.user_id, "Your group manager shared/updated the account access link.", "group_link", null, Number(req.params.id)));
 
   res.json({ message: "Access link sent to the group.", accessLink: trimmedLink });
 });
@@ -219,7 +229,7 @@ router.post("/:id/invite", (req, res) => {
   }
 
   if (invitedUser) {
-    notify(invitedUser.id, `You were invited to join a ${plan.name} group. Check your invites to accept.`, "group_invite");
+    notify(invitedUser.id, `You were invited to join a ${plan.name} group. Check your invites to accept.`, "group_invite", null, Number(groupId));
   }
 
   res.json({
@@ -318,12 +328,14 @@ router.post("/invites/:inviteId/accept", (req, res) => {
 
   const plan = db.prepare("SELECT p.name FROM plans p JOIN groups g ON g.plan_id = p.id WHERE g.id = ?").get(invite.group_id);
 
+  const nextPaymentDate = nextCycleDate();
+
   try {
     db.exec("BEGIN");
     db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(invite.price_per_seat, req.userId);
     db.prepare(
-      "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
-    ).run(invite.group_id, req.userId);
+      "INSERT INTO group_members (group_id, user_id, role, payment_status, next_payment_date) VALUES (?, ?, 'member', 'paid', ?)"
+    ).run(invite.group_id, req.userId, nextPaymentDate);
     db.prepare(
       "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
     ).run(req.userId, `${plan.name} seat payment (invite accepted)`, -invite.price_per_seat);
@@ -335,8 +347,8 @@ router.post("/invites/:inviteId/accept", (req, res) => {
     return res.status(409).json({ error: "Couldn't complete that — try again. Your wallet was not charged." });
   }
 
-  notify(req.userId, `You joined the ${plan.name} group.`, "group");
-  notify(invite.manager_id, `${me.email} accepted your invite to the ${plan.name} group.`, "group");
+  notify(req.userId, `You joined the ${plan.name} group. Your next payment is due ${nextPaymentDate}.`, "group", null, Number(invite.group_id));
+  notify(invite.manager_id, `${me.email} accepted your invite to the ${plan.name} group.`, "group", null, Number(invite.group_id));
 
   res.json({ message: `You joined the ${plan.name} group.` });
 });
@@ -369,7 +381,7 @@ router.delete("/:id/members/:userId", (req, res) => {
   if (result.changes === 0) return res.status(404).json({ error: "That member isn't in this group." });
 
   res.json({ message: "Member removed." });
-  notify(req.params.userId, "You were removed from a group.", "group");
+  notify(req.params.userId, "You were removed from a group.", "group", null, Number(req.params.id));
 });
 
 // POST /api/groups/:id/leave — a member leaves (managers can't leave their own group yet)
@@ -451,6 +463,7 @@ router.post("/", (req, res) => {
   // wrapping in BEGIN/COMMIT with a rollback on any failure gives us that atomicity; nothing
   // is deducted unless the group and membership rows both land.
   let groupId;
+  const nextPaymentDate = nextCycleDate();
   try {
     db.exec("BEGIN");
 
@@ -462,8 +475,8 @@ router.post("/", (req, res) => {
     // Manager takes the first seat, and pays for it — matches "Losub handles all billing;
     // you never collect payments" from the offer terms: managers pay in the same way members do.
     db.prepare(
-      "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'manager', 'paid')"
-    ).run(groupId, req.userId);
+      "INSERT INTO group_members (group_id, user_id, role, payment_status, next_payment_date) VALUES (?, ?, 'manager', 'paid', ?)"
+    ).run(groupId, req.userId, nextPaymentDate);
 
     db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(priceKobo, req.userId);
     db.prepare(
@@ -477,7 +490,7 @@ router.post("/", (req, res) => {
     return res.status(500).json({ error: "Couldn't create the group. Your wallet was not charged. Please try again." });
   }
 
-  notify(req.userId, `You're now the account manager for ${plan.name}.`, "group");
+  notify(req.userId, `You're now the account manager for ${plan.name}. Your next payment is due ${nextPaymentDate}.`, "group", null, Number(groupId));
 
   // Return the fully-formed group (shaped like GET /api/groups/mine's rows) plus the new
   // balance, so the frontend can drop it straight into the dashboard's in-memory state
@@ -530,6 +543,7 @@ router.post("/:id/join", (req, res) => {
   }
 
   const plan = db.prepare("SELECT name FROM plans WHERE id = ?").get(group.plan_id);
+  const nextPaymentDate = nextCycleDate();
 
   // Deduct + join + log transaction together, wrapped in a real transaction. Without an
   // explicit BEGIN/COMMIT, node:sqlite auto-commits each statement individually — so if the
@@ -541,8 +555,8 @@ router.post("/:id/join", (req, res) => {
     db.exec("BEGIN");
     db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(group.price_per_seat, req.userId);
     db.prepare(
-      "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
-    ).run(groupId, req.userId);
+      "INSERT INTO group_members (group_id, user_id, role, payment_status, next_payment_date) VALUES (?, ?, 'member', 'paid', ?)"
+    ).run(groupId, req.userId, nextPaymentDate);
     db.prepare(
       "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
     ).run(req.userId, `${plan.name} seat payment`, -group.price_per_seat);
@@ -554,11 +568,66 @@ router.post("/:id/join", (req, res) => {
     return res.status(409).json({ error: "That seat was just taken — try another group. Your wallet was not charged." });
   }
 
-  notify(req.userId, `You joined the ${plan.name} group.`, "group");
-  notify(group.manager_id, `Someone joined your ${plan.name} group.`, "group");
+  notify(req.userId, `You joined the ${plan.name} group. Your next payment is due ${nextPaymentDate}.`, "group", null, Number(groupId));
+  notify(group.manager_id, `Someone joined your ${plan.name} group.`, "group", null, Number(groupId));
 
   res.json({ message: `You joined the ${plan.name} group.` });
 
+});
+
+// POST /api/groups/:id/pay — renew the caller's own seat for another 28-day cycle: charges
+// the same price they normally pay for this group (member = full price_per_seat, manager =
+// 50% of it) from their wallet, moves payment_status back to 'paid', and pushes
+// next_payment_date another 28 days out from today. This is what the "time to pay" reminder
+// notifications/emails point members and managers at.
+router.post("/:id/pay", (req, res) => {
+  const groupId = req.params.id;
+
+  const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(groupId);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+
+  const membership = db.prepare(
+    "SELECT role, payment_status, next_payment_date FROM group_members WHERE group_id = ? AND user_id = ?"
+  ).get(groupId, req.userId);
+  if (!membership) return res.status(403).json({ error: "You're not part of this group." });
+
+  const priceKobo = membership.role === "manager"
+    ? Math.round(group.price_per_seat / 2)
+    : group.price_per_seat;
+
+  const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  if (user.wallet_balance < priceKobo) {
+    return res.status(400).json({ error: "Insufficient wallet balance. Fund your wallet first." });
+  }
+
+  const plan = db.prepare("SELECT name FROM plans WHERE id = ?").get(group.plan_id);
+  const newNextPaymentDate = nextCycleDate();
+
+  try {
+    db.exec("BEGIN");
+    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(priceKobo, req.userId);
+    db.prepare(
+      "UPDATE group_members SET payment_status = 'paid', next_payment_date = ?, last_reminder_sent_at = NULL WHERE group_id = ? AND user_id = ?"
+    ).run(newNextPaymentDate, groupId, req.userId);
+    db.prepare(
+      "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
+    ).run(req.userId, `${plan.name} seat renewal`, -priceKobo);
+    db.exec("COMMIT");
+  } catch (txErr) {
+    db.exec("ROLLBACK");
+    console.error("Seat renewal failed, rolled back (nothing was deducted):", txErr);
+    return res.status(500).json({ error: "Couldn't complete the payment. Your wallet was not charged. Try again." });
+  }
+
+  notify(req.userId, `Payment received for ${plan.name}. Your next payment is due ${newNextPaymentDate}.`, "payment", null, Number(groupId));
+
+  const updatedUser = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  res.json({
+    message: "Payment successful.",
+    paymentStatus: "paid",
+    nextPaymentDate: newNextPaymentDate,
+    balance: updatedUser.wallet_balance / 100,
+  });
 });
 
 module.exports = router;

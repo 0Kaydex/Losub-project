@@ -192,6 +192,55 @@ db.exec(`
   );
 `);
 
+// notifications.group_id: lets a notification be scoped to a specific group (invite,
+// access-link update, payment reminder, group message, etc.) so the group page can show
+// only notifications relevant to *that* group instead of the user's entire feed.
+const notificationMigrations = [
+  "ALTER TABLE notifications ADD COLUMN group_id INTEGER",
+];
+for (const sql of notificationMigrations) {
+  try {
+    db.exec(sql);
+  } catch (err) {
+    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
+  }
+}
+
+// group_members.last_reminder_sent_at: the daily payment-reminder job (see
+// scripts/payment-reminders.js) uses this to avoid re-notifying/re-emailing the same
+// member more than once per day as it re-scans every group_members row.
+const groupMemberMigrations = [
+  "ALTER TABLE group_members ADD COLUMN last_reminder_sent_at TEXT",
+];
+for (const sql of groupMemberMigrations) {
+  try {
+    db.exec(sql);
+  } catch (err) {
+    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
+  }
+}
+
+// messages: powers two different chains of communication that were previously missing
+// entirely:
+//   - thread_type = 'group'         → manager <-> members of one specific group
+//   - thread_type = 'manager_admin' → one manager <-> admins/owner (manager_id identifies
+//                                      whose thread it is, regardless of who's posting)
+db.exec(`
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_type TEXT NOT NULL,       -- 'group' | 'manager_admin'
+    group_id INTEGER,                -- set when thread_type = 'group'
+    manager_id INTEGER,              -- set when thread_type = 'manager_admin'
+    sender_id INTEGER NOT NULL,
+    sender_role TEXT NOT NULL,       -- 'manager' | 'member' | 'admin' | 'owner'
+    text TEXT NOT NULL,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (sender_id) REFERENCES users(id)
+  );
+`);
+db.exec("CREATE INDEX IF NOT EXISTS idx_messages_group ON messages(group_id, created_at)");
+db.exec("CREATE INDEX IF NOT EXISTS idx_messages_manager ON messages(manager_id, created_at)");
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS audit_log (
     id INTEGER PRIMARY KEY AUTOINCREMENT,

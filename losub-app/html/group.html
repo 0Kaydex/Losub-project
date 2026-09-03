@@ -8,6 +8,7 @@
   <link rel="stylesheet" href="../css/app-shell.css" />
   <link rel="stylesheet" href="../css/shared.css" />
   <link rel="stylesheet" href="../css/group.css" />
+  <link rel="stylesheet" href="../css/messaging-widget.css" />
 </head>
 
 <body class="app-shell-page">
@@ -44,6 +45,7 @@
               <span>You pay</span>
               <span id="yourPrice">—</span>
             </div>
+            <button type="button" class="pay-now-btn" id="payNowBtn" hidden>Pay now</button>
           </section>
 
           <section class="panel">
@@ -72,6 +74,17 @@
             <div class="section-header"><h2>Recent notifications</h2></div>
             <ul class="notif-list" id="groupNotifList"></ul>
             <p class="empty-state" id="groupNotifEmpty" hidden>No notifications for this group yet.</p>
+          </section>
+
+          <section class="panel">
+            <div class="section-header"><h2>Group messages</h2></div>
+            <p class="manager-note">Message your group manager, or see announcements they've posted here.</p>
+            <div class="mw-thread" id="groupMsgThread"></div>
+            <p class="mw-empty" id="groupMsgEmpty" hidden>No messages yet.</p>
+            <form class="mw-composer" id="groupMsgForm">
+              <input type="text" id="groupMsgInput" placeholder="Write a message…" maxlength="2000" required />
+              <button type="submit" id="groupMsgSend">Send</button>
+            </form>
           </section>
         </div>
 
