@@ -57,6 +57,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const soloPriceInput = document.getElementById("planSoloPrice");
   const pricePerSeatInput = document.getElementById("planPricePerSeat");
   const groupPriceInput = document.getElementById("planGroupPrice");
+  const maxSeatsInput = document.getElementById("planMaxSeats");
   const logoInput = document.getElementById("planLogo");
   const colorInput = document.getElementById("planColor");
 
@@ -78,6 +79,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     soloPriceInput.value = plan.solo_price;
     pricePerSeatInput.value = plan.price_per_seat ?? "";
     groupPriceInput.value = plan.group_price ?? "";
+    maxSeatsInput.value = plan.max_seats ?? 4;
     logoInput.value = plan.logo || "";
     colorInput.value = plan.color || "";
 
@@ -117,6 +119,7 @@ document.addEventListener("DOMContentLoaded", async () => {
               Solo ₦${p.solo_price.toLocaleString()}/mo
               ${p.price_per_seat != null ? ` · Per seat ₦${p.price_per_seat.toLocaleString()}/mo (manager pays ₦${Math.round(p.price_per_seat / 2).toLocaleString()})` : " · No per-seat price set yet"}
               ${p.group_price != null ? ` · Group cost ₦${p.group_price.toLocaleString()}/mo` : ""}
+              · Max ${p.max_seats || 4} members
             </div>
           </div>
           <div class="owner-plan-row-actions">
@@ -148,6 +151,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     const solo_price = Number(soloPriceInput.value);
     const price_per_seat = Number(pricePerSeatInput.value);
     const group_price = groupPriceInput.value ? Number(groupPriceInput.value) : null;
+    const max_seats = Number(maxSeatsInput.value);
     const logo = logoInput.value.trim() || null;
     const color = colorInput.value.trim() || null;
 
@@ -157,6 +161,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
     if (!price_per_seat || price_per_seat <= 0) {
       showMessage("Enter a valid price per seat — this is what each member actually pays.");
+      return;
+    }
+    if (!max_seats || max_seats < 2 || max_seats > 20) {
+      showMessage("Max members per group must be between 2 and 20.");
       return;
     }
 
@@ -171,7 +179,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name, solo_price, price_per_seat, group_price, logo, color }),
+        body: JSON.stringify({ name, solo_price, price_per_seat, group_price, max_seats, logo, color }),
       });
       const data = await res.json();
 

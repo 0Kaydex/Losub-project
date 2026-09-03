@@ -145,16 +145,11 @@
         As manager, you pay <strong id="modalManagerPrice">—</strong>/mo — 50% off the regular
         <span id="modalMemberPrice">—</span>/mo seat price. You'll be charged when you confirm below.
       </p>
+      <p class="modal__sub" id="modalSeatInfo">This plan holds up to — members in total, set by the site owner.</p>
 
-      <label class="auth-field">
-        <span>How many seats (including yours)?</span>
-        <div class="seat-count-picker" id="seatCountPicker">
-          <button type="button" class="seat-count-picker__btn" data-seats="2">2</button>
-          <button type="button" class="seat-count-picker__btn" data-seats="3">3</button>
-          <button type="button" class="seat-count-picker__btn is-active" data-seats="4">4</button>
-          <button type="button" class="seat-count-picker__btn" data-seats="5">5</button>
-          <button type="button" class="seat-count-picker__btn" data-seats="6">6</button>
-        </div>
+      <label class="auth-field auth-field--checkbox">
+        <input type="checkbox" id="modalPrivateGroup" />
+        <span>Invite-only — only people I invite can join. (Otherwise, anyone can find and join this group from Browse plans.)</span>
       </label>
 
       <ul class="modal__terms">

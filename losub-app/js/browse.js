@@ -177,7 +177,15 @@
   function openManagerModal(plan) {
     activePlan = plan;
     document.getElementById("modalPlanName").textContent = plan.name;
-    document.getElementById("modalManagerPrice").textContent = fmt(Math.round(plan.solo_price / 4));
+    // Manager pays 50% of the plan's configured price_per_seat — matches exactly what the
+    // backend charges in POST /api/groups. (This used to show solo_price / 4, which is why
+    // the modal — and the group afterward — displayed the original solo price instead of
+    // whatever the site owner actually configured for this plan.)
+    const managerPrice = plan.price_per_seat ? Math.round(plan.price_per_seat / 2) : Math.round(plan.solo_price / 4);
+    document.getElementById("modalManagerPrice").textContent = fmt(managerPrice);
+    document.getElementById("modalMemberPrice").textContent = plan.price_per_seat ? fmt(plan.price_per_seat) : fmt(Math.round(plan.solo_price / 2));
+    document.getElementById("modalSeatInfo").textContent = `This plan holds up to ${plan.max_seats || 4} members in total, set by the site owner.`;
+    document.getElementById("modalPrivateGroup").checked = false;
     document.getElementById("managerModalOverlay").hidden = false;
   }
 
@@ -205,7 +213,10 @@
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ plan_id: activePlan.id }),
+        body: JSON.stringify({
+          plan_id: activePlan.id,
+          is_private: document.getElementById("modalPrivateGroup").checked,
+        }),
       });
       const data = await res.json();
 

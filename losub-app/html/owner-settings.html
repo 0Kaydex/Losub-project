@@ -79,6 +79,10 @@
               <input type="number" id="planGroupPrice" placeholder="e.g. 2500" min="1" />
             </label>
             <label class="auth-field">
+              <span>Max members per group <span class="owner-plan-optional">— how many seats a group for this plan has in total (including the manager). e.g. Netflix = 4, YouTube Premium family = 6.</span></span>
+              <input type="number" id="planMaxSeats" placeholder="e.g. 4" min="2" max="20" required />
+            </label>
+            <label class="auth-field">
               <span>Logo URL <span class="owner-plan-optional">(optional)</span></span>
               <input type="text" id="planLogo" placeholder="https://cdn.simpleicons.org/spotify/1DB954" />
             </label>

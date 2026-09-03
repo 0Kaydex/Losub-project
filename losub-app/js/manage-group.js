@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   let group = null;
   let members = [];
+  let invites = [];
   let pendingRemoveId = null;
 
   // ---------- Summary card ----------
@@ -52,7 +53,8 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------- Seat grid ----------
   function renderSeats() {
     const grid = document.getElementById("seatGrid");
-    const emptySeats = group.seatsTotal - members.length;
+    // Pending invites hold a seat too, so an already-invited seat isn't shown as fully empty.
+    const openSeats = group.seatsTotal - members.length - invites.length;
 
     let html = members.map(m => `
       <div class="seat-card">
@@ -66,12 +68,24 @@ document.addEventListener("DOMContentLoaded", async () => {
       </div>
     `).join("");
 
-    for (let i = 0; i < emptySeats; i++) {
+    html += invites.map(inv => `
+      <div class="seat-card seat-card--pending">
+        <span class="seat-card__avatar">✉️</span>
+        <div class="seat-card__body">
+          <div class="seat-card__name">${inv.email}</div>
+          <div class="seat-card__meta">Invited ${new Date(inv.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</div>
+          <span class="seat-card__status seat-card__status--pending">Invite pending</span>
+        </div>
+        <button type="button" class="seat-card__revoke" data-revoke-id="${inv.id}">Revoke</button>
+      </div>
+    `).join("");
+
+    for (let i = 0; i < openSeats; i++) {
       html += `
         <div class="seat-card seat-card--empty">
           <div class="seat-card__body">
             <div class="seat-card__name">Empty seat</div>
-            <button type="button" class="seat-card__invite-btn" id="openInviteBtn">Share invite link</button>
+            <button type="button" class="seat-card__invite-btn" id="openInviteBtn">Invite someone</button>
           </div>
         </div>
       `;
@@ -158,10 +172,79 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target.id === "inviteModalOverlay") closeInviteModal();
   });
 
-  // The invite "form" now just copies a real, working link to Browse plans —
-  // there's no email/SMS invite system built yet, so we don't fake one.
+  // Real invite-by-email — the manager picks exactly who can take the seat.
   const inviteForm = document.getElementById("inviteForm");
-  if (inviteForm) inviteForm.hidden = true;
+  const inviteInput = document.getElementById("inviteInput");
+  const inviteError = document.getElementById("inviteError");
+
+  inviteForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = inviteInput.value.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      inviteError.hidden = false;
+      return;
+    }
+    inviteError.hidden = true;
+
+    const btn = document.getElementById("inviteSubmitBtn");
+    btn.disabled = true;
+    btn.textContent = "Sending…";
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/invite`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        inviteError.textContent = data.error || "Couldn't send that invite.";
+        inviteError.hidden = false;
+      } else {
+        closeInviteModal();
+        inviteForm.reset();
+        showToast(data.message || "Invite sent.");
+        loadGroup();
+      }
+    } catch {
+      inviteError.textContent = "Network error — try again.";
+      inviteError.hidden = false;
+    }
+
+    btn.disabled = false;
+    btn.textContent = "Send invite";
+  });
+
+  // ---------- Revoke a pending invite ----------
+  document.getElementById("seatGrid").addEventListener("click", async (e) => {
+    const revokeBtn = e.target.closest("[data-revoke-id]");
+    if (!revokeBtn) return;
+    revokeBtn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/invites/${revokeBtn.dataset.revokeId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "Couldn't revoke that invite.");
+        revokeBtn.disabled = false;
+        return;
+      }
+      invites = invites.filter(i => String(i.id) !== revokeBtn.dataset.revokeId);
+      renderSeats();
+      showToast("Invite revoked.");
+    } catch {
+      showToast("Network error — try again.");
+      revokeBtn.disabled = false;
+    }
+  });
 
   document.getElementById("copyInviteLink").addEventListener("click", () => {
     const link = `${window.location.origin}/html/browse.html`;
@@ -250,6 +333,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       group = await groupRes.json();
       const membersData = await membersRes.json();
       members = membersData.members || [];
+      invites = membersData.invites || [];
 
       renderSummary();
       renderSeats();

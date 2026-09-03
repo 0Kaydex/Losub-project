@@ -77,18 +77,18 @@
     <div class="modal">
       <button type="button" class="modal__close" id="inviteModalClose" aria-label="Close">&times;</button>
       <h2>Invite a member</h2>
-      <p class="modal__sub">Send an invite to fill this seat. They'll get a link to join and pay their share.</p>
+      <p class="modal__sub">Invite a specific person by email to fill this seat — only they'll be able to accept it. They'll get a notification and can accept from their dashboard.</p>
 
       <form id="inviteForm">
         <label class="mg-field">
-          <span class="mg-field__label">Email or phone number</span>
-          <input type="text" id="inviteInput" placeholder="e.g. jane@email.com" required />
+          <span class="mg-field__label">Email address</span>
+          <input type="email" id="inviteInput" placeholder="e.g. jane@email.com" required />
         </label>
-        <p class="mg-field__error" id="inviteError" hidden>Please enter a valid email or phone number.</p>
+        <p class="mg-field__error" id="inviteError" hidden>Please enter a valid email address.</p>
 
         <div class="modal__actions">
-          <button type="submit" class="auth-submit">Send invite</button>
-          <button type="button" class="link-btn" id="copyInviteLink">Or copy invite link instead</button>
+          <button type="submit" class="auth-submit" id="inviteSubmitBtn">Send invite</button>
+          <button type="button" class="link-btn" id="copyInviteLink">Or copy public invite link instead</button>
         </div>
       </form>
     </div>

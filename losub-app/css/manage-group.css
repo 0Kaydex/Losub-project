@@ -238,6 +238,27 @@
 }
 .seat-card__invite-btn:hover { background: var(--chip-blue); }
 
+/* Pending invite placeholder — same shape as a filled seat, but visually "in progress" */
+.seat-card--pending {
+  border: 2px dashed var(--line);
+  background: #FFFBEF;
+}
+
+.seat-card__revoke {
+  border: none;
+  background: none;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+  padding: 6px 10px;
+  border-radius: var(--r-pill);
+}
+.seat-card__revoke:hover {
+  background: #FDECEA;
+  color: #C0392B;
+}
+
 /* ---------- Invite form ---------- */
 .mg-field {
   display: block;

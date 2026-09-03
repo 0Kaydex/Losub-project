@@ -151,12 +151,29 @@ function makeRequestId() {
   return Date.now() + Math.floor(Math.random() * 100000);
 }
 
+/*
+ * GSUBZ's own docs show the top-level `code` as a bare 200 in one example
+ * and their error-code table lists it as the string '200' in another —
+ * their API is inconsistent (sometimes int, sometimes numeric string)
+ * about what type `code`/`content.code` come back as. The old version of
+ * this check used strict `===` against a number, so a real success
+ * response like `{ code: "200", status: "TRANSACTION_SUCCESSFUL" }` could
+ * fail the check even though the purchase genuinely succeeded — that's
+ * the "works but shows a red error" bug. This version normalizes types
+ * and casing before comparing so it can't be fooled by that.
+ */
 function isSuccess(data) {
+  const topCode = String(data?.code ?? "").trim();
+  const topStatus = String(data?.status ?? "").trim().toUpperCase();
+  const innerCode = String(data?.content?.code ?? "").trim();
+  const innerStatus = String(data?.content?.status ?? "").trim().toUpperCase();
+
   return (
-    data?.code === 200 ||
-    data?.status === "TRANSACTION_SUCCESSFUL" ||
-    data?.content?.code === "000" ||
-    data?.content?.status === "TRANSACTION_SUCCESSFUL"
+    topCode === "200" ||
+    topStatus === "TRANSACTION_SUCCESSFUL" ||
+    innerCode === "000" ||
+    innerCode === "200" ||
+    innerStatus === "TRANSACTION_SUCCESSFUL"
   );
 }
 

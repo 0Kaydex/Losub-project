@@ -49,7 +49,9 @@ router.get("/mine", (req, res) => {
   res.json({ groups });
 });
 
-// GET /api/groups/browse — open groups with free seats, excluding ones you're already in
+// GET /api/groups/browse — open PUBLIC groups with free seats, excluding ones you're
+// already in. Private (invite-only) groups never show up here — those only get filled
+// through the manager sending a direct invite (see POST /:id/invite below).
 router.get("/browse", (req, res) => {
  const rows = db.prepare(`
     SELECT
@@ -61,6 +63,7 @@ router.get("/browse", (req, res) => {
     JOIN plans p ON p.id = g.plan_id
     JOIN users m ON m.id = g.manager_id
     WHERE g.status = 'active'
+      AND g.is_private = 0
       AND g.id NOT IN (SELECT group_id FROM group_members WHERE user_id = ?)
     ORDER BY g.created_at DESC
   `).all(req.userId);
@@ -136,7 +139,8 @@ router.put("/:id/access-link", (req, res) => {
   res.json({ message: "Access link sent to the group.", accessLink: trimmedLink });
 });
 
-// GET /api/groups/:id/members — manager-only roster
+// GET /api/groups/:id/members — manager-only roster (also includes pending invites, so
+// the manager can see who they've already invited alongside seated members)
 router.get("/:id/members", (req, res) => {
   const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
   if (!group) return res.status(404).json({ error: "Group not found." });
@@ -152,7 +156,202 @@ router.get("/:id/members", (req, res) => {
     ORDER BY gm.joined_at
   `).all(req.params.id);
 
-  res.json({ members });
+  const invites = db.prepare(`
+    SELECT id, email, status, created_at
+    FROM group_invites
+    WHERE group_id = ? AND status = 'pending'
+    ORDER BY created_at
+  `).all(req.params.id);
+
+  res.json({ members, invites });
+});
+
+// POST /api/groups/:id/invite — manager picks a specific person (by email) to fill an
+// open seat, instead of the seat being grabbed by whoever finds it on the public browse
+// page first. If that email already has a Losub account, they get a notification right
+// away; either way it shows up next time they check their pending invites.
+router.post("/:id/invite", (req, res) => {
+  const groupId = req.params.id;
+  const { email } = req.body;
+
+  if (!email || !String(email).trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email).trim())) {
+    return res.status(400).json({ error: "Enter a valid email address." });
+  }
+  const normalizedEmail = String(email).trim().toLowerCase();
+
+  const group = db.prepare("SELECT * FROM groups WHERE id = ?").get(groupId);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id !== req.userId) {
+    return res.status(403).json({ error: "Only the group manager can invite members." });
+  }
+  if (group.status !== "active") {
+    return res.status(400).json({ error: "This group isn't active." });
+  }
+
+  const seatsFilled = db.prepare("SELECT COUNT(*) AS n FROM group_members WHERE group_id = ?").get(groupId).n;
+  const pendingInvites = db.prepare("SELECT COUNT(*) AS n FROM group_invites WHERE group_id = ? AND status = 'pending'").get(groupId).n;
+  if (seatsFilled + pendingInvites >= group.seats_total) {
+    return res.status(400).json({ error: "No open seats left to invite anyone into (including seats already held by pending invites)." });
+  }
+
+  const invitedUser = db.prepare("SELECT id, fullname FROM users WHERE lower(email) = ?").get(normalizedEmail);
+  if (invitedUser) {
+    const alreadyMember = db.prepare("SELECT id FROM group_members WHERE group_id = ? AND user_id = ?").get(groupId, invitedUser.id);
+    if (alreadyMember) {
+      return res.status(400).json({ error: "That person is already in this group." });
+    }
+  }
+
+  const plan = db.prepare("SELECT name FROM plans WHERE id = ?").get(group.plan_id);
+
+  let inviteId;
+  try {
+    const result = db.prepare(
+      "INSERT INTO group_invites (group_id, email, invited_user_id, invited_by, status) VALUES (?, ?, ?, ?, 'pending')"
+    ).run(groupId, normalizedEmail, invitedUser ? invitedUser.id : null, req.userId);
+    inviteId = result.lastInsertRowid;
+  } catch (err) {
+    if (/UNIQUE constraint failed/i.test(err.message || "")) {
+      return res.status(400).json({ error: "There's already a pending invite out to that email for this group." });
+    }
+    console.error("Invite creation failed:", err);
+    return res.status(500).json({ error: "Couldn't send the invite. Try again." });
+  }
+
+  if (invitedUser) {
+    notify(invitedUser.id, `You were invited to join a ${plan.name} group. Check your invites to accept.`, "group_invite");
+  }
+
+  res.json({
+    message: invitedUser
+      ? `Invite sent to ${invitedUser.fullname} — they'll see it next time they check their invites.`
+      : `Invite sent to ${normalizedEmail}. They'll see it once they sign up or log in with that email.`,
+    invite: { id: inviteId, email: normalizedEmail, status: "pending" },
+  });
+});
+
+// DELETE /api/groups/:id/invites/:inviteId — manager revokes a pending invite, freeing
+// the seat it was holding for someone else.
+router.delete("/:id/invites/:inviteId", (req, res) => {
+  const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id !== req.userId) {
+    return res.status(403).json({ error: "Only the group manager can revoke invites." });
+  }
+
+  const result = db.prepare(
+    "UPDATE group_invites SET status = 'revoked' WHERE id = ? AND group_id = ? AND status = 'pending'"
+  ).run(req.params.inviteId, req.params.id);
+  if (result.changes === 0) return res.status(404).json({ error: "That invite isn't pending anymore." });
+
+  res.json({ message: "Invite revoked." });
+});
+
+// GET /api/groups/invites/mine — pending invites addressed to the logged-in user's email
+router.get("/invites/mine", (req, res) => {
+  const me = db.prepare("SELECT email FROM users WHERE id = ?").get(req.userId);
+
+  const invites = db.prepare(`
+    SELECT
+      gi.id, gi.group_id, gi.created_at,
+      p.name AS plan_name, p.logo, p.color,
+      g.price_per_seat, g.seats_total,
+      (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled,
+      inviter.fullname AS invited_by_name
+    FROM group_invites gi
+    JOIN groups g ON g.id = gi.group_id
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users inviter ON inviter.id = gi.invited_by
+    WHERE gi.status = 'pending' AND lower(gi.email) = lower(?) AND g.status = 'active'
+    ORDER BY gi.created_at DESC
+  `).all(me.email);
+
+  res.json({
+    invites: invites.map(i => ({
+      id: i.id,
+      groupId: i.group_id,
+      plan: i.plan_name,
+      logo: i.logo,
+      color: i.color,
+      price: i.price_per_seat / 100,
+      seatsFilled: i.seats_filled,
+      seatsTotal: i.seats_total,
+      invitedBy: i.invited_by_name,
+      createdAt: i.created_at,
+    })),
+  });
+});
+
+// POST /api/groups/invites/:inviteId/accept — accept an invite: take the seat and pay for
+// it, same wallet/atomicity rules as a normal join.
+router.post("/invites/:inviteId/accept", (req, res) => {
+  const me = db.prepare("SELECT id, email, wallet_balance FROM users WHERE id = ?").get(req.userId);
+
+  const invite = db.prepare(`
+    SELECT gi.*, g.seats_total, g.price_per_seat, g.status AS group_status, g.manager_id
+    FROM group_invites gi
+    JOIN groups g ON g.id = gi.group_id
+    WHERE gi.id = ?
+  `).get(req.params.inviteId);
+
+  if (!invite || invite.status !== "pending" || String(invite.email).toLowerCase() !== me.email.toLowerCase()) {
+    return res.status(404).json({ error: "That invite isn't available anymore." });
+  }
+  if (invite.group_status !== "active") {
+    return res.status(400).json({ error: "This group isn't active anymore." });
+  }
+
+  const alreadyIn = db.prepare("SELECT id FROM group_members WHERE group_id = ? AND user_id = ?").get(invite.group_id, req.userId);
+  if (alreadyIn) {
+    db.prepare("UPDATE group_invites SET status = 'accepted' WHERE id = ?").run(invite.id);
+    return res.status(400).json({ error: "You're already in this group." });
+  }
+
+  const seatsFilled = db.prepare("SELECT COUNT(*) AS n FROM group_members WHERE group_id = ?").get(invite.group_id).n;
+  if (seatsFilled >= invite.seats_total) {
+    return res.status(400).json({ error: "This group filled up before you accepted." });
+  }
+
+  if (me.wallet_balance < invite.price_per_seat) {
+    return res.status(400).json({ error: "Insufficient wallet balance. Fund your wallet first." });
+  }
+
+  const plan = db.prepare("SELECT p.name FROM plans p JOIN groups g ON g.plan_id = p.id WHERE g.id = ?").get(invite.group_id);
+
+  try {
+    db.exec("BEGIN");
+    db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(invite.price_per_seat, req.userId);
+    db.prepare(
+      "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
+    ).run(invite.group_id, req.userId);
+    db.prepare(
+      "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
+    ).run(req.userId, `${plan.name} seat payment (invite accepted)`, -invite.price_per_seat);
+    db.prepare("UPDATE group_invites SET status = 'accepted' WHERE id = ?").run(invite.id);
+    db.exec("COMMIT");
+  } catch (txErr) {
+    db.exec("ROLLBACK");
+    console.error("Invite accept failed, rolled back (nothing was deducted):", txErr);
+    return res.status(409).json({ error: "Couldn't complete that — try again. Your wallet was not charged." });
+  }
+
+  notify(req.userId, `You joined the ${plan.name} group.`, "group");
+  notify(invite.manager_id, `${me.email} accepted your invite to the ${plan.name} group.`, "group");
+
+  res.json({ message: `You joined the ${plan.name} group.` });
+});
+
+// POST /api/groups/invites/:inviteId/decline
+router.post("/invites/:inviteId/decline", (req, res) => {
+  const me = db.prepare("SELECT email FROM users WHERE id = ?").get(req.userId);
+  const invite = db.prepare("SELECT * FROM group_invites WHERE id = ?").get(req.params.inviteId);
+
+  if (!invite || invite.status !== "pending" || String(invite.email).toLowerCase() !== me.email.toLowerCase()) {
+    return res.status(404).json({ error: "That invite isn't available anymore." });
+  }
+
+  db.prepare("UPDATE group_invites SET status = 'declined' WHERE id = ?").run(invite.id);
+  res.json({ message: "Invite declined." });
 });
 
 // DELETE /api/groups/:id/members/:userId — manager removes a member
@@ -187,23 +386,32 @@ router.post("/:id/leave", (req, res) => {
   res.json({ message: "You left the group." });
 });
 
-// Groups always split into this many seats. Kept server-side (not trusted from the client)
-// so the manager's price_per_seat is always computed the same way as everyone else's.
-const SEATS_PER_GROUP = 4;
-
 // POST /api/groups — become the account manager for a plan (creates its group + pays your
 // own seat, exactly like a member would when they join). Eligibility, pricing, and the wallet
 // deduction are all decided here, server-side — never trust plan_id-adjacent numbers the
 // client sends, and never create a group before the payment for it is confirmed to succeed.
+//
+// Seat count comes from plan.max_seats — the owner sets this per plan in the catalog (e.g.
+// Netflix = 4, YouTube family = 6), it is never hardcoded here. Pricing comes from
+// plan.price_per_seat, exactly as the owner configured it: members pay price_per_seat in
+// full, the manager pays 50% of it. This used to divide solo_price by a fixed number of
+// seats instead, which is why the group used to show the original solo price rather than
+// the price the owner actually set for the plan.
 router.post("/", (req, res) => {
-  const { plan_id } = req.body;
+  const { plan_id, is_private } = req.body;
 
   if (!plan_id) {
     return res.status(400).json({ error: "plan_id is required." });
   }
 
-  const plan = db.prepare("SELECT id, name, solo_price FROM plans WHERE id = ?").get(plan_id);
+  const plan = db.prepare("SELECT id, name, solo_price, price_per_seat, max_seats FROM plans WHERE id = ?").get(plan_id);
   if (!plan) return res.status(404).json({ error: "Plan not found." });
+
+  if (!plan.price_per_seat) {
+    return res.status(400).json({ error: "This plan doesn't have a per-seat price set yet — ask the site owner to finish setting it up." });
+  }
+
+  const seatsTotal = plan.max_seats || 4;
 
   // Eligibility: you can't become manager of a plan you already manage an active group for.
   const alreadyManaging = db.prepare(`
@@ -214,19 +422,22 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: "You're already the manager of a group for this plan." });
   }
 
-  // Eligibility / race guard: if an open group with free seats already exists for this plan
-  // (e.g. someone else became manager a moment ago, or two tabs raced each other), there's
+  // Eligibility / race guard: if an open PUBLIC group with free seats already exists for this
+  // plan (e.g. someone else became manager a moment ago, or two tabs raced each other), there's
   // nothing to create — the user should join that one instead of us creating a duplicate.
+  // Private (invite-only) groups are excluded — those are never something a stranger should be
+  // routed into instead of starting their own.
   const openGroup = db.prepare(`
     SELECT g.id, g.seats_total, (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
     FROM groups g
-    WHERE g.plan_id = ? AND g.status = 'active'
+    WHERE g.plan_id = ? AND g.status = 'active' AND g.is_private = 0
   `).all(plan_id).find(g => g.seats_filled < g.seats_total);
   if (openGroup) {
     return res.status(409).json({ error: "A group for this plan just opened up — join it instead of starting a new one.", groupId: openGroup.id });
   }
 
-  const priceKobo = Math.round(plan.solo_price / SEATS_PER_GROUP);
+  // Manager pays 50% of what a regular member pays for the seat.
+  const priceKobo = Math.round(plan.price_per_seat / 2);
 
   // Wallet balance verification — the manager pays their own seat up front, same as any
   // member joining a group does. Checked before touching anything else.
@@ -244,8 +455,8 @@ router.post("/", (req, res) => {
     db.exec("BEGIN");
 
     const result = db.prepare(
-      "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
-    ).run(plan_id, req.userId, SEATS_PER_GROUP, priceKobo);
+      "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat, is_private) VALUES (?, ?, ?, ?, ?)"
+    ).run(plan_id, req.userId, seatsTotal, plan.price_per_seat, is_private ? 1 : 0);
     groupId = result.lastInsertRowid;
 
     // Manager takes the first seat, and pays for it — matches "Losub handles all billing;

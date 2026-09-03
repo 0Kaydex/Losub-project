@@ -44,6 +44,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const fmt = n => `₦${n.toLocaleString()}`;
 
   let groups = [];
+  let invites = [];
   let walletBalance = 0;
 
   // ---------- Stats row ----------
@@ -109,6 +110,90 @@ document.addEventListener("DOMContentLoaded", () => {
     }).join("");
   }
 
+  // ---------- Group invites (someone invited you to fill a seat) ----------
+  function renderInvites() {
+    const section = document.getElementById("inviteSection");
+    const grid = document.getElementById("inviteGrid");
+
+    if (!invites.length) {
+      section.hidden = true;
+      return;
+    }
+    section.hidden = false;
+
+    grid.innerHTML = invites.map(inv => `
+      <article class="group-card">
+        <div class="group-card__top">
+          <div class="group-card__plan">
+            <img src="${inv.logo || `https://cdn.simpleicons.org/${inv.plan.toLowerCase().replace(/\s+/g, "")}/6B7280`}" alt="${inv.plan}" class="group-card__logo" style="background:${(inv.color || '#111827')}1A;" />
+            <h3>${inv.plan}</h3>
+          </div>
+        </div>
+        <div class="group-card__meta">
+          <span>Invited by ${inv.invitedBy}</span>
+          <span>${fmt(inv.price)}/mo</span>
+        </div>
+        <div class="group-card__meta">
+          <span>${inv.seatsFilled}/${inv.seatsTotal} seats filled</span>
+        </div>
+        <div class="dash__section-header">
+          <button type="button" class="group-card__cta" data-accept-invite="${inv.id}">Accept</button>
+          <button type="button" class="dash__link" data-decline-invite="${inv.id}">Decline</button>
+        </div>
+      </article>
+    `).join("");
+  }
+
+  document.getElementById("inviteGrid").addEventListener("click", async (e) => {
+    const acceptBtn = e.target.closest("[data-accept-invite]");
+    const declineBtn = e.target.closest("[data-decline-invite]");
+    if (!acceptBtn && !declineBtn) return;
+
+    const btn = acceptBtn || declineBtn;
+    const inviteId = btn.dataset.acceptInvite || btn.dataset.declineInvite;
+    const action = acceptBtn ? "accept" : "decline";
+    btn.disabled = true;
+
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/invites/${inviteId}/${action}`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        alert(data.error || "Couldn't complete that.");
+        btn.disabled = false;
+        return;
+      }
+
+      invites = invites.filter(i => String(i.id) !== inviteId);
+      renderInvites();
+      if (action === "accept") {
+        loadGroups();
+        loadWallet();
+      }
+    } catch {
+      alert("Network error — try again.");
+      btn.disabled = false;
+    }
+  });
+
+  async function loadInvites() {
+    try {
+      const res = await fetch(`${API_ORIGIN}/api/groups/invites/mine`, {
+        cache: "no-store",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      const data = await res.json();
+      invites = data.invites || [];
+    } catch {
+      invites = [];
+    }
+    renderInvites();
+  }
+
   // ---------- Notifications ----------
   function renderNotifications() {
     const list = document.getElementById("notifList");
@@ -163,8 +248,10 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 
+  let walletLoaded = false;
+
   function renderWalletBalance() {
-    document.getElementById("dashWalletBalance").textContent = fmt(walletBalance);
+    document.getElementById("dashWalletBalance").textContent = walletLoaded ? fmt(walletBalance) : "—";
   }
 
   // ---------- Real data loads ----------
@@ -184,18 +271,34 @@ document.addEventListener("DOMContentLoaded", () => {
     renderGroups();
   }
 
-  async function loadWallet() {
+  // Previously, any hiccup here (a dropped request, a slow cold response, a transient
+  // network error) fell into the catch block and set walletBalance to 0 — which then
+  // rendered as "₦0", indistinguishable from an actually-empty wallet. That's the "refresh
+  // and my balance disappears" bug: a real balance was never lost, the UI just showed a
+  // false zero on top of it for a moment. Now a failed load keeps showing "—" (via
+  // walletLoaded) instead of a misleading ₦0, and retries once automatically before giving up.
+  async function loadWallet(isRetry = false) {
     try {
       const res = await fetch(`${API_ORIGIN}/api/wallet`, {
         cache: "no-store",
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (!res.ok) throw new Error("Request failed");
+
       const data = await res.json();
       walletBalance = data.balance || 0;
-    } catch {
-      walletBalance = 0;
+      walletLoaded = true;
+      renderWalletBalance();
+    } catch (err) {
+      if (!isRetry) {
+        setTimeout(() => loadWallet(true), 800);
+        return;
+      }
+      // Both attempts failed — leave whatever was last successfully shown (or "—" if
+      // this was the very first load) rather than claiming the balance is zero.
+      if (!walletLoaded) renderWalletBalance();
     }
-    renderWalletBalance();
   }
 
   async function loadNotifications() {
@@ -218,6 +321,7 @@ document.addEventListener("DOMContentLoaded", () => {
   loadGroups();
   loadWallet();
   loadNotifications();
+  loadInvites();
   renderWaitlist();
 
   // ---------- Greeting name ----------

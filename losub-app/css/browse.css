@@ -439,3 +439,22 @@
 @media (max-width: 480px) {
   .plan-grid { grid-template-columns: 1fr; }
 }
+
+.auth-field--checkbox {
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 14px 0;
+}
+.auth-field--checkbox input[type="checkbox"] {
+  margin-top: 3px;
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+}
+.auth-field--checkbox span {
+  font-size: 13px;
+  line-height: 1.4;
+  color: inherit;
+}
