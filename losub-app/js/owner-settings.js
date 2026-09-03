@@ -200,20 +200,38 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   async function confirmDeletePlan(id, name) {
     if (!confirm(`Delete "${name}" from the plan catalog? This can't be undone.`)) return;
+    await deletePlan(id, name, false);
+  }
 
+  // Handles the normal case (no groups on the plan) AND the case where groups
+  // are still using this plan — the API blocks that delete by default and tells
+  // us how many groups are attached, so surface that and let the owner explicitly
+  // force it through instead of the delete silently going nowhere.
+  async function deletePlan(id, name, force) {
     try {
-      const res = await fetch(`${API_BASE}/plans/${id}`, {
+      const res = await fetch(`${API_BASE}/plans/${id}${force ? "?force=true" : ""}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
 
       if (!res.ok) {
+        if (data.groupCount) {
+          const reallyForce = confirm(
+            `${data.error}\n\nDelete anyway? This removes ${data.groupCount} group(s) and all their members.`
+          );
+          if (reallyForce) await deletePlan(id, name, true);
+          return;
+        }
         showMessage(data.error || "Couldn't delete that plan.");
         return;
       }
 
-      if (editingPlanId === id) exitEditMode();
+      // editingPlanId is a number (from the plans API); id here may be a string
+      // (from a button's data-id attribute) — compare loosely so cancelling an
+      // in-progress edit of the plan you just deleted actually works.
+      if (String(editingPlanId) === String(id)) exitEditMode();
+      showMessage(data.message || `${name} deleted.`, "success");
       loadPlans();
     } catch {
       showMessage("Network error — try again.");

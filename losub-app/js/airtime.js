@@ -579,6 +579,24 @@ document.addEventListener("DOMContentLoaded", () => {
       buyBtn.textContent =
         "Processing…";
 
+      const expectedDescription =
+        currentType === "airtime"
+          ? `${String(currentNetwork).toUpperCase()} airtime — ${phone}`
+          : `${String(currentNetwork).toUpperCase()} data — ${phone}`;
+      const attemptStartedAt = Date.now();
+
+      // If GSUBZ takes a while (cold-started server, slow provider response, etc.)
+      // the browser can give up on the request before a reply ever comes back —
+      // the purchase still goes through on the backend, the user's wallet is
+      // still charged, but the page would otherwise just say "couldn't reach the
+      // server" even though it worked. Cap how long we wait, then use this to
+      // decide whether to double-check instead of assuming failure.
+      const controller = new AbortController();
+      const timeoutId = setTimeout(
+        () => controller.abort(),
+        25000
+      );
+
       try {
         const endpoint =
           currentType === "airtime"
@@ -631,6 +649,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 JSON.stringify(
                   body
                 ),
+              signal: controller.signal,
             }
           );
 
@@ -655,49 +674,112 @@ document.addEventListener("DOMContentLoaded", () => {
           return;
         }
 
-        showMessage(
+        onPurchaseConfirmed(
           data.message ||
-            "Purchase successful.",
-          "success"
+            "Purchase successful."
         );
-
-        /*
-         * Reset selection after successful purchase.
-         */
-        selectedAmount = null;
-        selectedDataPlan = null;
-
-        document.getElementById(
-          "airtimeAmount"
-        ).value = "";
-
-        document
-          .querySelectorAll(
-            ".amount-chip, .data-plan-item"
-          )
-          .forEach((c) =>
-            c.classList.remove(
-              "is-active"
-            )
-          );
-
-        updateSummary();
       } catch (err) {
         console.error(
           "Purchase error:",
           err
         );
 
-        showMessage(
-          "Couldn't reach the server. Check your connection and try again."
-        );
+        // We genuinely don't know yet whether this went through — check the
+        // wallet's transaction history for a matching purchase logged right
+        // around when we made this request before telling the user it failed.
+        const confirmed =
+          await confirmPurchaseFromHistory(
+            expectedDescription,
+            attemptStartedAt
+          );
+
+        if (confirmed) {
+          onPurchaseConfirmed(
+            "Purchase successful — your connection dropped before we could confirm it, but it went through."
+          );
+        } else {
+          showMessage(
+            err.name === "AbortError"
+              ? "This is taking longer than usual. Check your wallet's transaction history in a moment before trying again — you may have already been charged."
+              : "Couldn't reach the server. Check your connection and try again."
+          );
+        }
       } finally {
+        clearTimeout(timeoutId);
         buyBtn.disabled = false;
         buyBtn.textContent =
           "Buy now";
       }
     }
   );
+
+  /*
+   * Polls the wallet for a purchase transaction that matches what we just
+   * attempted (same type + description) and was logged after we started the
+   * request — used only when the purchase's own response never made it back
+   * to the browser, so we're not left guessing whether the user was charged.
+   */
+  async function confirmPurchaseFromHistory(
+    expectedDescription,
+    attemptStartedAt
+  ) {
+    try {
+      const res = await fetch(
+        `${API_ORIGIN}/api/wallet`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+      if (!res.ok) return false;
+
+      const data = await res.json();
+      const transactions =
+        Array.isArray(data.transactions)
+          ? data.transactions
+          : [];
+
+      return transactions.some((tx) => {
+        if (tx.type !== currentType) return false;
+        if (tx.description !== expectedDescription) return false;
+        const txTime = new Date(
+          `${tx.created_at}Z`
+        ).getTime();
+        // A little slack for clock differences between browser and server.
+        return txTime >= attemptStartedAt - 10000;
+      });
+    } catch {
+      return false;
+    }
+  }
+
+  /*
+   * Shared "it went through" UI reset — used whether we got a normal success
+   * response or had to confirm it after the fact via wallet history.
+   */
+  function onPurchaseConfirmed(message) {
+    showMessage(message, "success");
+
+    selectedAmount = null;
+    selectedDataPlan = null;
+
+    document.getElementById(
+      "airtimeAmount"
+    ).value = "";
+
+    document
+      .querySelectorAll(
+        ".amount-chip, .data-plan-item"
+      )
+      .forEach((c) =>
+        c.classList.remove(
+          "is-active"
+        )
+      );
+
+    updateSummary();
+  }
 
   /*
    * Load the current network's data plans if the page

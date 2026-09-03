@@ -159,6 +159,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
 
   // ---------- Message your group (manager <-> members) ----------
+  let lastGroupMsgCount = 0;
   async function loadGroupMessages() {
     const thread = document.getElementById("groupMsgThread");
     const empty = document.getElementById("groupMsgEmpty");
@@ -174,6 +175,10 @@ document.addEventListener("DOMContentLoaded", async () => {
         empty.hidden = false;
         return;
       }
+      // Skip the redraw (and scroll jump) on background polls that found nothing new.
+      if (messages.length === lastGroupMsgCount) return;
+      lastGroupMsgCount = messages.length;
+
       thread.hidden = false;
       empty.hidden = true;
       thread.innerHTML = messages.map(m => `
@@ -216,6 +221,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
 
   // ---------- Messages from Losub (manager <-> admin/owner) ----------
+  let lastAdminMsgCount = 0;
   async function loadAdminMessages() {
     const thread = document.getElementById("adminMsgThread");
     const empty = document.getElementById("adminMsgEmpty");
@@ -231,6 +237,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         empty.hidden = false;
         return;
       }
+      if (messages.length === lastAdminMsgCount) return;
+      lastAdminMsgCount = messages.length;
+
       thread.hidden = false;
       empty.hidden = true;
       thread.innerHTML = messages.map(m => `
@@ -463,10 +472,25 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderAccessLink();
       loadGroupMessages();
       loadAdminMessages();
+      startMessagePolling();
     } catch (err) {
       showToast("Couldn't load this group. Refresh to try again.");
     }
   }
+
+  // Poll both threads in the background so a reply from a group member or from
+  // Losub admin/owner shows up without the manager having to refresh the page.
+  let messagePollTimer = null;
+  function startMessagePolling() {
+    if (messagePollTimer) clearInterval(messagePollTimer);
+    messagePollTimer = setInterval(() => {
+      loadGroupMessages();
+      loadAdminMessages();
+    }, 8000);
+  }
+  window.addEventListener("beforeunload", () => {
+    if (messagePollTimer) clearInterval(messagePollTimer);
+  });
 
   loadGroup();
 });

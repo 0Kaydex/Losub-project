@@ -11,6 +11,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let threads = [];
   let activeManagerId = null;
   let activeMessages = [];
+  let pollTimer = null;
 
   const initial = name => name.charAt(0);
 
@@ -61,6 +62,7 @@ document.addEventListener("DOMContentLoaded", () => {
         </div>
       </div>
       <div class="thread-panel__messages" id="threadMessages"></div>
+      <p class="thread-panel__error" id="composerError" hidden></p>
       <div class="thread-panel__composer">
         <input type="text" id="composerInput" placeholder="Message ${thread.name}…" maxlength="2000" />
         <button type="button" class="admin-action-btn admin-action-btn--primary" id="composerSend">Send</button>
@@ -106,31 +108,56 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  async function openThread(managerId) {
-    activeManagerId = managerId;
-    renderThreadList();
-    renderThreadPanel();
-
+  // Pull the latest messages for whichever manager thread is open, without
+  // resetting the composer or scroll position — used both on first open and
+  // on the background poll so a manager's reply shows up without a manual refresh.
+  async function refreshActiveThread({ silent } = {}) {
+    if (!activeManagerId) return;
     try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/manager/${managerId}`, {
+      const res = await fetch(`${API_ORIGIN}/api/messages/manager/${activeManagerId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      if (!res.ok) throw new Error("bad status");
       const data = await res.json();
       activeMessages = data.messages || [];
       renderMessages();
     } catch {
-      activeMessages = [];
-      renderMessages();
+      if (!silent) {
+        activeMessages = [];
+        renderMessages();
+      }
     }
+  }
+
+  function startPolling() {
+    stopPolling();
+    pollTimer = setInterval(() => {
+      refreshActiveThread({ silent: true });
+      loadThreads();
+    }, 8000);
+  }
+  function stopPolling() {
+    if (pollTimer) clearInterval(pollTimer);
+    pollTimer = null;
+  }
+
+  async function openThread(managerId) {
+    activeManagerId = managerId;
+    renderThreadList();
+    renderThreadPanel();
+    await refreshActiveThread();
+    startPolling();
   }
 
   async function sendMessage() {
     const input = document.getElementById("composerInput");
+    const errorEl = document.getElementById("composerError");
     const text = input.value.trim();
     if (!text || !activeManagerId) return;
 
     const btn = document.getElementById("composerSend");
     btn.disabled = true;
+    if (errorEl) errorEl.hidden = true;
 
     try {
       const res = await fetch(`${API_ORIGIN}/api/messages/manager/${activeManagerId}`, {
@@ -144,8 +171,15 @@ document.addEventListener("DOMContentLoaded", () => {
         input.value = "";
         renderMessages();
         loadThreads(); // refresh preview text in the sidebar
+      } else if (errorEl) {
+        errorEl.textContent = data.error || "Couldn't send that message — try again.";
+        errorEl.hidden = false;
       }
     } catch {
+      if (errorEl) {
+        errorEl.textContent = "Network error — try again.";
+        errorEl.hidden = false;
+      }
       // leave the input filled so the user can retry
     }
     btn.disabled = false;
@@ -156,6 +190,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!item) return;
     openThread(Number(item.dataset.id));
   });
+
+  window.addEventListener("beforeunload", stopPolling);
 
   loadThreads();
 });

@@ -119,6 +119,47 @@ router.get("/groups", (req, res) => {
   res.json({ groups });
 });
 
+// DELETE /api/admin/groups/:id — permanently remove a group: kicks every member and
+// the manager out, revokes any pending invites, wipes the group's message thread, and
+// deletes the group itself. Nothing is refunded automatically. Everyone who was in the
+// group (manager + members) gets a notification explaining why their access just
+// disappeared, since this is the one place that can happen without them doing anything.
+router.delete("/groups/:id", (req, res) => {
+  const group = db.prepare(`
+    SELECT g.id, g.manager_id, p.name AS plan_name
+    FROM groups g
+    JOIN plans p ON p.id = g.plan_id
+    WHERE g.id = ?
+  `).get(req.params.id);
+
+  if (!group) return res.status(404).json({ error: "Group not found." });
+
+  const members = db.prepare(
+    "SELECT user_id FROM group_members WHERE group_id = ?"
+  ).all(req.params.id);
+
+  db.prepare("DELETE FROM group_members WHERE group_id = ?").run(req.params.id);
+  db.prepare("DELETE FROM group_invites WHERE group_id = ?").run(req.params.id);
+  db.prepare("DELETE FROM messages WHERE thread_type = 'group' AND group_id = ?").run(req.params.id);
+  db.prepare("DELETE FROM groups WHERE id = ?").run(req.params.id);
+
+  // Notify everyone who was in it — group_members already includes the manager's own
+  // row (same pattern used in routes/messages.js), so this alone covers manager + members.
+  members.forEach(({ user_id }) => {
+    notify(user_id, `Your "${group.plan_name}" group was removed by a Losub admin. If you believe this was a mistake, message Losub support.`, "group");
+  });
+
+  logAudit(
+    req.userId,
+    "group.delete",
+    "group",
+    group.id,
+    `Deleted "${group.plan_name}" group (manager #${group.manager_id}) and removed ${members.length} member(s)`
+  );
+
+  res.json({ message: `${group.plan_name} group deleted and ${members.length} member(s) removed.` });
+});
+
 // GET /api/admin/transactions — platform-wide wallet activity, most recent first
 router.get("/transactions", (req, res) => {
   const rows = db.prepare(`
