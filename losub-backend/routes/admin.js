@@ -4,42 +4,9 @@ const { requireAuth } = require("../middleware/auth");
 const { requireAdmin } = require("../middleware/requireAdmin");
 const { logAudit } = require("../utils/logAudit");
 const { notify } = require("../utils/notify");
-const { runPaymentReminders } = require("../scripts/payment-reminders");
 const router = express.Router();
 
 router.use(requireAuth, requireAdmin);
-
-// POST /api/admin/updates/broadcast — send a platform-wide "new update" notification to
-// every user (e.g. new feature, maintenance notice, policy change). This is the "new
-// updates" trigger from the notifications requirements — previously there was no way
-// for admins/owner to push anything to the whole user base at once.
-router.post("/updates/broadcast", (req, res) => {
-  const { text } = req.body;
-  if (!text || !text.trim()) return res.status(400).json({ error: "Update text is required." });
-
-  const trimmed = text.trim().slice(0, 500);
-  const users = db.prepare("SELECT id FROM users").all();
-  users.forEach(u => notify(u.id, trimmed, "update"));
-
-  logAudit(req.userId, "update.broadcast", null, null, `Broadcast update to ${users.length} user(s): ${trimmed}`);
-
-  res.json({ message: `Update sent to ${users.length} user(s).` });
-});
-
-// POST /api/admin/run-payment-reminders — manually trigger the daily payment-reminder
-// job (see scripts/payment-reminders.js). Useful for testing, and as a target an
-// external cron/uptime pinger can hit if you don't set up a native cron on the host —
-// the internal setInterval scheduler in server.js only runs while the machine is awake,
-// and fly.toml here has auto_stop_machines enabled.
-router.post("/run-payment-reminders", async (req, res) => {
-  try {
-    const result = await runPaymentReminders();
-    res.json({ message: "Payment reminders job completed.", ...result });
-  } catch (err) {
-    console.error("Manual payment reminders run failed:", err);
-    res.status(500).json({ error: "Job failed — check server logs." });
-  }
-});
 
 router.get("/test", (req, res) => {
   res.json({
@@ -119,47 +86,6 @@ router.get("/groups", (req, res) => {
   res.json({ groups });
 });
 
-// DELETE /api/admin/groups/:id — permanently remove a group: kicks every member and
-// the manager out, revokes any pending invites, wipes the group's message thread, and
-// deletes the group itself. Nothing is refunded automatically. Everyone who was in the
-// group (manager + members) gets a notification explaining why their access just
-// disappeared, since this is the one place that can happen without them doing anything.
-router.delete("/groups/:id", (req, res) => {
-  const group = db.prepare(`
-    SELECT g.id, g.manager_id, p.name AS plan_name
-    FROM groups g
-    JOIN plans p ON p.id = g.plan_id
-    WHERE g.id = ?
-  `).get(req.params.id);
-
-  if (!group) return res.status(404).json({ error: "Group not found." });
-
-  const members = db.prepare(
-    "SELECT user_id FROM group_members WHERE group_id = ?"
-  ).all(req.params.id);
-
-  db.prepare("DELETE FROM group_members WHERE group_id = ?").run(req.params.id);
-  db.prepare("DELETE FROM group_invites WHERE group_id = ?").run(req.params.id);
-  db.prepare("DELETE FROM messages WHERE thread_type = 'group' AND group_id = ?").run(req.params.id);
-  db.prepare("DELETE FROM groups WHERE id = ?").run(req.params.id);
-
-  // Notify everyone who was in it — group_members already includes the manager's own
-  // row (same pattern used in routes/messages.js), so this alone covers manager + members.
-  members.forEach(({ user_id }) => {
-    notify(user_id, `Your "${group.plan_name}" group was removed by a Losub admin. If you believe this was a mistake, message Losub support.`, "group");
-  });
-
-  logAudit(
-    req.userId,
-    "group.delete",
-    "group",
-    group.id,
-    `Deleted "${group.plan_name}" group (manager #${group.manager_id}) and removed ${members.length} member(s)`
-  );
-
-  res.json({ message: `${group.plan_name} group deleted and ${members.length} member(s) removed.` });
-});
-
 // GET /api/admin/transactions — platform-wide wallet activity, most recent first
 router.get("/transactions", (req, res) => {
   const rows = db.prepare(`
@@ -204,6 +130,82 @@ router.get("/audit-log", (req, res) => {
   }));
 
   res.json({ entries });
+});
+
+// ---------------------------------------------------------------------------
+// Support messaging — the manager <-> Losub admin/owner "direct line" thread
+// for every group. Messages are wiped after 24h (see db.pruneOldMessages).
+// ---------------------------------------------------------------------------
+
+// GET /api/admin/messages/threads — one row per group that has a live support
+// thread, newest activity first, with a preview of the last message.
+router.get("/messages/threads", (req, res) => {
+  db.pruneOldMessages();
+
+  const rows = db.prepare(`
+    SELECT g.id AS group_id, p.name AS plan_name, u.fullname AS manager_name,
+           (SELECT body FROM messages WHERE group_id = g.id AND thread = 'support' ORDER BY created_at DESC LIMIT 1) AS last_body,
+           (SELECT created_at FROM messages WHERE group_id = g.id AND thread = 'support' ORDER BY created_at DESC LIMIT 1) AS last_at
+    FROM groups g
+    JOIN plans p ON p.id = g.plan_id
+    JOIN users u ON u.id = g.manager_id
+    WHERE EXISTS (SELECT 1 FROM messages WHERE group_id = g.id AND thread = 'support')
+    ORDER BY last_at DESC
+  `).all();
+
+  res.json({
+    threads: rows.map(r => ({
+      groupId: r.group_id,
+      plan: r.plan_name,
+      manager: r.manager_name,
+      lastMessage: r.last_body,
+      lastAt: r.last_at,
+    })),
+  });
+});
+
+// GET /api/admin/messages/:groupId — full support thread for one group
+router.get("/messages/:groupId", (req, res) => {
+  db.pruneOldMessages();
+
+  const group = db.prepare(`
+    SELECT g.id, p.name AS plan_name, u.fullname AS manager_name
+    FROM groups g JOIN plans p ON p.id = g.plan_id JOIN users u ON u.id = g.manager_id
+    WHERE g.id = ?
+  `).get(req.params.groupId);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+
+  const messages = db.prepare(
+    "SELECT id, sender_id, sender_role, sender_name, body, created_at FROM messages WHERE group_id = ? AND thread = 'support' ORDER BY created_at ASC"
+  ).all(req.params.groupId);
+
+  res.json({ plan: group.plan_name, manager: group.manager_name, messages, expiresAfterHours: 24 });
+});
+
+// POST /api/admin/messages/:groupId  { body: string }
+router.post("/messages/:groupId", (req, res) => {
+  db.pruneOldMessages();
+
+  const body = (req.body.body || "").trim();
+  if (!body) return res.status(400).json({ error: "Message can't be empty." });
+  if (body.length > 1000) return res.status(400).json({ error: "Message is too long (max 1000 characters)." });
+
+  const group = db.prepare("SELECT id, manager_id FROM groups WHERE id = ?").get(req.params.groupId);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+
+  const sender = db.prepare("SELECT fullname FROM users WHERE id = ?").get(req.userId);
+
+  const result = db.prepare(
+    "INSERT INTO messages (group_id, thread, sender_id, sender_role, sender_name, body) VALUES (?, 'support', ?, 'admin', ?, ?)"
+  ).run(req.params.groupId, req.userId, sender.fullname, body);
+
+  const saved = db.prepare(
+    "SELECT id, sender_id, sender_role, sender_name, body, created_at FROM messages WHERE id = ?"
+  ).get(result.lastInsertRowid);
+
+  notify(group.manager_id, `Losub support: ${body.slice(0, 80)}`, "group_message", `messages.html?group=${req.params.groupId}&thread=support`);
+
+  res.status(201).json({ message: saved });
 });
 
 module.exports = router;

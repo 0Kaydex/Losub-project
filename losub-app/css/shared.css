@@ -82,8 +82,7 @@
 .status-pill--pending,
 .status-pill--filling { background: var(--pastel-sand); color: #7a5a12; }
 .status-pill--defaulted,
-.status-pill--failed,
-.status-pill--overdue { background: var(--pastel-pink); color: #8c2a3f; }
+.status-pill--failed { background: var(--pastel-pink); color: #8c2a3f; }
 .status-pill--full { background: var(--pastel-lilac); color: #4a3b6b; }
 
 .empty-state {

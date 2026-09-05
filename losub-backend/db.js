@@ -11,14 +11,6 @@ const dbPath = process.env.DB_PATH || path.join(__dirname, "losub.db");
 console.log("DATABASE PATH:", dbPath);
 const db = new DatabaseSync(dbPath);
 
-// WAL lets readers (GET /api/wallet, /api/groups/mine, etc.) run without blocking behind
-// a write, instead of every request queuing up on one exclusive file lock. node:sqlite is
-// still single-threaded/synchronous per query, so this doesn't make it a "real" concurrent
-// database — but it meaningfully reduces the lock contention that shows up as random slow
-// or failed requests once more than a couple of people use the site at the same time.
-db.exec("PRAGMA journal_mode = WAL");
-db.exec("PRAGMA busy_timeout = 5000");
-
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,10 +114,6 @@ db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_tx_reference ON wallet_tra
 
 const groupMigrations = [
   "ALTER TABLE groups ADD COLUMN access_link TEXT",
-  // is_private: when set, the group is invite-only and never appears on the public
-  // /api/groups/browse marketplace — only people the manager explicitly invites
-  // (see group_invites below) can join it.
-  "ALTER TABLE groups ADD COLUMN is_private INTEGER NOT NULL DEFAULT 0",
 ];
 for (const sql of groupMigrations) {
   try {
@@ -134,50 +122,6 @@ for (const sql of groupMigrations) {
     if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
   }
 }
-
-const planMigrations = [
-  // group_price: what the shared/family plan actually costs from the provider (e.g. Spotify
-  // Family = ₦2,500) — informational only, for the admin's own margin visibility. Never
-  // used in the per-seat math.
-  "ALTER TABLE plans ADD COLUMN group_price INTEGER",
-  // price_per_seat: what each regular member actually pays for a seat in this plan's
-  // groups — set directly by the admin, NOT derived by dividing solo_price or group_price.
-  // The manager pays 50% of this. seats_total (chosen per-group) only controls capacity,
-  // it no longer affects price.
-  "ALTER TABLE plans ADD COLUMN price_per_seat INTEGER",
-  // max_seats: how many total seats (including the manager's own) a group for this plan
-  // gets. Different services split differently (Netflix = 4, YouTube family = 6, etc.),
-  // so this is owner-configurable per plan instead of one hardcoded number for every plan.
-  "ALTER TABLE plans ADD COLUMN max_seats INTEGER NOT NULL DEFAULT 4",
-];
-for (const sql of planMigrations) {
-  try {
-    db.exec(sql);
-  } catch (err) {
-    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
-  }
-}
-
-// group_invites: lets a manager pick specific people to fill their group instead of it
-// being a first-come-first-served public marketplace. An invite is matched by email —
-// if the invited person already has a Losub account it also gets attached to their
-// user_id (and they get a notification); if not, it just sits there by email and
-// attaches itself the next time that email signs up... for now it simply stays
-// pending until someone with that email logs in and checks their invites.
-db.exec(`
-  CREATE TABLE IF NOT EXISTS group_invites (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    group_id INTEGER NOT NULL,
-    email TEXT NOT NULL,
-    invited_user_id INTEGER,
-    invited_by INTEGER NOT NULL,
-    status TEXT NOT NULL DEFAULT 'pending', -- 'pending' | 'accepted' | 'declined' | 'revoked'
-    created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (group_id) REFERENCES groups(id),
-    FOREIGN KEY (invited_by) REFERENCES users(id)
-  );
-`);
-db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_group_invites_pending ON group_invites(group_id, email) WHERE status = 'pending'");
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS notifications (
@@ -192,54 +136,30 @@ db.exec(`
   );
 `);
 
-// notifications.group_id: lets a notification be scoped to a specific group (invite,
-// access-link update, payment reminder, group message, etc.) so the group page can show
-// only notifications relevant to *that* group instead of the user's entire feed.
-const notificationMigrations = [
-  "ALTER TABLE notifications ADD COLUMN group_id INTEGER",
-];
-for (const sql of notificationMigrations) {
-  try {
-    db.exec(sql);
-  } catch (err) {
-    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
-  }
-}
-
-// group_members.last_reminder_sent_at: the daily payment-reminder job (see
-// scripts/payment-reminders.js) uses this to avoid re-notifying/re-emailing the same
-// member more than once per day as it re-scans every group_members row.
-const groupMemberMigrations = [
-  "ALTER TABLE group_members ADD COLUMN last_reminder_sent_at TEXT",
-];
-for (const sql of groupMemberMigrations) {
-  try {
-    db.exec(sql);
-  } catch (err) {
-    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
-  }
-}
-
-// messages: powers two different chains of communication that were previously missing
-// entirely:
-//   - thread_type = 'group'         → manager <-> members of one specific group
-//   - thread_type = 'manager_admin' → one manager <-> admins/owner (manager_id identifies
-//                                      whose thread it is, regardless of who's posting)
 db.exec(`
   CREATE TABLE IF NOT EXISTS messages (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    thread_type TEXT NOT NULL,       -- 'group' | 'manager_admin'
-    group_id INTEGER,                -- set when thread_type = 'group'
-    manager_id INTEGER,              -- set when thread_type = 'manager_admin'
-    sender_id INTEGER NOT NULL,
-    sender_role TEXT NOT NULL,       -- 'manager' | 'member' | 'admin' | 'owner'
-    text TEXT NOT NULL,
+    group_id INTEGER NOT NULL,
+    thread TEXT NOT NULL DEFAULT 'group',   -- 'group' (manager + members) or 'support' (manager <-> Losub admin/owner)
+    sender_id INTEGER,                      -- NULL for messages sent by an admin who isn't a member of the group
+    sender_role TEXT NOT NULL,              -- 'manager' | 'member' | 'admin'
+    sender_name TEXT NOT NULL,              -- name snapshot, so it still shows correctly after the row expires from other tables
+    body TEXT NOT NULL,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
-    FOREIGN KEY (sender_id) REFERENCES users(id)
+    FOREIGN KEY (group_id) REFERENCES groups(id)
   );
 `);
-db.exec("CREATE INDEX IF NOT EXISTS idx_messages_group ON messages(group_id, created_at)");
-db.exec("CREATE INDEX IF NOT EXISTS idx_messages_manager ON messages(manager_id, created_at)");
+
+db.exec("CREATE INDEX IF NOT EXISTS idx_messages_group_thread ON messages(group_id, thread, created_at)");
+
+// Messages are ephemeral — anything older than 24h is permanently deleted.
+// Called opportunistically from the messages routes rather than on a timer,
+// since node:sqlite has no built-in scheduler and this keeps the table small
+// without needing a separate worker process.
+function pruneOldMessages() {
+  db.prepare("DELETE FROM messages WHERE created_at < datetime('now', '-1 day')").run();
+}
+db.pruneOldMessages = pruneOldMessages;
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS audit_log (

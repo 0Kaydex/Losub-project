@@ -1,0 +1,156 @@
+/* ---------- Back button (shared pattern with manage-group) ---------- */
+.back-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: none;
+  background: none;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-soft);
+  margin-bottom: 20px;
+  padding: 4px 0;
+}
+.back-btn:hover { color: var(--ink); }
+.back-btn__arrow { font-size: 16px; }
+
+/* ---------- Group picker ---------- */
+.msg-group-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 14px;
+}
+
+.msg-group-card {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  background: var(--surface);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-card);
+  padding: 18px;
+  cursor: pointer;
+  border: none;
+  text-align: left;
+  width: 100%;
+  font-family: inherit;
+}
+.msg-group-card:hover { box-shadow: var(--shadow-card-2); }
+
+.msg-group-card__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  padding: 8px;
+  box-sizing: border-box;
+  flex-shrink: 0;
+}
+
+.msg-group-card__body { min-width: 0; flex: 1; }
+
+.msg-group-card__name {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.msg-group-card__role {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 2px;
+}
+
+.msg-group-card__badge {
+  flex-shrink: 0;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 10px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+}
+
+/* ---------- Inbox ---------- */
+.msg-panel {
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  height: min(600px, 70vh);
+  overflow: hidden;
+}
+
+.msg-thread {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.msg-bubble-row {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+}
+.msg-bubble-row--mine { align-self: flex-end; align-items: flex-end; }
+.msg-bubble-row--theirs { align-self: flex-start; align-items: flex-start; }
+
+.msg-bubble-meta {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin-bottom: 3px;
+  padding: 0 4px;
+}
+
+.msg-bubble {
+  padding: 10px 14px;
+  border-radius: var(--r-md);
+  font-size: 13.5px;
+  line-height: 1.45;
+  word-break: break-word;
+}
+.msg-bubble-row--mine .msg-bubble { background: var(--ink); color: var(--paper); border-bottom-right-radius: 4px; }
+.msg-bubble-row--theirs .msg-bubble { background: var(--paper); color: var(--ink); border-bottom-left-radius: 4px; }
+.msg-bubble-row--admin .msg-bubble { background: var(--pastel-sky); color: var(--ink); }
+
+.msg-bubble-time {
+  font-size: 10px;
+  color: var(--ink-faint);
+  margin-top: 3px;
+  padding: 0 4px;
+}
+
+.msg-panel .empty-state { flex: 1; display: flex; align-items: center; justify-content: center; }
+
+.msg-composer {
+  display: flex;
+  gap: 10px;
+  padding: 14px 16px;
+  border-top: 1px solid var(--line);
+  flex-shrink: 0;
+}
+
+.msg-composer input {
+  flex: 1;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-pill);
+  background: var(--paper);
+  font-size: 14px;
+  color: var(--ink);
+}
+.msg-composer input:focus { outline: 2px solid var(--chip-blue); outline-offset: 1px; }
+
+.msg-composer .auth-submit {
+  width: auto;
+  padding: 0 22px;
+  border-radius: var(--r-pill);
+}
+
+@media (max-width: 480px) {
+  .msg-group-list { grid-template-columns: 1fr; }
+  .msg-panel { height: min(560px, 78vh); }
+  .msg-bubble-row { max-width: 90%; }
+}

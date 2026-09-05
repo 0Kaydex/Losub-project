@@ -8,6 +8,24 @@
     return;
   }
 
+  // One retry + a generous timeout, so a slow/cold backend doesn't
+  // immediately surface as a false "network error" alert.
+  async function apiFetch(url, options = {}, { timeoutMs = 8000, retries = 1 } = {}) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+      } catch (err) {
+        clearTimeout(timer);
+        if (attempt === retries) throw err;
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+  }
+
   const fmt = n => `₦${n.toLocaleString()}`;
   let searchTerm = "";
   let catalogPlans = [];   // from /api/plans — every plan that exists
@@ -40,7 +58,6 @@
           logo: p.logo,
           color: p.color,
           soloPrice: p.solo_price,
-          pricePerSeat: p.price_per_seat,
         });
       });
 
@@ -94,14 +111,7 @@
         ? `<button type="button" class="plan-card__cta plan-card__cta--full" data-plan-id="${p.planId}" data-become-manager="1">No group yet — Become manager</button>`
         : `<button type="button" class="plan-card__cta" data-group-id="${p.groupId}">Join</button>`;
       const seatsLine = isManagerCard ? "No open group yet" : `${p.seatsFilled}/${p.seatsTotal} seats filled`;
-      // Always show what a member actually pays for a seat (price_per_seat), never the
-      // original solo subscription price — that's true whether there's already an open
-      // group to join (p.price, from g.yourPrice) or not yet (p.pricePerSeat, straight
-      // from the plan catalog). Falls back to solo_price only for older plans that were
-      // created before price_per_seat existed and haven't been re-saved yet.
-      const priceLine = isManagerCard
-        ? fmt(p.pricePerSeat ?? p.soloPrice)
-        : fmt(p.price);
+      const priceLine = isManagerCard ? fmt(p.soloPrice) : fmt(p.price);
 
       return `
         <article class="plan-card ${isManagerCard ? 'plan-card--full' : ''}">
@@ -144,7 +154,7 @@
     btn.textContent = "Joining…";
 
     try {
-      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/join`, {
+      const res = await apiFetch(`${API_ORIGIN}/api/groups/${groupId}/join`, {
         method: "POST",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -159,7 +169,7 @@
 
       window.location.href = "dashboard.html";
     } catch (err) {
-      alert("Network error — try again.");
+      alert("Couldn't reach Losub — check your connection and try again.");
       btn.disabled = false;
       btn.textContent = originalText;
     }
@@ -185,15 +195,7 @@
   function openManagerModal(plan) {
     activePlan = plan;
     document.getElementById("modalPlanName").textContent = plan.name;
-    // Manager pays 50% of the plan's configured price_per_seat — matches exactly what the
-    // backend charges in POST /api/groups. (This used to show solo_price / 4, which is why
-    // the modal — and the group afterward — displayed the original solo price instead of
-    // whatever the site owner actually configured for this plan.)
-    const managerPrice = plan.price_per_seat ? Math.round(plan.price_per_seat / 2) : Math.round(plan.solo_price / 4);
-    document.getElementById("modalManagerPrice").textContent = fmt(managerPrice);
-    document.getElementById("modalMemberPrice").textContent = plan.price_per_seat ? fmt(plan.price_per_seat) : fmt(Math.round(plan.solo_price / 2));
-    document.getElementById("modalSeatInfo").textContent = `This plan holds up to ${plan.max_seats || 4} members in total, set by the site owner.`;
-    document.getElementById("modalPrivateGroup").checked = false;
+    document.getElementById("modalManagerPrice").textContent = fmt(Math.round(plan.solo_price / 4));
     document.getElementById("managerModalOverlay").hidden = false;
   }
 
@@ -214,41 +216,30 @@
     btn.textContent = "Creating group…";
 
     try {
-      const res = await fetch(`${API_ORIGIN}/api/groups`, {
+      const res = await apiFetch(`${API_ORIGIN}/api/groups`, {
         method: "POST",
-        cache: "no-store",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
         body: JSON.stringify({
           plan_id: activePlan.id,
-          is_private: document.getElementById("modalPrivateGroup").checked,
+          seats_total: 4,
+          price_per_seat: Math.round(activePlan.solo_price / 4),
         }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        // 409 = someone else just opened a group for this plan (race with another manager
-        // signing up seconds earlier) — send them to join it instead of retrying blindly.
-        if (res.status === 409 && data.groupId) {
-          alert(data.error || "A group for this plan just opened up — joining it instead.");
-          window.location.href = "dashboard.html";
-          return;
-        }
         alert(data.error || "Couldn't create the group.");
         btn.disabled = false;
         btn.textContent = "Accept and continue";
         return;
       }
 
-      // The group is already committed on the server at this point (POST /api/groups is
-      // atomic — see routes/groups.js), so a normal navigation to the dashboard is enough
-      // for it to show up immediately; no extra refresh needed since dashboard.js always
-      // fetches fresh, uncached data on load.
       window.location.href = "dashboard.html";
     } catch (err) {
-      alert("Network error — try again.");
+      alert("Couldn't reach Losub — check your connection and try again.");
       btn.disabled = false;
       btn.textContent = "Accept and continue";
     }
@@ -280,8 +271,8 @@
   async function loadData() {
     try {
       const [plansRes, groupsRes] = await Promise.all([
-        fetch(`${API_ORIGIN}/api/plans`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_ORIGIN}/api/groups/browse`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+        apiFetch(`${API_ORIGIN}/api/plans`, { headers: { Authorization: `Bearer ${token}` } }),
+        apiFetch(`${API_ORIGIN}/api/groups/browse`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (plansRes.status === 401 || groupsRes.status === 401) {

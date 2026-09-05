@@ -16,9 +16,8 @@
   <link rel="stylesheet" href="../css/shared.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
   <link rel="stylesheet" href="../css/manage-group.css" />
-  <link rel="stylesheet" href="../css/messaging-widget.css" />
 </head>
-<body class="app-shell-page mg-page">
+<body class="app-shell-page">
 
   <div class="app-shell">
     
@@ -28,9 +27,12 @@
       <header class="topbar">
         <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
         <h1 class="topbar__title">Manage group</h1>
-        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
-          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
-        </button>
+        <div class="topbar__actions">
+          <button class="topbar__bell" aria-label="Messages" id="messagesBtn">💬</button>
+          <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+            <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+          </button>
+        </div>
       </header>
 
       <main class="page-content">
@@ -69,34 +71,6 @@
           </div>
         </section>
 
-        <!-- ============ MESSAGE YOUR GROUP ============ -->
-        <section class="mg-section">
-          <div class="mg-section__head">
-            <h2>Message your group</h2>
-          </div>
-          <p class="mg-field__hint">Post announcements to everyone in this group, or reply to what a member sent you.</p>
-          <div class="mw-thread" id="groupMsgThread"></div>
-          <p class="mw-empty" id="groupMsgEmpty" hidden>No messages yet.</p>
-          <form class="mw-composer" id="groupMsgForm">
-            <input type="text" id="groupMsgInput" placeholder="Write a message to your group…" maxlength="2000" required />
-            <button type="submit" id="groupMsgSend">Send</button>
-          </form>
-        </section>
-
-        <!-- ============ MESSAGES FROM LOSUB ============ -->
-        <section class="mg-section">
-          <div class="mg-section__head">
-            <h2>Messages from Losub</h2>
-          </div>
-          <p class="mg-field__hint">Direct line to the Losub admin/owner team — check-ins, disputes, or anything else about this account.</p>
-          <div class="mw-thread" id="adminMsgThread"></div>
-          <p class="mw-empty" id="adminMsgEmpty" hidden>No messages yet — send one below if you need anything.</p>
-          <form class="mw-composer" id="adminMsgForm">
-            <input type="text" id="adminMsgInput" placeholder="Message Losub admin/owner…" maxlength="2000" required />
-            <button type="submit" id="adminMsgSend">Send</button>
-          </form>
-        </section>
-
       </main>
     </div>
   </div>
@@ -106,18 +80,18 @@
     <div class="modal">
       <button type="button" class="modal__close" id="inviteModalClose" aria-label="Close">&times;</button>
       <h2>Invite a member</h2>
-      <p class="modal__sub">Invite a specific person by email to fill this seat — only they'll be able to accept it. They'll get a notification and can accept from their dashboard.</p>
+      <p class="modal__sub">Send an invite to fill this seat. They'll get a link to join and pay their share.</p>
 
       <form id="inviteForm">
         <label class="mg-field">
-          <span class="mg-field__label">Email address</span>
-          <input type="email" id="inviteInput" placeholder="e.g. jane@email.com" required />
+          <span class="mg-field__label">Email or phone number</span>
+          <input type="text" id="inviteInput" placeholder="e.g. jane@email.com" required />
         </label>
-        <p class="mg-field__error" id="inviteError" hidden>Please enter a valid email address.</p>
+        <p class="mg-field__error" id="inviteError" hidden>Please enter a valid email or phone number.</p>
 
         <div class="modal__actions">
-          <button type="submit" class="auth-submit" id="inviteSubmitBtn">Send invite</button>
-          <button type="button" class="link-btn" id="copyInviteLink">Or copy public invite link instead</button>
+          <button type="submit" class="auth-submit">Send invite</button>
+          <button type="button" class="link-btn" id="copyInviteLink">Or copy invite link instead</button>
         </div>
       </form>
     </div>

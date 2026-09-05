@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Messages — Losub</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <link rel="stylesheet" href="../css/base.css" />
+  <link rel="stylesheet" href="../css/shared.css" />
+  <link rel="stylesheet" href="../css/app-shell.css" />
+  <link rel="stylesheet" href="../css/messages.css" />
+</head>
+<body class="app-shell-page">
+
+  <div class="app-shell">
+
+    <div id="userSidebar"></div>
+
+    <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">Messages</h1>
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
+
+      <main class="page-content">
+
+        <!-- ============ GROUP PICKER (shown when no group is selected) ============ -->
+        <section id="groupPicker" hidden>
+          <section class="page__header">
+            <h2>Messages</h2>
+            <p>Pick a group to open its inbox.</p>
+          </section>
+          <div class="msg-group-list" id="msgGroupList"></div>
+          <p class="empty-state" id="msgGroupEmpty" hidden>You're not part of any group yet. Join or start one from Browse plans.</p>
+        </section>
+
+        <!-- ============ INBOX (shown when a group is selected) ============ -->
+        <section id="inboxView" hidden>
+
+          <button type="button" class="back-btn" id="msgBackBtn">
+            <span class="back-btn__arrow">&larr;</span> Back
+          </button>
+
+          <section class="page__header">
+            <h2 id="inboxGroupName">Inbox</h2>
+            <p>Messages here disappear automatically after 24 hours.</p>
+          </section>
+
+          <div class="tab-bar" id="inboxTabs">
+            <button type="button" class="tab-bar__btn is-active" data-thread="group">Group chat</button>
+            <button type="button" class="tab-bar__btn" id="supportTabBtn" data-thread="support" hidden>Losub support</button>
+          </div>
+
+          <section class="panel msg-panel">
+            <div class="msg-thread" id="msgThread"></div>
+            <p class="empty-state" id="msgThreadEmpty" hidden>No messages yet — say hello.</p>
+
+            <form class="msg-composer" id="msgComposer">
+              <input type="text" id="msgInput" placeholder="Write a message…" maxlength="1000" autocomplete="off" required />
+              <button type="submit" class="auth-submit" id="msgSendBtn">Send</button>
+            </form>
+          </section>
+
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <div class="mg-toast" id="msgToast" hidden></div>
+
+  <script src="../js/app-shell.js"></script>
+  <script src="../js/messages.js"></script>
+  <script src="../js/load-user-sidebar.js"></script>
+</body>
+</html>

@@ -16,14 +16,34 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
+  // One retry + a generous timeout, so a slow/cold backend doesn't
+  // immediately surface as a false "network error" toast.
+  async function apiFetch(url, options = {}, { timeoutMs = 8000, retries = 1 } = {}) {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
+      try {
+        const res = await fetch(url, { ...options, signal: controller.signal });
+        clearTimeout(timer);
+        return res;
+      } catch (err) {
+        clearTimeout(timer);
+        if (attempt === retries) throw err;
+        await new Promise(r => setTimeout(r, 500));
+      }
+    }
+  }
+
   const fmt = n => `₦${n.toLocaleString()}`;
   const initials = name => name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase();
 
   let group = null;
   let members = [];
-  let invites = [];
   let pendingRemoveId = null;
-  let myUserFullname = null;
+
+  document.getElementById("messagesBtn")?.addEventListener("click", () => {
+    window.location.href = `messages.html?group=${groupId}`;
+  });
 
   // ---------- Summary card ----------
   function renderSummary() {
@@ -54,8 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------- Seat grid ----------
   function renderSeats() {
     const grid = document.getElementById("seatGrid");
-    // Pending invites hold a seat too, so an already-invited seat isn't shown as fully empty.
-    const openSeats = group.seatsTotal - members.length - invites.length;
+    const emptySeats = group.seatsTotal - members.length;
 
     let html = members.map(m => `
       <div class="seat-card">
@@ -63,30 +82,18 @@ document.addEventListener("DOMContentLoaded", async () => {
         <div class="seat-card__body">
           <div class="seat-card__name">${m.fullname}</div>
           <div class="seat-card__meta">Joined ${new Date(m.joined_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })} · ${m.email}</div>
-          <span class="seat-card__status seat-card__status--active">${{ paid: "Active", overdue: "Overdue", pending: "Pending" }[m.payment_status] || m.payment_status}</span>
+          <span class="seat-card__status seat-card__status--active">${m.payment_status === "paid" ? "Active" : m.payment_status}</span>
         </div>
         ${m.role === "manager" ? "" : `<button type="button" class="seat-card__remove" data-id="${m.user_id}">Remove</button>`}
       </div>
     `).join("");
 
-    html += invites.map(inv => `
-      <div class="seat-card seat-card--pending">
-        <span class="seat-card__avatar">✉️</span>
-        <div class="seat-card__body">
-          <div class="seat-card__name">${inv.email}</div>
-          <div class="seat-card__meta">Invited ${new Date(inv.created_at).toLocaleDateString("en-NG", { day: "numeric", month: "short", year: "numeric" })}</div>
-          <span class="seat-card__status seat-card__status--pending">Invite pending</span>
-        </div>
-        <button type="button" class="seat-card__revoke" data-revoke-id="${inv.id}">Revoke</button>
-      </div>
-    `).join("");
-
-    for (let i = 0; i < openSeats; i++) {
+    for (let i = 0; i < emptySeats; i++) {
       html += `
         <div class="seat-card seat-card--empty">
           <div class="seat-card__body">
             <div class="seat-card__name">Empty seat</div>
-            <button type="button" class="seat-card__invite-btn" id="openInviteBtn">Invite someone</button>
+            <button type="button" class="seat-card__invite-btn" id="openInviteBtn">Share invite link</button>
           </div>
         </div>
       `;
@@ -123,7 +130,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     submitBtn.textContent = "Sending…";
 
     try {
-      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/access-link`, {
+      const res = await apiFetch(`${API_ORIGIN}/api/groups/${groupId}/access-link`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
@@ -141,7 +148,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast(data.message);
       }
     } catch {
-      showToast("Network error — try again.");
+      showToast("Couldn't reach Losub — check your connection and try again.");
     }
 
     submitBtn.disabled = false;
@@ -158,129 +165,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
   }
 
-  // ---------- Message your group (manager <-> members) ----------
-  let lastGroupMsgCount = 0;
-  async function loadGroupMessages() {
-    const thread = document.getElementById("groupMsgThread");
-    const empty = document.getElementById("groupMsgEmpty");
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const messages = data.messages || [];
-
-      if (!messages.length) {
-        thread.hidden = true;
-        empty.hidden = false;
-        return;
-      }
-      // Skip the redraw (and scroll jump) on background polls that found nothing new.
-      if (messages.length === lastGroupMsgCount) return;
-      lastGroupMsgCount = messages.length;
-
-      thread.hidden = false;
-      empty.hidden = true;
-      thread.innerHTML = messages.map(m => `
-        <div class="mw-msg ${m.sender_name === myUserFullname ? 'mw-msg--mine' : 'mw-msg--theirs'}">
-          <span class="mw-msg__meta">${m.sender_name} · ${m.sender_role}</span>
-          ${m.text}
-        </div>
-      `).join("");
-      thread.scrollTop = thread.scrollHeight;
-    } catch {
-      thread.hidden = true;
-      empty.hidden = false;
-    }
-  }
-
-  document.getElementById("groupMsgForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const input = document.getElementById("groupMsgInput");
-    const btn = document.getElementById("groupMsgSend");
-    const text = input.value.trim();
-    if (!text) return;
-
-    btn.disabled = true;
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/group/${groupId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ text }),
-      });
-      if (res.ok) {
-        input.value = "";
-        loadGroupMessages();
-      } else {
-        showToast("Couldn't send that message.");
-      }
-    } catch {
-      showToast("Network error — try again.");
-    }
-    btn.disabled = false;
-  });
-
-  // ---------- Messages from Losub (manager <-> admin/owner) ----------
-  let lastAdminMsgCount = 0;
-  async function loadAdminMessages() {
-    const thread = document.getElementById("adminMsgThread");
-    const empty = document.getElementById("adminMsgEmpty");
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/manager`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const messages = data.messages || [];
-
-      if (!messages.length) {
-        thread.hidden = true;
-        empty.hidden = false;
-        return;
-      }
-      if (messages.length === lastAdminMsgCount) return;
-      lastAdminMsgCount = messages.length;
-
-      thread.hidden = false;
-      empty.hidden = true;
-      thread.innerHTML = messages.map(m => `
-        <div class="mw-msg ${m.sender_role === 'manager' ? 'mw-msg--mine' : 'mw-msg--theirs'}">
-          <span class="mw-msg__meta">${m.sender_role === "manager" ? "You" : `${m.sender_name} · Losub ${m.sender_role}`}</span>
-          ${m.text}
-        </div>
-      `).join("");
-      thread.scrollTop = thread.scrollHeight;
-    } catch {
-      thread.hidden = true;
-      empty.hidden = false;
-    }
-  }
-
-  document.getElementById("adminMsgForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const input = document.getElementById("adminMsgInput");
-    const btn = document.getElementById("adminMsgSend");
-    const text = input.value.trim();
-    if (!text) return;
-
-    btn.disabled = true;
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/manager`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ text }),
-      });
-      if (res.ok) {
-        input.value = "";
-        loadAdminMessages();
-      } else {
-        showToast("Couldn't send that message.");
-      }
-    } catch {
-      showToast("Network error — try again.");
-    }
-    btn.disabled = false;
-  });
-
   // ---------- Invite modal — real link to Browse plans, no fake email sending ----------
   const inviteOverlay = document.getElementById("inviteModalOverlay");
 
@@ -296,79 +180,10 @@ document.addEventListener("DOMContentLoaded", async () => {
     if (e.target.id === "inviteModalOverlay") closeInviteModal();
   });
 
-  // Real invite-by-email — the manager picks exactly who can take the seat.
+  // The invite "form" now just copies a real, working link to Browse plans —
+  // there's no email/SMS invite system built yet, so we don't fake one.
   const inviteForm = document.getElementById("inviteForm");
-  const inviteInput = document.getElementById("inviteInput");
-  const inviteError = document.getElementById("inviteError");
-
-  inviteForm.addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const email = inviteInput.value.trim();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      inviteError.hidden = false;
-      return;
-    }
-    inviteError.hidden = true;
-
-    const btn = document.getElementById("inviteSubmitBtn");
-    btn.disabled = true;
-    btn.textContent = "Sending…";
-
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/invite`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({ email }),
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        inviteError.textContent = data.error || "Couldn't send that invite.";
-        inviteError.hidden = false;
-      } else {
-        closeInviteModal();
-        inviteForm.reset();
-        showToast(data.message || "Invite sent.");
-        loadGroup();
-      }
-    } catch {
-      inviteError.textContent = "Network error — try again.";
-      inviteError.hidden = false;
-    }
-
-    btn.disabled = false;
-    btn.textContent = "Send invite";
-  });
-
-  // ---------- Revoke a pending invite ----------
-  document.getElementById("seatGrid").addEventListener("click", async (e) => {
-    const revokeBtn = e.target.closest("[data-revoke-id]");
-    if (!revokeBtn) return;
-    revokeBtn.disabled = true;
-
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/invites/${revokeBtn.dataset.revokeId}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-
-      if (!res.ok) {
-        showToast(data.error || "Couldn't revoke that invite.");
-        revokeBtn.disabled = false;
-        return;
-      }
-      invites = invites.filter(i => String(i.id) !== revokeBtn.dataset.revokeId);
-      renderSeats();
-      showToast("Invite revoked.");
-    } catch {
-      showToast("Network error — try again.");
-      revokeBtn.disabled = false;
-    }
-  });
+  if (inviteForm) inviteForm.hidden = true;
 
   document.getElementById("copyInviteLink").addEventListener("click", () => {
     const link = `${window.location.origin}/html/browse.html`;
@@ -413,7 +228,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     btn.disabled = true;
 
     try {
-      const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}/members/${pendingRemoveId}`, {
+      const res = await apiFetch(`${API_ORIGIN}/api/groups/${groupId}/members/${pendingRemoveId}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
@@ -429,7 +244,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         showToast(`${removed.fullname} was removed from the group`);
       }
     } catch {
-      showToast("Network error — try again.");
+      showToast("Couldn't reach Losub — check your connection and try again.");
     }
 
     btn.disabled = false;
@@ -439,17 +254,9 @@ document.addEventListener("DOMContentLoaded", async () => {
   // ---------- Initial load ----------
   async function loadGroup() {
     try {
-      try {
-        const meRes = await fetch(`${API_ORIGIN}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-        const meData = await meRes.json();
-        myUserFullname = meData.user?.fullname || null;
-      } catch {
-        myUserFullname = null;
-      }
-
       const [groupRes, membersRes] = await Promise.all([
-        fetch(`${API_ORIGIN}/api/groups/${groupId}`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
-        fetch(`${API_ORIGIN}/api/groups/${groupId}/members`, { cache: "no-store", headers: { Authorization: `Bearer ${token}` } }),
+        apiFetch(`${API_ORIGIN}/api/groups/${groupId}`, { headers: { Authorization: `Bearer ${token}` } }),
+        apiFetch(`${API_ORIGIN}/api/groups/${groupId}/members`, { headers: { Authorization: `Bearer ${token}` } }),
       ]);
 
       if (groupRes.status === 401 || membersRes.status === 401) {
@@ -465,32 +272,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       group = await groupRes.json();
       const membersData = await membersRes.json();
       members = membersData.members || [];
-      invites = membersData.invites || [];
 
       renderSummary();
       renderSeats();
       renderAccessLink();
-      loadGroupMessages();
-      loadAdminMessages();
-      startMessagePolling();
     } catch (err) {
       showToast("Couldn't load this group. Refresh to try again.");
     }
   }
-
-  // Poll both threads in the background so a reply from a group member or from
-  // Losub admin/owner shows up without the manager having to refresh the page.
-  let messagePollTimer = null;
-  function startMessagePolling() {
-    if (messagePollTimer) clearInterval(messagePollTimer);
-    messagePollTimer = setInterval(() => {
-      loadGroupMessages();
-      loadAdminMessages();
-    }, 8000);
-  }
-  window.addEventListener("beforeunload", () => {
-    if (messagePollTimer) clearInterval(messagePollTimer);
-  });
 
   loadGroup();
 });

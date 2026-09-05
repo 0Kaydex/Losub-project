@@ -57,30 +57,6 @@
   border-color: var(--ink);
 }
 
-/* ---------- Seat count picker (manager modal) ---------- */
-.seat-count-picker {
-  display: flex;
-  gap: 8px;
-}
-
-.seat-count-picker__btn {
-  flex: 1;
-  padding: 10px 0;
-  border: 2px solid var(--line, #e5e7eb);
-  border-radius: var(--r-md, 10px);
-  font-size: 14px;
-  font-weight: 700;
-  color: var(--ink);
-  background: transparent;
-  cursor: pointer;
-}
-
-.seat-count-picker__btn.is-active {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: #fff;
-}
-
 /* ---------- Horizontal scrolling row (Top Plans) ---------- */
 .plan-row {
   display: flex;
@@ -438,23 +414,4 @@
 
 @media (max-width: 480px) {
   .plan-grid { grid-template-columns: 1fr; }
-}
-
-.auth-field--checkbox {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-start;
-  gap: 10px;
-  margin: 14px 0;
-}
-.auth-field--checkbox input[type="checkbox"] {
-  margin-top: 3px;
-  width: 16px;
-  height: 16px;
-  flex-shrink: 0;
-}
-.auth-field--checkbox span {
-  font-size: 13px;
-  line-height: 1.4;
-  color: inherit;
 }

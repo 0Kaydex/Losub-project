@@ -51,26 +51,4 @@ function resetPasswordEmail(fullname, link) {
   };
 }
 
-function paymentReminderEmail(fullname, planName, amountNaira, dueDate, daysLeft) {
-  const dueLabel = new Date(dueDate).toLocaleDateString("en-NG", { day: "numeric", month: "long", year: "numeric" });
-  const whenLine = daysLeft <= 0
-    ? `Your payment was due on <strong>${dueLabel}</strong>. Please pay now to keep your seat active.`
-    : `Your next payment of <strong>₦${amountNaira.toLocaleString()}</strong> is due in <strong>${daysLeft} day${daysLeft === 1 ? "" : "s"}</strong>, on <strong>${dueLabel}</strong>.`;
-
-  return {
-    subject: daysLeft <= 0
-      ? `Payment overdue for your ${planName} seat`
-      : `Reminder: ${planName} payment due in ${daysLeft} day${daysLeft === 1 ? "" : "s"}`,
-    html: `
-      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
-        <h2>Hi ${fullname},</h2>
-        <p>${whenLine}</p>
-        <p>Make sure your wallet has enough balance so your ${planName} seat doesn't lose access.</p>
-        <p><a href="https://losubapp.com/html/wallet.html" style="display:inline-block;padding:12px 24px;background:#14120E;color:#fff;text-decoration:none;border-radius:999px;">Fund my wallet</a></p>
-        <p style="color:#888;font-size:13px;">This is an automatic payment reminder from Losub.</p>
-      </div>
-    `,
-  };
-}
-
-module.exports = { sendEmail, verificationEmail, resetPasswordEmail, paymentReminderEmail };
+module.exports = { sendEmail, verificationEmail, resetPasswordEmail };

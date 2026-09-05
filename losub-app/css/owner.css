@@ -92,15 +92,6 @@
   font-weight: 400;
   color: var(--ink-soft);
 }
-.owner-plan-form__actions {
-  display: flex;
-  gap: 10px;
-}
-.owner-plan-row-actions {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
 
 @media (max-width: 640px) {
   .owner-page-badge { display: none; }

@@ -16,19 +16,20 @@ document.addEventListener("DOMContentLoaded", async () => {
     return;
   }
 
-  const statusLabel = { paid: "Paid", pending: "Pending", defaulted: "Defaulted", overdue: "Overdue" };
+  const statusLabel = { paid: "Paid", pending: "Pending", defaulted: "Defaulted" };
   const fmt = n => `₦${n.toLocaleString()}`;
 
   async function loadGroupNotifications() {
-    // Scoped to this group only (?groupId=), instead of the user's whole feed.
+    // Notifications aren't tied to a specific group yet, so this shows your
+    // most recent notifications generally rather than filtered to this group.
     const list = document.getElementById("groupNotifList");
     const empty = document.getElementById("groupNotifEmpty");
     try {
-      const notifRes = await fetch(`${API_ORIGIN}/api/notifications?groupId=${groupId}`, {
+      const notifRes = await fetch(`${API_ORIGIN}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       const notifData = await notifRes.json();
-      const recent = (notifData.notifications || []).slice(0, 5);
+      const recent = (notifData.notifications || []).slice(0, 3);
 
       if (!recent.length) {
         list.hidden = true;
@@ -51,74 +52,8 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
-  // ---------- Group messages (manager <-> members) ----------
-  let myUserFullname = null;
-
-  async function loadGroupMessages() {
-    const thread = document.getElementById("groupMsgThread");
-    const empty = document.getElementById("groupMsgEmpty");
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/group/${groupId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const data = await res.json();
-      const messages = data.messages || [];
-
-      if (!messages.length) {
-        thread.hidden = true;
-        empty.hidden = false;
-        return;
-      }
-      thread.hidden = false;
-      empty.hidden = true;
-      thread.innerHTML = messages.map(m => `
-        <div class="mw-msg ${m.sender_name === myUserFullname ? 'mw-msg--mine' : 'mw-msg--theirs'}">
-          <span class="mw-msg__meta">${m.sender_name} · ${m.sender_role}</span>
-          ${m.text}
-        </div>
-      `).join("");
-      thread.scrollTop = thread.scrollHeight;
-    } catch {
-      thread.hidden = true;
-      empty.hidden = false;
-    }
-  }
-
-  document.getElementById("groupMsgForm").addEventListener("submit", async (e) => {
-    e.preventDefault();
-    const input = document.getElementById("groupMsgInput");
-    const btn = document.getElementById("groupMsgSend");
-    const text = input.value.trim();
-    if (!text) return;
-
-    btn.disabled = true;
-    try {
-      const res = await fetch(`${API_ORIGIN}/api/messages/group/${groupId}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
-        body: JSON.stringify({ text }),
-      });
-      if (res.ok) {
-        input.value = "";
-        loadGroupMessages();
-      }
-    } catch {
-      // silently fail — user can retry
-    }
-    btn.disabled = false;
-  });
-
   try {
-    try {
-      const meRes = await fetch(`${API_ORIGIN}/api/auth/me`, { headers: { Authorization: `Bearer ${token}` } });
-      const meData = await meRes.json();
-      myUserFullname = meData.user?.fullname || null;
-    } catch {
-      myUserFullname = null;
-    }
-
     const res = await fetch(`${API_ORIGIN}/api/groups/${groupId}`, {
-      cache: "no-store",
       headers: { Authorization: `Bearer ${token}` },
     });
 
@@ -141,46 +76,13 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById("nextPaymentDate").textContent = g.nextPaymentDate || "—";
     document.getElementById("yourPrice").textContent = fmt(g.yourPrice);
 
-    const payBtn = document.getElementById("payNowBtn");
-    if (g.paymentStatus === "overdue" || g.paymentStatus === "pending") {
-      payBtn.hidden = false;
-      payBtn.textContent = `Pay now (${fmt(g.yourPrice)})`;
-      payBtn.onclick = async () => {
-        payBtn.disabled = true;
-        payBtn.textContent = "Processing…";
-        try {
-          const payRes = await fetch(`${API_ORIGIN}/api/groups/${groupId}/pay`, {
-            method: "POST",
-            headers: { Authorization: `Bearer ${token}` },
-          });
-          const payData = await payRes.json();
-          if (!payRes.ok) {
-            alert(payData.error || "Payment failed.");
-            payBtn.disabled = false;
-            payBtn.textContent = `Pay now (${fmt(g.yourPrice)})`;
-            return;
-          }
-          statusEl.textContent = statusLabel.paid;
-          statusEl.className = "status-pill status-pill--paid";
-          document.getElementById("nextPaymentDate").textContent = payData.nextPaymentDate;
-          payBtn.hidden = true;
-          loadGroupNotifications();
-        } catch {
-          alert("Network error — try again.");
-          payBtn.disabled = false;
-          payBtn.textContent = `Pay now (${fmt(g.yourPrice)})`;
-        }
-      };
-    } else {
-      payBtn.hidden = true;
-    }
-
     document.getElementById("soloPrice").textContent = fmt(g.soloPrice);
     document.getElementById("miniYourPrice").textContent = fmt(g.yourPrice);
     document.getElementById("miniSaved").textContent = fmt(g.soloPrice - g.yourPrice);
 
     document.getElementById("managerName").textContent = g.manager;
     document.getElementById("managerInitial").textContent = g.manager.charAt(0);
+    document.getElementById("messageGroupLink").href = `messages.html?group=${groupId}`;
 
     if (g.accessLink) {
       document.getElementById("accessPanel").hidden = false;
@@ -188,7 +90,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     loadGroupNotifications();
-    loadGroupMessages();
 
     // Managers don't get a "leave" button here — that's not built yet (backend rejects it too).
     const leaveBtn = document.getElementById("leaveGroupBtn");
@@ -217,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
           window.location.href = "dashboard.html";
         } catch {
-          alert("Network error — try again.");
+          alert("Couldn't reach Losub — check your connection and try again.");
           leaveBtn.disabled = false;
           leaveBtn.textContent = "Leave this group";
         }

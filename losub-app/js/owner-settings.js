@@ -50,52 +50,6 @@ document.addEventListener("DOMContentLoaded", async () => {
   const addPlanForm = document.getElementById("addPlanForm");
   const addPlanMessage = document.getElementById("addPlanMessage");
   const addPlanSubmit = document.getElementById("addPlanSubmit");
-  const planFormTitle = document.getElementById("planFormTitle");
-  const cancelEditBtn = document.getElementById("cancelEditBtn");
-
-  const nameInput = document.getElementById("planName");
-  const soloPriceInput = document.getElementById("planSoloPrice");
-  const pricePerSeatInput = document.getElementById("planPricePerSeat");
-  const groupPriceInput = document.getElementById("planGroupPrice");
-  const maxSeatsInput = document.getElementById("planMaxSeats");
-  const logoInput = document.getElementById("planLogo");
-  const colorInput = document.getElementById("planColor");
-
-  let editingPlanId = null; // null = "add" mode, otherwise the id being edited
-
-  function showMessage(text, type = "error") {
-    addPlanMessage.textContent = text;
-    addPlanMessage.className = `auth-message auth-message--${type}`;
-    addPlanMessage.hidden = false;
-  }
-
-  function enterEditMode(plan) {
-    editingPlanId = plan.id;
-    planFormTitle.textContent = `Editing "${plan.name}"`;
-    addPlanSubmit.textContent = "Save changes";
-    cancelEditBtn.hidden = false;
-
-    nameInput.value = plan.name;
-    soloPriceInput.value = plan.solo_price;
-    pricePerSeatInput.value = plan.price_per_seat ?? "";
-    groupPriceInput.value = plan.group_price ?? "";
-    maxSeatsInput.value = plan.max_seats ?? 4;
-    logoInput.value = plan.logo || "";
-    colorInput.value = plan.color || "";
-
-    addPlanForm.scrollIntoView({ behavior: "smooth", block: "start" });
-  }
-
-  function exitEditMode() {
-    editingPlanId = null;
-    planFormTitle.textContent = "Add a plan";
-    addPlanSubmit.textContent = "Add plan";
-    cancelEditBtn.hidden = true;
-    addPlanForm.reset();
-    addPlanMessage.hidden = true;
-  }
-
-  cancelEditBtn.addEventListener("click", exitEditMode);
 
   async function loadPlans() {
     try {
@@ -115,28 +69,14 @@ document.addEventListener("DOMContentLoaded", async () => {
         <li>
           <div>
             <div class="admin-list__name">${p.name}</div>
-            <div class="admin-list__meta">
-              Solo ₦${p.solo_price.toLocaleString()}/mo
-              ${p.price_per_seat != null ? ` · Per seat ₦${p.price_per_seat.toLocaleString()}/mo (manager pays ₦${Math.round(p.price_per_seat / 2).toLocaleString()})` : " · No per-seat price set yet"}
-              ${p.group_price != null ? ` · Group cost ₦${p.group_price.toLocaleString()}/mo` : ""}
-              · Max ${p.max_seats || 4} members
-            </div>
+            <div class="admin-list__meta">₦${p.solo_price.toLocaleString()}/mo solo price</div>
           </div>
-          <div class="owner-plan-row-actions">
-            <button type="button" class="admin-action-btn owner-edit-plan-btn" data-id="${p.id}">Edit</button>
-            <button type="button" class="admin-action-btn admin-action-btn--danger owner-delete-plan-btn" data-id="${p.id}" data-name="${p.name}">Delete</button>
-          </div>
+          <button type="button" class="admin-action-btn admin-action-btn--danger owner-delete-plan-btn" data-id="${p.id}" data-name="${p.name}">Delete</button>
         </li>
       `).join("");
 
       existingPlansList.querySelectorAll(".owner-delete-plan-btn").forEach(btn => {
         btn.addEventListener("click", () => confirmDeletePlan(btn.dataset.id, btn.dataset.name));
-      });
-      existingPlansList.querySelectorAll(".owner-edit-plan-btn").forEach(btn => {
-        btn.addEventListener("click", () => {
-          const plan = plans.find(p => String(p.id) === btn.dataset.id);
-          if (plan) enterEditMode(plan);
-        });
       });
     } catch {
       existingPlansEmpty.hidden = false;
@@ -147,94 +87,75 @@ document.addEventListener("DOMContentLoaded", async () => {
     e.preventDefault();
     addPlanMessage.hidden = true;
 
-    const name = nameInput.value.trim();
-    const solo_price = Number(soloPriceInput.value);
-    const price_per_seat = Number(pricePerSeatInput.value);
-    const group_price = groupPriceInput.value ? Number(groupPriceInput.value) : null;
-    const max_seats = Number(maxSeatsInput.value);
-    const logo = logoInput.value.trim() || null;
-    const color = colorInput.value.trim() || null;
+    const name = document.getElementById("planName").value.trim();
+    const solo_price = Number(document.getElementById("planSoloPrice").value);
+    const logo = document.getElementById("planLogo").value.trim() || null;
+    const color = document.getElementById("planColor").value.trim() || null;
 
     if (!name || !solo_price || solo_price <= 0) {
-      showMessage("Enter a plan name and a valid solo price.");
-      return;
-    }
-    if (!price_per_seat || price_per_seat <= 0) {
-      showMessage("Enter a valid price per seat — this is what each member actually pays.");
-      return;
-    }
-    if (!max_seats || max_seats < 2 || max_seats > 20) {
-      showMessage("Max members per group must be between 2 and 20.");
+      addPlanMessage.textContent = "Enter a plan name and a valid solo price.";
+      addPlanMessage.className = "auth-message auth-message--error";
+      addPlanMessage.hidden = false;
       return;
     }
 
-    const isEditing = editingPlanId !== null;
     addPlanSubmit.disabled = true;
-    addPlanSubmit.textContent = isEditing ? "Saving…" : "Adding…";
+    addPlanSubmit.textContent = "Adding…";
 
     try {
-      const res = await fetch(`${API_BASE}/plans${isEditing ? `/${editingPlanId}` : ""}`, {
-        method: isEditing ? "PUT" : "POST",
+      const res = await fetch(`${API_BASE}/plans`, {
+        method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name, solo_price, price_per_seat, group_price, max_seats, logo, color }),
+        body: JSON.stringify({ name, solo_price, logo, color }),
       });
       const data = await res.json();
 
       if (!res.ok) {
-        showMessage(data.error || `Couldn't ${isEditing ? "update" : "add"} that plan.`);
+        addPlanMessage.textContent = data.error || "Couldn't add that plan.";
+        addPlanMessage.className = "auth-message auth-message--error";
+        addPlanMessage.hidden = false;
       } else {
-        showMessage(data.message || (isEditing ? "Plan updated." : "Plan added."), "success");
-        exitEditMode();
+        addPlanMessage.textContent = data.message || "Plan added.";
+        addPlanMessage.className = "auth-message auth-message--success";
+        addPlanMessage.hidden = false;
+        addPlanForm.reset();
         loadPlans();
       }
     } catch {
-      showMessage("Network error — try again.");
+      addPlanMessage.textContent = "Network error — try again.";
+      addPlanMessage.className = "auth-message auth-message--error";
+      addPlanMessage.hidden = false;
     }
 
     addPlanSubmit.disabled = false;
-    if (editingPlanId === null) addPlanSubmit.textContent = "Add plan";
+    addPlanSubmit.textContent = "Add plan";
   });
 
   async function confirmDeletePlan(id, name) {
     if (!confirm(`Delete "${name}" from the plan catalog? This can't be undone.`)) return;
-    await deletePlan(id, name, false);
-  }
 
-  // Handles the normal case (no groups on the plan) AND the case where groups
-  // are still using this plan — the API blocks that delete by default and tells
-  // us how many groups are attached, so surface that and let the owner explicitly
-  // force it through instead of the delete silently going nowhere.
-  async function deletePlan(id, name, force) {
     try {
-      const res = await fetch(`${API_BASE}/plans/${id}${force ? "?force=true" : ""}`, {
+      const res = await fetch(`${API_BASE}/plans/${id}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
 
       if (!res.ok) {
-        if (data.groupCount) {
-          const reallyForce = confirm(
-            `${data.error}\n\nDelete anyway? This removes ${data.groupCount} group(s) and all their members.`
-          );
-          if (reallyForce) await deletePlan(id, name, true);
-          return;
-        }
-        showMessage(data.error || "Couldn't delete that plan.");
+        addPlanMessage.textContent = data.error || "Couldn't delete that plan.";
+        addPlanMessage.className = "auth-message auth-message--error";
+        addPlanMessage.hidden = false;
         return;
       }
 
-      // editingPlanId is a number (from the plans API); id here may be a string
-      // (from a button's data-id attribute) — compare loosely so cancelling an
-      // in-progress edit of the plan you just deleted actually works.
-      if (String(editingPlanId) === String(id)) exitEditMode();
-      showMessage(data.message || `${name} deleted.`, "success");
       loadPlans();
     } catch {
-      showMessage("Network error — try again.");
+      addPlanMessage.textContent = "Network error — try again.";
+      addPlanMessage.className = "auth-message auth-message--error";
+      addPlanMessage.hidden = false;
     }
   }
 

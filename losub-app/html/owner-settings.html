@@ -58,29 +58,17 @@
         </div>
 
         <section class="panel owner-more-panel">
-          <div class="section-header"><h2 id="planFormTitle">Add a plan</h2></div>
+          <div class="section-header"><h2>Add a plan</h2></div>
           <p class="owner-plan-hint">Add a subscription plan to the catalog. Once added, anyone can start a group for it from Browse plans.</p>
 
           <form id="addPlanForm" class="owner-plan-form">
             <label class="auth-field">
               <span>Plan name</span>
-              <input type="text" id="planName" placeholder="e.g. Spotify Family" required />
+              <input type="text" id="planName" placeholder="e.g. Spotify" required />
             </label>
             <label class="auth-field">
-              <span>Solo price (₦/month) <span class="owner-plan-optional">— shown as "you'd pay this alone", for the savings comparison only</span></span>
-              <input type="number" id="planSoloPrice" placeholder="e.g. 1600" min="1" required />
-            </label>
-            <label class="auth-field">
-              <span>Price per seat (₦/month) <span class="owner-plan-optional">— what each regular member actually pays. The manager pays 50% of this.</span></span>
-              <input type="number" id="planPricePerSeat" placeholder="e.g. 650" min="1" required />
-            </label>
-            <label class="auth-field">
-              <span>Group/family plan cost (₦/month) <span class="owner-plan-optional">(optional — what the shared plan actually costs you, for your own margin reference. Never charged to users.)</span></span>
-              <input type="number" id="planGroupPrice" placeholder="e.g. 2500" min="1" />
-            </label>
-            <label class="auth-field">
-              <span>Max members per group <span class="owner-plan-optional">— how many seats a group for this plan has in total (including the manager). e.g. Netflix = 4, YouTube Premium family = 6.</span></span>
-              <input type="number" id="planMaxSeats" placeholder="e.g. 4" min="2" max="20" required />
+              <span>Solo price (₦/month)</span>
+              <input type="number" id="planSoloPrice" placeholder="e.g. 3200" min="1" required />
             </label>
             <label class="auth-field">
               <span>Logo URL <span class="owner-plan-optional">(optional)</span></span>
@@ -92,10 +80,7 @@
             </label>
 
             <div id="addPlanMessage" class="auth-message" hidden></div>
-            <div class="owner-plan-form__actions">
-              <button type="submit" class="admin-action-btn admin-action-btn--primary" id="addPlanSubmit">Add plan</button>
-              <button type="button" class="admin-action-btn" id="cancelEditBtn" hidden>Cancel</button>
-            </div>
+            <button type="submit" class="admin-action-btn admin-action-btn--primary" id="addPlanSubmit">Add plan</button>
           </form>
         </section>
 
