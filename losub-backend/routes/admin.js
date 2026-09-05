@@ -63,14 +63,14 @@ router.put("/users/:id/suspend", (req, res) => {
 router.get("/groups", (req, res) => {
   const rows = db.prepare(`
     SELECT
-      g.id, g.seats_total, g.price_per_seat, g.status,
+      g.id, g.seats_total, g.price_per_seat, g.status, g.exit_requested, g.exit_reason, g.exit_requested_at,
       p.name AS plan_name,
       m.fullname AS manager_name,
       (SELECT COUNT(*) FROM group_members WHERE group_id = g.id) AS seats_filled
     FROM groups g
     JOIN plans p ON p.id = g.plan_id
     JOIN users m ON m.id = g.manager_id
-    ORDER BY g.created_at DESC
+    ORDER BY g.exit_requested DESC, g.created_at DESC
   `).all();
 
   const groups = rows.map(row => ({
@@ -81,9 +81,36 @@ router.get("/groups", (req, res) => {
     seatsTotal: row.seats_total,
     monthlyRevenue: (row.price_per_seat * row.seats_filled) / 100,
     status: row.seats_filled >= row.seats_total ? "full" : row.status,
+    exitRequested: !!row.exit_requested,
+    exitReason: row.exit_reason || null,
+    exitRequestedAt: row.exit_requested_at || null,
   }));
 
   res.json({ groups });
+});
+
+// DELETE /api/admin/groups/:id — permanently closes a group: removes every
+// member's seat, wipes its message threads, then deletes the group row.
+// Used both for manager-requested closures and general admin cleanup.
+router.delete("/groups/:id", (req, res) => {
+  const group = db.prepare(`
+    SELECT g.id, p.name AS plan_name, m.fullname AS manager_name
+    FROM groups g JOIN plans p ON p.id = g.plan_id JOIN users m ON m.id = g.manager_id
+    WHERE g.id = ?
+  `).get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+
+  const memberIds = db.prepare("SELECT user_id FROM group_members WHERE group_id = ?").all(req.params.id);
+
+  db.prepare("DELETE FROM group_members WHERE group_id = ?").run(req.params.id);
+  db.prepare("DELETE FROM messages WHERE group_id = ?").run(req.params.id);
+  db.prepare("DELETE FROM groups WHERE id = ?").run(req.params.id);
+
+  memberIds.forEach(m => notify(m.user_id, `Your ${group.plan_name} group was closed by Losub.`, "group"));
+
+  logAudit(req.userId, "group.delete", "group", group.id, `Closed ${group.plan_name} group managed by ${group.manager_name}`);
+
+  res.json({ message: "Group closed and removed." });
 });
 
 // GET /api/admin/transactions — platform-wide wallet activity, most recent first

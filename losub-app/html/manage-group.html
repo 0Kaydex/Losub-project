@@ -71,7 +71,39 @@
           </div>
         </section>
 
+        <!-- ============ DANGER ZONE ============ -->
+        <section class="mg-section mg-section--danger" id="dangerZone">
+          <div class="mg-section__head">
+            <h2>Close this group</h2>
+          </div>
+          <p class="mg-field__hint" id="dangerZoneHint">
+            Done managing this group? Send a request to Losub — we'll reassign or refund members, then close it out. This can't be undone once approved.
+          </p>
+          <button type="button" class="auth-submit auth-submit--danger" id="requestExitBtn" style="width:auto; padding:0 20px;">
+            Request to close this group
+          </button>
+        </section>
+
       </main>
+    </div>
+  </div>
+
+  <!-- ============ EXIT REQUEST MODAL ============ -->
+  <div class="modal-overlay" id="exitModalOverlay" hidden>
+    <div class="modal">
+      <button type="button" class="modal__close" id="exitModalClose" aria-label="Close">&times;</button>
+      <h2>Request to close this group?</h2>
+      <p class="modal__sub">
+        This sends a message straight to the Losub team so they can step in — reassign or refund the other members, then permanently close the group. You'll be notified once it's done.
+      </p>
+      <label class="mg-field">
+        <span class="mg-field__label">Reason (optional)</span>
+        <textarea id="exitReasonInput" rows="3" placeholder="e.g. I no longer want to manage this plan…" maxlength="500" style="width:100%; padding:12px 14px; border:1px solid var(--line); border-radius:var(--r-md); font-family:inherit; font-size:14px; resize:vertical;"></textarea>
+      </label>
+      <div class="modal__actions">
+        <button type="button" class="auth-submit auth-submit--danger" id="confirmExitRequest">Send request</button>
+        <button type="button" class="link-btn" id="cancelExitRequest">Cancel</button>
+      </div>
     </div>
   </div>
 

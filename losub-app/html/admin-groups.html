@@ -35,16 +35,30 @@
           <button type="button" class="tab-bar__btn is-active" data-status="all">All</button>
           <button type="button" class="tab-bar__btn" data-status="active">Active</button>
           <button type="button" class="tab-bar__btn" data-status="full">Full</button>
+          <button type="button" class="tab-bar__btn" data-status="exit_requested">Exit requested</button>
         </div>
 
         <section class="panel">
           <table class="admin-table">
-            <thead><tr><th>Plan</th><th>Manager</th><th>Seats</th><th>Monthly revenue</th><th>Status</th></tr></thead>
+            <thead><tr><th>Plan</th><th>Manager</th><th>Seats</th><th>Monthly revenue</th><th>Status</th><th></th></tr></thead>
             <tbody id="groupsTableBody"></tbody>
           </table>
           <p class="empty-state" id="groupsEmpty" hidden>No groups match your search.</p>
         </section>
       </main>
+    </div>
+  </div>
+
+  <!-- ============ DELETE GROUP MODAL ============ -->
+  <div class="modal-overlay" id="deleteGroupOverlay" hidden>
+    <div class="modal">
+      <button type="button" class="modal__close" id="deleteGroupClose" aria-label="Close">&times;</button>
+      <h2>Close this group?</h2>
+      <p class="modal__sub" id="deleteGroupSub">This removes every member's seat and permanently deletes the group. This can't be undone.</p>
+      <div class="modal__actions">
+        <button type="button" class="auth-submit auth-submit--danger" id="confirmDeleteGroup">Close group</button>
+        <button type="button" class="link-btn" id="cancelDeleteGroup">Cancel</button>
+      </div>
     </div>
   </div>
 

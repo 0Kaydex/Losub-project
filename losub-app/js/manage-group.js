@@ -276,10 +276,73 @@ document.addEventListener("DOMContentLoaded", async () => {
       renderSummary();
       renderSeats();
       renderAccessLink();
+      renderDangerZone();
     } catch (err) {
       showToast("Couldn't load this group. Refresh to try again.");
     }
   }
+
+  // ---------- Danger zone: request to close the group ----------
+  function renderDangerZone() {
+    const hint = document.getElementById("dangerZoneHint");
+    const btn = document.getElementById("requestExitBtn");
+    if (group.exitRequested) {
+      btn.disabled = true;
+      btn.textContent = "Request pending review";
+      hint.textContent = "Losub has your request and is working on it — you'll be notified once the group is closed.";
+    } else {
+      btn.disabled = false;
+      btn.textContent = "Request to close this group";
+      hint.textContent = "Done managing this group? Send a request to Losub — we'll reassign or refund members, then close it out. This can't be undone once approved.";
+    }
+  }
+
+  const exitOverlay = document.getElementById("exitModalOverlay");
+
+  function openExitModal() {
+    if (group.exitRequested) return;
+    document.getElementById("exitReasonInput").value = "";
+    exitOverlay.hidden = false;
+  }
+  function closeExitModal() {
+    exitOverlay.hidden = true;
+  }
+
+  document.getElementById("requestExitBtn").addEventListener("click", openExitModal);
+  document.getElementById("exitModalClose").addEventListener("click", closeExitModal);
+  document.getElementById("cancelExitRequest").addEventListener("click", closeExitModal);
+  exitOverlay.addEventListener("click", (e) => {
+    if (e.target.id === "exitModalOverlay") closeExitModal();
+  });
+
+  document.getElementById("confirmExitRequest").addEventListener("click", async () => {
+    const btn = document.getElementById("confirmExitRequest");
+    const reason = document.getElementById("exitReasonInput").value.trim();
+    btn.disabled = true;
+
+    try {
+      const res = await apiFetch(`${API_ORIGIN}/api/groups/${groupId}/exit-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ reason }),
+      });
+      const data = await res.json();
+
+      if (!res.ok) {
+        showToast(data.error || "Couldn't send the request.");
+      } else {
+        group.exitRequested = true;
+        group.exitReason = reason || null;
+        renderDangerZone();
+        closeExitModal();
+        showToast(data.message);
+      }
+    } catch {
+      showToast("Couldn't reach Losub — check your connection and try again.");
+    }
+
+    btn.disabled = false;
+  });
 
   loadGroup();
 });

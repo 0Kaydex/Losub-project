@@ -103,6 +103,7 @@
   color: var(--ink);
 }
 .admin-table tr:last-child td { border-bottom: none; }
+.admin-table__row--highlight td { background: var(--pastel-sand); }
 
 .admin-search {
   margin-bottom: 20px;

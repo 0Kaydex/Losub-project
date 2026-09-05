@@ -91,6 +91,9 @@ db.exec(`
     seats_total INTEGER NOT NULL,
     price_per_seat INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'active',
+    exit_requested INTEGER NOT NULL DEFAULT 0,
+    exit_reason TEXT,
+    exit_requested_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (plan_id) REFERENCES plans(id),
     FOREIGN KEY (manager_id) REFERENCES users(id)
@@ -114,6 +117,9 @@ db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_tx_reference ON wallet_tra
 
 const groupMigrations = [
   "ALTER TABLE groups ADD COLUMN access_link TEXT",
+  "ALTER TABLE groups ADD COLUMN exit_requested INTEGER NOT NULL DEFAULT 0",
+  "ALTER TABLE groups ADD COLUMN exit_reason TEXT",
+  "ALTER TABLE groups ADD COLUMN exit_requested_at TEXT",
 ];
 for (const sql of groupMigrations) {
   try {

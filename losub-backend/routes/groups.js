@@ -75,7 +75,7 @@ router.get("/browse", (req, res) => {
 // GET /api/groups/:id — details for a group you belong to (member or manager)
 router.get("/:id", (req, res) => {
   const group = db.prepare(`
-    SELECT g.id, g.seats_total, g.price_per_seat, g.status, g.access_link,
+    SELECT g.id, g.seats_total, g.price_per_seat, g.status, g.access_link, g.exit_requested, g.exit_reason,
            p.name AS plan_name, p.logo, p.color, p.solo_price,
            m.fullname AS manager_name, m.id AS manager_id
     FROM groups g
@@ -108,6 +108,8 @@ router.get("/:id", (req, res) => {
     paymentStatus: membership.payment_status,
     nextPaymentDate: membership.next_payment_date,
     accessLink: group.access_link || null,
+    exitRequested: !!group.exit_requested,
+    exitReason: group.exit_reason || null,
   });
 });
 
@@ -173,18 +175,57 @@ router.delete("/:id/members/:userId", (req, res) => {
   notify(req.params.userId, "You were removed from a group.", "group");
 });
 
-// POST /api/groups/:id/leave — a member leaves (managers can't leave their own group yet)
+// POST /api/groups/:id/leave — a member leaves. Managers can't leave directly
+// (that would orphan the group) — see /exit-request below for their path.
 router.post("/:id/leave", (req, res) => {
   const group = db.prepare("SELECT manager_id FROM groups WHERE id = ?").get(req.params.id);
   if (!group) return res.status(404).json({ error: "Group not found." });
   if (group.manager_id === req.userId) {
-    return res.status(400).json({ error: "Managers can't leave their own group — that feature isn't built yet." });
+    return res.status(400).json({ error: "Managers can't leave directly — use \"Request to close this group\" instead." });
   }
 
   const result = db.prepare("DELETE FROM group_members WHERE group_id = ? AND user_id = ?").run(req.params.id, req.userId);
   if (result.changes === 0) return res.status(404).json({ error: "You're not in this group." });
 
   res.json({ message: "You left the group." });
+});
+
+// POST /api/groups/:id/exit-request — manager asks Losub to close/reassign the
+// group. This doesn't delete anything itself: it flags the group, drops a
+// message into the support thread, and notifies every admin/owner so a human
+// reviews it (transfers members, refunds, etc. before the group is deleted).
+router.post("/:id/exit-request", (req, res) => {
+  const group = db.prepare("SELECT manager_id, exit_requested FROM groups WHERE id = ?").get(req.params.id);
+  if (!group) return res.status(404).json({ error: "Group not found." });
+  if (group.manager_id !== req.userId) {
+    return res.status(403).json({ error: "Only the group manager can request to close this group." });
+  }
+  if (group.exit_requested) {
+    return res.status(400).json({ error: "A close request is already pending review." });
+  }
+
+  const reason = (req.body.reason || "").trim().slice(0, 500);
+
+  db.prepare(
+    "UPDATE groups SET exit_requested = 1, exit_reason = ?, exit_requested_at = datetime('now') WHERE id = ?"
+  ).run(reason || null, req.params.id);
+
+  const manager = db.prepare("SELECT fullname FROM users WHERE id = ?").get(req.userId);
+  const supportBody = `⚠️ Requested to close this group and exit as manager.${reason ? ` Reason: ${reason}` : ""}`;
+
+  db.prepare(
+    "INSERT INTO messages (group_id, thread, sender_id, sender_role, sender_name, body) VALUES (?, 'support', ?, 'manager', ?, ?)"
+  ).run(req.params.id, req.userId, manager.fullname, supportBody);
+
+  const admins = db.prepare("SELECT id FROM users WHERE role IN ('admin', 'owner')").all();
+  admins.forEach(a => notify(
+    a.id,
+    `${manager.fullname} requested to close a group.`,
+    "group_message",
+    `admin-groups.html?highlight=${req.params.id}`
+  ));
+
+  res.json({ message: "Request sent. Losub will review and close out the group." });
 });
 
 // POST /api/groups — create a new group as its manager

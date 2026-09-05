@@ -101,6 +101,15 @@
 /* ---------- Section head ---------- */
 .mg-section { margin-bottom: 40px; }
 
+.mg-section--danger {
+  border: 1px solid #FADBD8;
+  background: #FDF2F1;
+  border-radius: var(--r-lg);
+  padding: 20px 22px;
+}
+.mg-section--danger .mg-section__head h2 { color: #A93226; }
+.mg-section--danger .mg-field__hint { margin-bottom: 14px; }
+
 .mg-section__head {
   display: flex;
   align-items: baseline;

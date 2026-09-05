@@ -84,6 +84,7 @@
 .status-pill--defaulted,
 .status-pill--failed { background: var(--pastel-pink); color: #8c2a3f; }
 .status-pill--full { background: var(--pastel-lilac); color: #4a3b6b; }
+.status-pill--danger { background: var(--pastel-pink); color: #8c2a3f; margin-left: 6px; }
 
 .empty-state {
   text-align: center;
