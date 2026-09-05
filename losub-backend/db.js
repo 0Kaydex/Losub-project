@@ -142,13 +142,35 @@ db.exec(`
     group_id INTEGER NOT NULL,
     thread TEXT NOT NULL DEFAULT 'group',   -- 'group' (manager + members) or 'support' (manager <-> Losub admin/owner)
     sender_id INTEGER,                      -- NULL for messages sent by an admin who isn't a member of the group
-    sender_role TEXT NOT NULL,              -- 'manager' | 'member' | 'admin'
-    sender_name TEXT NOT NULL,              -- name snapshot, so it still shows correctly after the row expires from other tables
-    body TEXT NOT NULL,
+    sender_role TEXT NOT NULL DEFAULT 'member', -- 'manager' | 'member' | 'admin'
+    sender_name TEXT NOT NULL DEFAULT '',   -- name snapshot, so it still shows correctly after the row expires from other tables
+    body TEXT NOT NULL DEFAULT '',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (group_id) REFERENCES groups(id)
   );
 `);
+
+// Migration guard: an older deploy may already have a `messages` table with a
+// different shape (CREATE TABLE IF NOT EXISTS above is a no-op in that case,
+// since SQLite won't retrofit columns onto an existing table). Add anything
+// that's missing so the index below — and every query in the messages
+// routes — doesn't crash the whole app on boot.
+{
+  const existingCols = db.prepare("PRAGMA table_info(messages)").all().map(c => c.name);
+  const wantedCols = [
+    { name: "thread", def: "TEXT NOT NULL DEFAULT 'group'" },
+    { name: "sender_id", def: "INTEGER" },
+    { name: "sender_role", def: "TEXT NOT NULL DEFAULT 'member'" },
+    { name: "sender_name", def: "TEXT NOT NULL DEFAULT ''" },
+    { name: "body", def: "TEXT NOT NULL DEFAULT ''" },
+    { name: "created_at", def: "TEXT NOT NULL DEFAULT (datetime('now'))" },
+  ];
+  for (const col of wantedCols) {
+    if (!existingCols.includes(col.name)) {
+      db.exec(`ALTER TABLE messages ADD COLUMN ${col.name} ${col.def}`);
+    }
+  }
+}
 
 db.exec("CREATE INDEX IF NOT EXISTS idx_messages_group_thread ON messages(group_id, thread, created_at)");
 
