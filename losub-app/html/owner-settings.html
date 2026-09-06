@@ -57,32 +57,53 @@
 
         </div>
 
-        <section class="panel owner-more-panel">
-          <div class="section-header"><h2>Add a plan</h2></div>
-          <p class="owner-plan-hint">Add a subscription plan to the catalog. Once added, anyone can start a group for it from Browse plans.</p>
+       <section class="panel owner-more-panel">
+  <div class="section-header"><h2>Add a plan</h2></div>
+  <p class="owner-plan-hint">Add a subscription plan to the catalog. Once added, anyone can start a group for it from Browse plans.</p>
 
-          <form id="addPlanForm" class="owner-plan-form">
-            <label class="auth-field">
-              <span>Plan name</span>
-              <input type="text" id="planName" placeholder="e.g. Spotify" required />
-            </label>
-            <label class="auth-field">
-              <span>Solo price (₦/month)</span>
-              <input type="number" id="planSoloPrice" placeholder="e.g. 3200" min="1" required />
-            </label>
-            <label class="auth-field">
-              <span>Logo URL <span class="owner-plan-optional">(optional)</span></span>
-              <input type="text" id="planLogo" placeholder="https://cdn.simpleicons.org/spotify/1DB954" />
-            </label>
-            <label class="auth-field">
-              <span>Brand color <span class="owner-plan-optional">(optional)</span></span>
-              <input type="text" id="planColor" placeholder="#1DB954" />
-            </label>
+  <form id="addPlanForm" class="owner-plan-form">
+    <label class="auth-field">
+      <span>Plan name</span>
+      <input type="text" id="planName" placeholder="e.g. Spotify" required />
+    </label>
+    <label class="auth-field">
+      <span>Solo price (₦/month)</span>
+      <input type="number" id="planSoloPrice" placeholder="e.g. 3200" min="1" required />
+    </label>
+    <p class="owner-plan-hint" style="margin-top:-4px;">What it costs to subscribe alone — shown to members as their savings.</p>
 
-            <div id="addPlanMessage" class="auth-message" hidden></div>
-            <button type="submit" class="admin-action-btn admin-action-btn--primary" id="addPlanSubmit">Add plan</button>
-          </form>
-        </section>
+    <label class="auth-field">
+      <span>Price per seat (₦/month)</span>
+      <input type="number" id="planPricePerSeat" placeholder="e.g. 1200" min="1" required />
+    </label>
+    <p class="owner-plan-hint" style="margin-top:-4px;">What each member in a group is billed, every month.</p>
+
+    <label class="auth-field">
+      <span>Family plan cost (₦/month)</span>
+      <input type="number" id="planFamilyPrice" placeholder="e.g. 5000" min="1" required />
+    </label>
+    <p class="owner-plan-hint" style="margin-top:-4px;">What Losub actually pays for the underlying family/group subscription.</p>
+
+    <label class="auth-field">
+      <span>Seats in that family plan</span>
+      <input type="number" id="planDefaultSeats" placeholder="e.g. 4" min="1" value="4" required />
+    </label>
+
+    <p class="owner-plan-hint" id="planMarginPreview" style="font-weight:600;"></p>
+
+    <label class="auth-field">
+      <span>Logo URL <span class="owner-plan-optional">(optional)</span></span>
+      <input type="text" id="planLogo" placeholder="https://cdn.simpleicons.org/spotify/1DB954" />
+    </label>
+    <label class="auth-field">
+      <span>Brand color <span class="owner-plan-optional">(optional)</span></span>
+      <input type="text" id="planColor" placeholder="#1DB954" />
+    </label>
+
+    <div id="addPlanMessage" class="auth-message" hidden></div>
+    <button type="submit" class="admin-action-btn admin-action-btn--primary" id="addPlanSubmit">Add plan</button>
+  </form>
+</section>
 
         <section class="panel">
           <div class="section-header"><h2>Existing plans</h2></div>

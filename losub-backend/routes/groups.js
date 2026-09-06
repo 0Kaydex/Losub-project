@@ -228,22 +228,26 @@ router.post("/:id/exit-request", (req, res) => {
   res.json({ message: "Request sent. Losub will review and close out the group." });
 });
 
-// POST /api/groups — create a new group as its manager
+// POST /api/groups — start a new group for a plan. Seat price and seat count
+// come from the plan's admin-configured pricing, not the client, so every
+// group for a given plan is priced consistently and margin math stays
+// predictable for the owner.
 router.post("/", (req, res) => {
-  const { plan_id, seats_total, price_per_seat } = req.body;
+  const { plan_id } = req.body;
 
-  if (!plan_id || !seats_total || !price_per_seat) {
-    return res.status(400).json({ error: "plan_id, seats_total, and price_per_seat are required." });
+  if (!plan_id) {
+    return res.status(400).json({ error: "plan_id is required." });
   }
 
-  const plan = db.prepare("SELECT id FROM plans WHERE id = ?").get(plan_id);
+  const plan = db.prepare("SELECT id, price_per_seat, default_seats FROM plans WHERE id = ?").get(plan_id);
   if (!plan) return res.status(404).json({ error: "Plan not found." });
-
-  const priceKobo = Math.round(Number(price_per_seat) * 100);
+  if (plan.price_per_seat == null) {
+    return res.status(400).json({ error: "This plan doesn't have a seat price configured yet — ask Losub to set one up." });
+  }
 
   const result = db.prepare(
     "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
-  ).run(plan_id, req.userId, seats_total, priceKobo);
+  ).run(plan_id, req.userId, plan.default_seats, plan.price_per_seat);
 
   // Manager automatically takes the first seat, marked as paid (they're not paying themselves).
   db.prepare(
@@ -252,6 +256,7 @@ router.post("/", (req, res) => {
 
   res.json({ id: result.lastInsertRowid, message: "Group created." });
 });
+
 
 // POST /api/groups/:id/join — take a seat, deducting price_per_seat from wallet
 router.post("/:id/join", (req, res) => {

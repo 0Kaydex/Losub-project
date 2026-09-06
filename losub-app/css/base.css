@@ -71,8 +71,11 @@ body {
   -webkit-font-smoothing: antialiased;
   /* space for the fixed header so content never sits underneath it */
   padding-top: var(--header-h);
+  /* belt-and-suspenders: one long unbreakable string (a URL, a token, etc.)
+  anywhere on the page should never be able to force horizontal scroll
+     on the whole app — it should wrap or get clipped locally instead. */
+  overflow-x: hidden;
 }
-
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   margin: 0;

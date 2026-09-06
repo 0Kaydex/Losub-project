@@ -65,15 +65,23 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
       existingPlansEmpty.hidden = true;
-      existingPlansList.innerHTML = plans.map(p => `
-        <li>
-          <div>
-            <div class="admin-list__name">${p.name}</div>
-            <div class="admin-list__meta">₦${p.solo_price.toLocaleString()}/mo solo price</div>
-          </div>
-          <button type="button" class="admin-action-btn admin-action-btn--danger owner-delete-plan-btn" data-id="${p.id}" data-name="${p.name}">Delete</button>
-        </li>
-      `).join("");
+      existingPlansList.innerHTML = plans.map(p => {
+        const seatLine = p.price_per_seat != null
+          ? `₦${p.price_per_seat.toLocaleString()}/seat × ${p.default_seats} seats`
+          : "Seat price not set";
+        const marginLine = p.margin != null
+          ? ` · <strong>₦${p.margin.toLocaleString()}/mo margin</strong>`
+          : "";
+        return `
+          <li>
+            <div>
+              <div class="admin-list__name">${p.name}</div>
+              <div class="admin-list__meta">₦${p.solo_price.toLocaleString()}/mo solo · ${seatLine}${marginLine}</div>
+            </div>
+            <button type="button" class="admin-action-btn admin-action-btn--danger owner-delete-plan-btn" data-id="${p.id}" data-name="${p.name}">Delete</button>
+          </li>
+        `;
+      }).join("");
 
       existingPlansList.querySelectorAll(".owner-delete-plan-btn").forEach(btn => {
         btn.addEventListener("click", () => confirmDeletePlan(btn.dataset.id, btn.dataset.name));
@@ -83,17 +91,45 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
   }
 
+  // ---------- Live margin preview as the owner fills the form in ----------
+  function updateMarginPreview() {
+    const pricePerSeat = Number(document.getElementById("planPricePerSeat").value);
+    const familyPrice = Number(document.getElementById("planFamilyPrice").value);
+    const seats = Number(document.getElementById("planDefaultSeats").value);
+    const preview = document.getElementById("planMarginPreview");
+
+    if (pricePerSeat > 0 && familyPrice > 0 && seats > 0) {
+      const margin = pricePerSeat * seats - familyPrice;
+      preview.textContent = `≈ ₦${margin.toLocaleString()}/month margin (₦${pricePerSeat.toLocaleString()} × ${seats} seats − ₦${familyPrice.toLocaleString()} cost)`;
+      preview.style.color = margin >= 0 ? "#1E8A46" : "#C0392B";
+    } else {
+      preview.textContent = "";
+    }
+  }
+  ["planPricePerSeat", "planFamilyPrice", "planDefaultSeats"].forEach(id => {
+    document.getElementById(id).addEventListener("input", updateMarginPreview);
+  });
+
   addPlanForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     addPlanMessage.hidden = true;
 
     const name = document.getElementById("planName").value.trim();
     const solo_price = Number(document.getElementById("planSoloPrice").value);
+    const price_per_seat = Number(document.getElementById("planPricePerSeat").value);
+    const family_price = Number(document.getElementById("planFamilyPrice").value);
+    const default_seats = Number(document.getElementById("planDefaultSeats").value) || 4;
     const logo = document.getElementById("planLogo").value.trim() || null;
     const color = document.getElementById("planColor").value.trim() || null;
 
     if (!name || !solo_price || solo_price <= 0) {
       addPlanMessage.textContent = "Enter a plan name and a valid solo price.";
+      addPlanMessage.className = "auth-message auth-message--error";
+      addPlanMessage.hidden = false;
+      return;
+    }
+    if (!price_per_seat || price_per_seat <= 0 || !family_price || family_price <= 0) {
+      addPlanMessage.textContent = "Enter a valid price per seat and family plan cost.";
       addPlanMessage.className = "auth-message auth-message--error";
       addPlanMessage.hidden = false;
       return;
@@ -109,7 +145,7 @@ document.addEventListener("DOMContentLoaded", async () => {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ name, solo_price, logo, color }),
+        body: JSON.stringify({ name, solo_price, price_per_seat, family_price, default_seats, logo, color }),
       });
       const data = await res.json();
 
@@ -122,10 +158,12 @@ document.addEventListener("DOMContentLoaded", async () => {
         addPlanMessage.className = "auth-message auth-message--success";
         addPlanMessage.hidden = false;
         addPlanForm.reset();
+        document.getElementById("planDefaultSeats").value = 4;
+        document.getElementById("planMarginPreview").textContent = "";
         loadPlans();
       }
     } catch {
-      addPlanMessage.textContent = "Network error — try again.";
+      addPlanMessage.textContent = "Couldn't reach Losub — check your connection and try again.";
       addPlanMessage.className = "auth-message auth-message--error";
       addPlanMessage.hidden = false;
     }
@@ -153,7 +191,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       loadPlans();
     } catch {
-      addPlanMessage.textContent = "Network error — try again.";
+      addPlanMessage.textContent = "Couldn't reach Losub — check your connection and try again.";
       addPlanMessage.className = "auth-message auth-message--error";
       addPlanMessage.hidden = false;
     }

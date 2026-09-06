@@ -11,6 +11,26 @@ const dbPath = process.env.DB_PATH || path.join(__dirname, "losub.db");
 console.log("DATABASE PATH:", dbPath);
 const db = new DatabaseSync(dbPath);
 
+// Generic "add this column if it's missing" helper. CREATE TABLE IF NOT
+// EXISTS is a no-op against a table that already exists from an older
+// deploy — it will NOT retrofit new columns onto it. We've been bitten by
+// this twice already (messages.thread, groups.exit_requested), so every
+// table now gets checked this way instead of ad-hoc per-table migrations.
+function ensureColumns(table, columns) {
+  const existing = db.prepare(`PRAGMA table_info(${table})`).all().map(c => c.name);
+  for (const { name, def } of columns) {
+    if (!existing.includes(name)) {
+      try {
+        db.exec(`ALTER TABLE ${table} ADD COLUMN ${name} ${def}`);
+      } catch (err) {
+        if (!/duplicate column/i.test(err.message)) {
+          console.error(`Migration warning (${table}.${name}):`, err.message);
+        }
+      }
+    }
+  }
+}
+
 db.exec(`
   CREATE TABLE IF NOT EXISTS users (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -37,23 +57,13 @@ db.exec(`
 
 // Lightweight migration for anyone who already ran an earlier version of
 // this schema (pre Google Sign-In) — safe to run every startup.
-const migrations = [
-  "ALTER TABLE users ADD COLUMN google_id TEXT",
-  "ALTER TABLE users ADD COLUMN auth_provider TEXT NOT NULL DEFAULT 'local'",
-  "ALTER TABLE users ADD COLUMN role TEXT NOT NULL DEFAULT 'member'",
-  "ALTER TABLE users ADD COLUMN wallet_balance INTEGER NOT NULL DEFAULT 0",
-  "ALTER TABLE users ADD COLUMN suspended INTEGER NOT NULL DEFAULT 0",
-];
-
-
-for (const sql of migrations) {
-  try {
-    db.exec(sql);
-  } catch (err) {
-    // Ignore "duplicate column" errors — means it already ran before
-    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
-  }
-}
+ensureColumns("users", [
+  { name: "google_id", def: "TEXT" },
+  { name: "auth_provider", def: "TEXT NOT NULL DEFAULT 'local'" },
+  { name: "role", def: "TEXT NOT NULL DEFAULT 'member'" },
+  { name: "wallet_balance", def: "INTEGER NOT NULL DEFAULT 0" },
+  { name: "suspended", def: "INTEGER NOT NULL DEFAULT 0" },
+]);
 
 // SQLite treats every NULL as distinct under a UNIQUE index, so this still
 // lets unlimited email/password users have google_id = NULL, while
@@ -115,19 +125,31 @@ db.exec(`
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_group_members_unique ON group_members(group_id, user_id)");
 db.exec("CREATE UNIQUE INDEX IF NOT EXISTS idx_wallet_tx_reference ON wallet_transactions(reference) WHERE reference IS NOT NULL");
 
-const groupMigrations = [
-  "ALTER TABLE groups ADD COLUMN access_link TEXT",
-  "ALTER TABLE groups ADD COLUMN exit_requested INTEGER NOT NULL DEFAULT 0",
-  "ALTER TABLE groups ADD COLUMN exit_reason TEXT",
-  "ALTER TABLE groups ADD COLUMN exit_requested_at TEXT",
-];
-for (const sql of groupMigrations) {
-  try {
-    db.exec(sql);
-  } catch (err) {
-    if (!/duplicate column/i.test(err.message)) console.error("Migration warning:", err.message);
-  }
-}
+ensureColumns("wallet_transactions", [
+  { name: "type", def: "TEXT NOT NULL DEFAULT 'general'" },
+  { name: "description", def: "TEXT NOT NULL DEFAULT ''" },
+  { name: "amount", def: "INTEGER NOT NULL DEFAULT 0" },
+  { name: "status", def: "TEXT NOT NULL DEFAULT 'success'" },
+  { name: "reference", def: "TEXT" },
+]);
+
+ensureColumns("groups", [
+  { name: "access_link", def: "TEXT" },
+  { name: "exit_requested", def: "INTEGER NOT NULL DEFAULT 0" },
+  { name: "exit_reason", def: "TEXT" },
+  { name: "exit_requested_at", def: "TEXT" },
+]);
+
+// price_per_seat: what each member seat is billed.
+// family_price: what Losub actually pays for the underlying family/group
+//   subscription — the cost basis for margin.
+// default_seats: how many seats that family subscription supports, so
+//   margin = (price_per_seat * default_seats) - family_price can be computed.
+ensureColumns("plans", [
+  { name: "price_per_seat", def: "INTEGER" },
+  { name: "family_price", def: "INTEGER" },
+  { name: "default_seats", def: "INTEGER NOT NULL DEFAULT 4" },
+]);
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS notifications (
@@ -161,22 +183,20 @@ db.exec(`
 // since SQLite won't retrofit columns onto an existing table). Add anything
 // that's missing so the index below — and every query in the messages
 // routes — doesn't crash the whole app on boot.
-{
-  const existingCols = db.prepare("PRAGMA table_info(messages)").all().map(c => c.name);
-  const wantedCols = [
-    { name: "thread", def: "TEXT NOT NULL DEFAULT 'group'" },
-    { name: "sender_id", def: "INTEGER" },
-    { name: "sender_role", def: "TEXT NOT NULL DEFAULT 'member'" },
-    { name: "sender_name", def: "TEXT NOT NULL DEFAULT ''" },
-    { name: "body", def: "TEXT NOT NULL DEFAULT ''" },
-    { name: "created_at", def: "TEXT NOT NULL DEFAULT (datetime('now'))" },
-  ];
-  for (const col of wantedCols) {
-    if (!existingCols.includes(col.name)) {
-      db.exec(`ALTER TABLE messages ADD COLUMN ${col.name} ${col.def}`);
-    }
-  }
-}
+ensureColumns("messages", [
+  { name: "thread", def: "TEXT NOT NULL DEFAULT 'group'" },
+  { name: "sender_id", def: "INTEGER" },
+  { name: "sender_role", def: "TEXT NOT NULL DEFAULT 'member'" },
+  { name: "sender_name", def: "TEXT NOT NULL DEFAULT ''" },
+  { name: "body", def: "TEXT NOT NULL DEFAULT ''" },
+  { name: "created_at", def: "TEXT NOT NULL DEFAULT (datetime('now'))" },
+]);
+
+ensureColumns("notifications", [
+  { name: "type", def: "TEXT NOT NULL DEFAULT 'general'" },
+  { name: "link", def: "TEXT" },
+  { name: "read", def: "INTEGER NOT NULL DEFAULT 0" },
+]);
 
 db.exec("CREATE INDEX IF NOT EXISTS idx_messages_group_thread ON messages(group_id, thread, created_at)");
 

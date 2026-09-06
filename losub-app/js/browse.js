@@ -191,11 +191,11 @@
   document.getElementById("newOffersRow").addEventListener("click", handleGridClick);
   document.getElementById("planGrid").addEventListener("click", handleGridClick);
 
-  // ---------- Manager offer modal (real — creates a group) ----------
+   // ---------- Manager offer modal (real — creates a group) ----------
   function openManagerModal(plan) {
     activePlan = plan;
     document.getElementById("modalPlanName").textContent = plan.name;
-    document.getElementById("modalManagerPrice").textContent = fmt(Math.round(plan.solo_price / 4));
+    document.getElementById("modalManagerPrice").textContent = fmt(plan.price_per_seat ?? Math.round(plan.solo_price / 4));
     document.getElementById("managerModalOverlay").hidden = false;
   }
 
@@ -222,11 +222,7 @@
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          plan_id: activePlan.id,
-          seats_total: 4,
-          price_per_seat: Math.round(activePlan.solo_price / 4),
-        }),
+        body: JSON.stringify({ plan_id: activePlan.id }),
       });
       const data = await res.json();
 

@@ -282,6 +282,47 @@
   color: #C0392B;
 }
 
+.mg-field__hint {
+  font-size: 12px;
+  color: var(--ink-soft);
+  margin-top: 6px;
+  overflow-wrap: break-word;
+  word-break: break-word;
+}
+
+/* ---------- Access-link form (was unstyled — long URLs were overflowing
+   the page width and forcing horizontal scroll on the whole app) ---------- */
+.mg-access-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: stretch;
+  max-width: 100%;
+}
+
+.mg-access-form input {
+  flex: 1;
+  min-width: 0; /* critical: lets a flex child shrink below its content width */
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  font-size: 14px;
+  color: var(--ink);
+  box-sizing: border-box;
+}
+
+.mg-access-form .auth-submit {
+  width: auto;
+  flex-shrink: 0;
+  padding: 0 20px;
+}
+
+@media (max-width: 480px) {
+  .mg-access-form { flex-direction: column; }
+  .mg-access-form .auth-submit { width: 100%; }
+}
+
 .auth-submit--danger {
   background: #C0392B;
 }
