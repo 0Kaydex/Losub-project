@@ -38,7 +38,7 @@
 
 .group-summary__info {
   flex: 1;
-  min-width: 180px;
+  min-width: 0;
 }
 
 .group-summary__name {
@@ -114,6 +114,7 @@
   display: flex;
   align-items: baseline;
   justify-content: space-between;
+  gap: 12px;
   margin-bottom: 16px;
 }
 
@@ -131,15 +132,15 @@
 /* ---------- Seat grid ---------- */
 .seat-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
 }
 
 .seat-card {
   background: var(--surface);
   border-radius: var(--r-lg);
   box-shadow: var(--shadow-card);
-  padding: 18px;
+  padding: 14px;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -207,6 +208,7 @@
   font-size: 12px;
   font-weight: 700;
   flex-shrink: 0;
+  min-height: 44px;
   padding: 6px 10px;
   border-radius: var(--r-pill);
 }
@@ -237,6 +239,7 @@
 
 .seat-card__invite-btn {
   margin-top: 6px;
+  min-height: 44px;
   padding: 6px 16px;
   border-radius: var(--r-pill);
   background: var(--ink);
@@ -318,6 +321,24 @@
   padding: 0 20px;
 }
 
+/* This page does not load auth.css or account.css. */
+.auth-submit {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 24px;
+  background: var(--ink);
+  color: var(--paper);
+  border: none;
+  border-radius: var(--r-pill);
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: opacity 0.15s ease, transform 0.1s ease;
+}
+.auth-submit:hover:not(:disabled) { opacity: 0.88; }
+.auth-submit:active:not(:disabled) { transform: scale(0.98); }
+.auth-submit:disabled { opacity: 0.4; cursor: not-allowed; }
+
 @media (max-width: 480px) {
   .mg-access-form { flex-direction: column; }
   .mg-access-form .auth-submit { width: 100%; }
@@ -337,6 +358,9 @@
   background: var(--ink);
   color: var(--paper);
   padding: 12px 22px;
+  max-width: min(520px, calc(100vw - 32px));
+  text-align: center;
+  overflow-wrap: anywhere;
   border-radius: var(--r-pill);
   font-size: 13px;
   font-weight: 600;
@@ -350,6 +374,27 @@
 @keyframes mg-toast-in {
   from { opacity: 0; transform: translate(-50%, 8px); }
   to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 700px) {
+  .group-summary {
+    padding: 20px;
+  }
+
+  .seat-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .mg-section__head {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .mg-section--danger .auth-submit {
+    width: 100% !important;
+  }
 }
 
 @media (max-width: 480px) {
