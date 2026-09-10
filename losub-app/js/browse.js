@@ -28,9 +28,17 @@
 
   const fmt = n => `₦${n.toLocaleString()}`;
   let searchTerm = "";
+  let activeCategory = "all";
   let catalogPlans = [];   // from /api/plans — every plan that exists
   let openGroups = [];     // from /api/groups/browse — groups with free seats
   let activePlan = null;   // plan selected in the "become manager" modal
+
+  const categoryKeywords = {
+    video: ["netflix", "disney", "prime", "showmax", "hulu", "max", "crunchyroll", "youtube"],
+    music: ["spotify", "apple music", "tidal", "deezer", "audiomack", "boomplay"],
+    productivity: ["capcut", "notion", "canva", "microsoft", "google", "adobe", "grammarly", "chatgpt"],
+    security: ["nordvpn", "expressvpn", "surfshark", "vpn", "1password", "bitwarden"],
+  };
 
   // A catalog plan with no open (joinable) group becomes a "become manager" card.
   function getDisplayItems() {
@@ -65,9 +73,14 @@
   }
 
   function getVisibleItems() {
-    return getDisplayItems().filter(item =>
-      item.name.toLowerCase().includes(searchTerm.toLowerCase())
-    );
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    return getDisplayItems().filter(item => {
+      const name = String(item.name || "").toLowerCase();
+      const matchesSearch = !normalizedSearch || name.includes(normalizedSearch);
+      const matchesCategory = activeCategory === "all"
+        || (categoryKeywords[activeCategory] || []).some(keyword => name.includes(keyword));
+      return matchesSearch && matchesCategory;
+    });
   }
 
   function renderTopPlans() {
@@ -138,12 +151,13 @@
     renderPlanGrid();
   });
 
-  // Category chips are currently decorative — plans have no category field in the database yet.
   document.getElementById("categoryGrid").addEventListener("click", (e) => {
     const chip = e.target.closest(".category-chip");
     if (!chip) return;
+    activeCategory = chip.dataset.cat || "all";
     document.querySelectorAll(".category-chip").forEach(c => c.classList.remove("is-active"));
     chip.classList.add("is-active");
+    renderPlanGrid();
   });
   document.querySelector('.category-chip[data-cat="all"]').classList.add("is-active");
 
