@@ -1,6 +1,8 @@
  document.addEventListener("DOMContentLoaded", () => {
 
-  const API_ORIGIN = "https://api.losubapp.com";
+  // API_ORIGIN comes from js/config.js (must be loaded before this file) —
+  // it resolves to your local backend automatically when running on
+  // localhost/127.0.0.1, and to production otherwise.
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
@@ -66,6 +68,8 @@
           logo: p.logo,
           color: p.color,
           soloPrice: p.solo_price,
+          // Fallback estimate only for the rare plan with no seat price configured yet.
+          pricePerSeat: p.price_per_seat ?? Math.round(p.solo_price / 4),
         });
       });
 
@@ -124,7 +128,8 @@
         ? `<button type="button" class="plan-card__cta plan-card__cta--full" data-plan-id="${p.planId}" data-become-manager="1">No group yet — Become manager</button>`
         : `<button type="button" class="plan-card__cta" data-group-id="${p.groupId}">Join</button>`;
       const seatsLine = isManagerCard ? "No open group yet" : `${p.seatsFilled}/${p.seatsTotal} seats filled`;
-      const priceLine = isManagerCard ? fmt(p.soloPrice) : fmt(p.price);
+      // Plans are always shown at the per-seat price members actually pay, never the solo price.
+      const priceLine = isManagerCard ? fmt(p.pricePerSeat) : fmt(p.price);
 
       return `
         <article class="plan-card ${isManagerCard ? 'plan-card--full' : ''}">
@@ -208,8 +213,10 @@
    // ---------- Manager offer modal (real — creates a group) ----------
   function openManagerModal(plan) {
     activePlan = plan;
+    // Managers pay 50% of the per-seat price for taking on the group, not the full seat price.
+    const perSeat = plan.price_per_seat ?? Math.round(plan.solo_price / 4);
     document.getElementById("modalPlanName").textContent = plan.name;
-    document.getElementById("modalManagerPrice").textContent = fmt(plan.price_per_seat ?? Math.round(plan.solo_price / 4));
+    document.getElementById("modalManagerPrice").textContent = fmt(Math.round(perSeat / 2));
     document.getElementById("managerModalOverlay").hidden = false;
   }
 

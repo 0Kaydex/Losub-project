@@ -228,6 +228,19 @@ router.post("/:id/exit-request", (req, res) => {
   res.json({ message: "Request sent. Losub will review and close out the group." });
 });
 
+// Every seat — manager or member — is due again 28 days after the date it was
+// paid for. Computed in SQL (not JS) so it's stored using the same clock/format
+// as every other datetime('now') column in this database, and isn't affected
+// by the server's local timezone.
+const NEXT_PAYMENT_SQL = "datetime('now', '+28 days')";
+
+// The manager doesn't pay the full member seat price — they pay 50% of
+// price_per_seat for taking on the work of running the group. Rounded to the
+// nearest kobo so it always divides cleanly.
+function managerChargeFor(pricePerSeatKobo) {
+  return Math.round(pricePerSeatKobo / 2);
+}
+
 // POST /api/groups — start a new group for a plan. Seat price and seat count
 // come from the plan's admin-configured pricing, not the client, so every
 // group for a given plan is priced consistently and margin math stays
@@ -239,20 +252,35 @@ router.post("/", (req, res) => {
     return res.status(400).json({ error: "plan_id is required." });
   }
 
-  const plan = db.prepare("SELECT id, price_per_seat, default_seats FROM plans WHERE id = ?").get(plan_id);
+  const plan = db.prepare("SELECT id, name, price_per_seat, default_seats FROM plans WHERE id = ?").get(plan_id);
   if (!plan) return res.status(404).json({ error: "Plan not found." });
   if (plan.price_per_seat == null) {
     return res.status(400).json({ error: "This plan doesn't have a seat price configured yet — ask Losub to set one up." });
+  }
+
+  const managerChargeKobo = managerChargeFor(plan.price_per_seat);
+
+  const user = db.prepare("SELECT wallet_balance FROM users WHERE id = ?").get(req.userId);
+  if (user.wallet_balance < managerChargeKobo) {
+    return res.status(400).json({
+      error: `Insufficient wallet balance. Starting this group costs ₦${(managerChargeKobo / 100).toLocaleString()} (50% of the seat price) as manager — fund your wallet first.`,
+    });
   }
 
   const result = db.prepare(
     "INSERT INTO groups (plan_id, manager_id, seats_total, price_per_seat) VALUES (?, ?, ?, ?)"
   ).run(plan_id, req.userId, plan.default_seats, plan.price_per_seat);
 
-  // Manager automatically takes the first seat, marked as paid (they're not paying themselves).
+  // Manager automatically takes the first seat, paying 50% of price_per_seat
+  // (not the full member seat price) and, just like any member, owes again
+  // 28 days from now.
+  db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(managerChargeKobo, req.userId);
   db.prepare(
-    "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'manager', 'paid')"
+    `INSERT INTO group_members (group_id, user_id, role, payment_status, next_payment_date) VALUES (?, ?, 'manager', 'paid', ${NEXT_PAYMENT_SQL})`
   ).run(result.lastInsertRowid, req.userId);
+  db.prepare(
+    "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"
+  ).run(req.userId, `${plan.name} manager seat payment (50%)`, -managerChargeKobo);
 
   res.json({ id: result.lastInsertRowid, message: "Group created." });
 });
@@ -286,10 +314,11 @@ router.post("/:id/join", (req, res) => {
 
   // Deduct + join + log transaction together — all or nothing in effect since node:sqlite
   // runs synchronously and any thrown error here would leave earlier statements applied,
-  // so we order deduction first and only join after it succeeds.
+  // so we order deduction first and only join after it succeeds. next_payment_date is set
+  // to 28 days from this join/payment date, same rule as every other seat.
   db.prepare("UPDATE users SET wallet_balance = wallet_balance - ? WHERE id = ?").run(group.price_per_seat, req.userId);
   db.prepare(
-    "INSERT INTO group_members (group_id, user_id, role, payment_status) VALUES (?, ?, 'member', 'paid')"
+    `INSERT INTO group_members (group_id, user_id, role, payment_status, next_payment_date) VALUES (?, ?, 'member', 'paid', ${NEXT_PAYMENT_SQL})`
   ).run(groupId, req.userId);
   db.prepare(
     "INSERT INTO wallet_transactions (user_id, type, description, amount, status) VALUES (?, 'plan_payment', ?, ?, 'success')"

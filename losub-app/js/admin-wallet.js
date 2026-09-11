@@ -1,6 +1,8 @@
 document.addEventListener("DOMContentLoaded", () => {
 
-  const API_ORIGIN = "https://api.losubapp.com";
+  // API_ORIGIN comes from js/config.js (must be loaded before this file) —
+  // it resolves to your local backend automatically when running on
+  // localhost/127.0.0.1, and to production otherwise.
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
