@@ -12,24 +12,30 @@ const groupsRoutes = require("./routes/groups");
 const vtpassRoutes = require("./routes/vtpass");
 const notificationsRoutes = require("./routes/notifications");
 const webhooksRoutes = require("./routes/webhooks");
+const path = require("path");
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+const PRODUCTION_ORIGINS = ["https://losubapp.com", "https://www.losubapp.com"];
+// Local dev tools (VS Code Live Preview, Live Server, `python -m http.server`, etc.)
+// don't all agree on one port — some pick a random free one every time. Rather than
+// hardcode a specific port, allow any http://127.0.0.1:PORT, http://localhost:PORT, or http://[::1]:PORT.
+const LOCAL_ORIGIN_PATTERN = /^(http:\/\/(127\.0\.0\.1|localhost|\[::1\])(:\d+)?|null|file:\/\/.*)$/;
+
 app.use(cors({
-  origin: [
-    "https://losubapp.com",
-    "https://www.losubapp.com",
-    // Local dev — Live Server's current default port is 127.0.0.1:5501, but
-    // 5500 is kept too since some setups (and older Live Server installs)
-    // still use it.
-    "http://127.0.0.1:5501",
-    "http://localhost:5501",
-    "http://127.0.0.1:5500",
-    "http://localhost:5500"
-  ],
+  origin: (origin, callback) => {
+    // Requests with no Origin header (curl, server-to-server, some webhooks) or local dev origins are allowed
+    if (!origin || PRODUCTION_ORIGINS.includes(origin) || LOCAL_ORIGIN_PATTERN.test(origin)) {
+      return callback(null, true);
+    }
+    callback(null, false);
+  },
   methods: ["GET", "POST", "PUT", "DELETE"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
+// Serve static frontend files directly from losub-app directory
+app.use(express.static(path.join(__dirname, "../losub-app")));
 
 // Mounted BEFORE express.json(): Paystack's webhook signature is computed over the
 // raw request body, so this route needs express.raw() instead of the parsed JSON
@@ -38,6 +44,10 @@ app.use("/api/webhooks", express.raw({ type: "application/json" }), webhooksRout
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+app.get("/", (req, res) => {
+  res.redirect("/html/index.html");
+});
 
 app.get("/api/health", (req, res) => {
   res.json({ ok: true, message: "Losub backend is running." });

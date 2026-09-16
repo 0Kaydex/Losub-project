@@ -3,8 +3,8 @@
 // the Live Server default of 127.0.0.1:5501) automatically talks to your
 // local backend instead of production, so you never have to hand-edit URLs
 // per file when your local dev port changes again.
-const LOSUB_LOCAL_HOSTNAMES = ["localhost", "127.0.0.1"];
-const LOSUB_IS_LOCAL = LOSUB_LOCAL_HOSTNAMES.includes(window.location.hostname);
+const LOSUB_LOCAL_HOSTNAMES = ["localhost", "127.0.0.1", "::1", "[::1]", "0.0.0.0", ""];
+const LOSUB_IS_LOCAL = LOSUB_LOCAL_HOSTNAMES.includes(window.location.hostname) || window.location.protocol === "file:";
 
 // If your local backend runs on a different port, change it here only.
 const LOSUB_LOCAL_BACKEND_PORT = 3000;
