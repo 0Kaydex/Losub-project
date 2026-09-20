@@ -435,9 +435,14 @@ document.addEventListener("DOMContentLoaded", () => {
       "fundMessage"
     ).hidden = true;
 
-    document.getElementById(
-      "paystackFallbackBtn"
-    ).hidden = true;
+    // FIX: Safely check if paystackFallbackBtn exists before accessing it
+    const fallbackBtn =
+      document.getElementById(
+        "paystackFallbackBtn"
+      );
+    if (fallbackBtn) {
+      fallbackBtn.hidden = true;
+    }
 
     const btn =
       document.getElementById(
@@ -446,7 +451,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     btn.disabled = false;
     btn.textContent =
-      "Fund with Flutterwave";
+      "Continue to payment";
 
     updateFeePreview();
   }
@@ -607,7 +612,10 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.textContent =
       "Opening Flutterwave…";
 
-    fallbackBtn.hidden = true;
+    // FIX: Safely check if fallbackBtn exists before setting hidden to prevent uncaught TypeError
+    if (fallbackBtn) {
+      fallbackBtn.hidden = true;
+    }
     messageBox.hidden = true;
 
     try {
@@ -669,7 +677,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       btn.disabled = false;
       btn.textContent =
-        "Fund with Flutterwave";
+        "Continue to payment";
 
       showError(
         err.message ||
@@ -680,27 +688,45 @@ document.addEventListener("DOMContentLoaded", () => {
       // Offer Paystack as backup.
       // ---------------------------------------------------
 
-      fallbackBtn.hidden = false;
+      // FIX: Safely show fallbackBtn only if present in DOM
+      if (fallbackBtn) {
+        fallbackBtn.hidden = false;
+      }
     }
   }
 
+  // FIX: Support the paymentMethod radio selection (Flutterwave vs Paystack)
   document
     .getElementById("confirmFundBtn")
     .addEventListener(
       "click",
-      startFlutterwavePayment
+      () => {
+        const selectedMethod =
+          document.querySelector('input[name="paymentMethod"]:checked')?.value ||
+          "flutterwave";
+
+        if (selectedMethod === "paystack") {
+          startPaystackFallback();
+        } else {
+          startFlutterwavePayment();
+        }
+      }
     );
 
   // -------------------------------------------------------
-  // Paystack BACKUP
+  // Paystack BACKUP (if fallback button exists in DOM)
   // -------------------------------------------------------
 
-  document
-    .getElementById("paystackFallbackBtn")
-    .addEventListener(
+  // FIX: Check if paystackFallbackBtn exists before adding event listener
+  const fallbackEl =
+    document.getElementById("paystackFallbackBtn");
+
+  if (fallbackEl) {
+    fallbackEl.addEventListener(
       "click",
       startPaystackFallback
     );
+  }
 
   function startPaystackFallback() {
 
@@ -739,7 +765,10 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     btn.disabled = true;
-    fallbackBtn.disabled = true;
+    // FIX: Safely check fallbackBtn before disabling
+    if (fallbackBtn) {
+      fallbackBtn.disabled = true;
+    }
 
     btn.textContent =
       "Opening Paystack…";
@@ -793,11 +822,13 @@ document.addEventListener("DOMContentLoaded", () => {
               .then(data => {
 
                 btn.disabled = false;
-                fallbackBtn.disabled =
-                  false;
+                // FIX: Safely check fallbackBtn
+                if (fallbackBtn) {
+                  fallbackBtn.disabled = false;
+                }
 
                 btn.textContent =
-                  "Fund with Flutterwave";
+                  "Continue to payment";
 
                 if (
                   data.balance ===
@@ -824,11 +855,13 @@ document.addEventListener("DOMContentLoaded", () => {
               .catch(() => {
 
                 btn.disabled = false;
-                fallbackBtn.disabled =
-                  false;
+                // FIX: Safely check fallbackBtn
+                if (fallbackBtn) {
+                  fallbackBtn.disabled = false;
+                }
 
                 btn.textContent =
-                  "Fund with Flutterwave";
+                  "Continue to payment";
 
                 showError(
                   "Payment succeeded but confirmation failed. Contact support with your Paystack reference: " +
@@ -841,11 +874,13 @@ document.addEventListener("DOMContentLoaded", () => {
           function() {
 
             btn.disabled = false;
-            fallbackBtn.disabled =
-              false;
+            // FIX: Safely check fallbackBtn
+            if (fallbackBtn) {
+              fallbackBtn.disabled = false;
+            }
 
             btn.textContent =
-              "Fund with Flutterwave";
+              "Continue to payment";
           },
       });
 
@@ -913,7 +948,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       btn.disabled = false;
       btn.textContent =
-        "Fund with Flutterwave";
+        "Continue to payment";
 
       showError(
         "The Flutterwave payment was not successful."
@@ -981,7 +1016,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       btn.disabled = false;
       btn.textContent =
-        "Fund with Flutterwave";
+        "Continue to payment";
 
       showError(
         err.message ||
