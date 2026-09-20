@@ -96,26 +96,41 @@ router.post("/flutterwave", (req, res) => {
     }
 
     // -------------------------------------------------------
-    // Get customer
+    // Get customer / user
+    //
+    // FIX: Look up user by meta.user_id or tx_ref first, then fall back to email.
+    // In Flutterwave sandbox, customer.email is replaced with a test rave email (ravesb_...).
+    // In live mode, the billing email may differ from the registered Losub email.
     // -------------------------------------------------------
+
+    let userId = Number(data.meta?.user_id);
+    if (!userId && txRef.startsWith("losub_flw_")) {
+      userId = Number(txRef.split("_")[2]);
+    }
+
+    let user = null;
+    if (userId) {
+      user = db
+        .prepare(`
+          SELECT id, email
+          FROM users
+          WHERE id = ?
+        `)
+        .get(userId);
+    }
 
     const payerEmail =
       data.customer?.email?.toLowerCase();
 
-    if (!payerEmail) {
-      console.error(
-        `Flutterwave webhook has no customer email: ${txRef}`
-      );
-      return;
+    if (!user && payerEmail) {
+      user = db
+        .prepare(`
+          SELECT id, email
+          FROM users
+          WHERE email = ?
+        `)
+        .get(payerEmail);
     }
-
-    const user = db
-      .prepare(`
-        SELECT id, email
-        FROM users
-        WHERE email = ?
-      `)
-      .get(payerEmail);
 
     if (!user) {
       console.error(

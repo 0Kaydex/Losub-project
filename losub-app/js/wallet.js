@@ -899,13 +899,14 @@ document.addEventListener("DOMContentLoaded", () => {
       );
 
     const status =
-      params.get("status");
+      (params.get("status") || "").toLowerCase();
 
     const txRef =
       params.get("tx_ref");
 
+    // FIX: Accept both transaction_id and id query parameters from Flutterwave
     const transactionId =
-      params.get("transaction_id");
+      params.get("transaction_id") || params.get("id");
 
     if (
       !txRef ||
@@ -920,6 +921,15 @@ document.addEventListener("DOMContentLoaded", () => {
       document.title,
       window.location.pathname
     );
+
+    // FIX: Open modal so user sees confirmation status and any messages
+    const modalOverlay =
+      document.getElementById(
+        "fundModalOverlay"
+      );
+    if (modalOverlay) {
+      modalOverlay.hidden = false;
+    }
 
     const messageBox =
       document.getElementById(
@@ -943,7 +953,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
     if (
       status &&
-      status !== "successful"
+      status !== "successful" &&
+      status !== "completed"
     ) {
 
       btn.disabled = false;
@@ -1156,7 +1167,9 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial load
   // -------------------------------------------------------
 
-  handleFlutterwaveRedirect();
-
-  loadWallet();
+  // FIX: Await redirect verification before loading wallet balance to avoid race conditions
+  (async function init() {
+    await handleFlutterwaveRedirect();
+    await loadWallet();
+  })();
 });

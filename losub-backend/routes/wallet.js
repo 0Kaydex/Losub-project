@@ -434,16 +434,24 @@ async function verifyFlutterwavePayment({
     }
 
     // ---------------------------------------------
-    // Make sure the Flutterwave payment belongs
-    // to this user's email.
+    // Security check: Verify payment ownership
+    //
+    // FIX: Verify against user.id using payment.meta.user_id or tx_ref.
+    // In Flutterwave sandbox/test mode, payment.customer.email is automatically
+    // replaced with a test rave email (e.g. ravesb_...), and in live mode,
+    // users may pay using a bank transfer or card linked to a different billing email.
+    // Checking payerEmail !== user.email was causing valid payments to be rejected with 403.
     // ---------------------------------------------
 
-    const payerEmail = payment.customer?.email;
+    const metaUserId = Number(payment.meta?.user_id);
+    const txRefUserId = Number(txRef.split("_")[2]);
+    const expectedUserId = metaUserId || txRefUserId;
 
-    if (
-      payerEmail &&
-      payerEmail.toLowerCase() !== user.email.toLowerCase()
-    ) {
+    if (expectedUserId && expectedUserId !== user.id) {
+      console.error(
+        `Flutterwave account mismatch. Expected user ${user.id}, payment meta indicates user ${expectedUserId}`
+      );
+
       return res.status(403).json({
         error: "This payment doesn't match your account.",
       });
