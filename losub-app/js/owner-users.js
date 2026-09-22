@@ -1,7 +1,9 @@
 document.addEventListener("DOMContentLoaded", async () => {
 
-  // Adjust this if your backend lives at a different base URL.
-  const API_BASE = "https://api.losubapp.com/api";
+  // API_BASE_URL comes from js/config.js (must be loaded before this file) —
+  // it resolves to your local backend automatically when running on
+  // localhost/127.0.0.1, and to production otherwise.
+  const API_BASE = API_BASE_URL;
 
   const user = JSON.parse(localStorage.getItem("losub_user"));
   const token = localStorage.getItem("losub_token");

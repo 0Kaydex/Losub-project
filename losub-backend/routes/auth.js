@@ -8,7 +8,7 @@ const { sendEmail, verificationEmail, resetPasswordEmail } = require("../utils/m
 
 const router = express.Router();
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5500/html";
+const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5501/html";
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 const JWT_SECRET = process.env.JWT_SECRET;
 

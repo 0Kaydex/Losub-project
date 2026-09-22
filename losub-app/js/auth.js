@@ -44,11 +44,19 @@ document.addEventListener("DOMContentLoaded", () => {
 
   // ---------- API helper ----------
   async function apiPost(path, body) {
-    const res = await fetch(`${API_BASE_URL}${path}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(body),
-    });
+    let res;
+    try {
+      res = await fetch(`${API_BASE_URL}${path}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+    } catch (err) {
+      if (err.message && (err.message.includes("Failed to fetch") || err.name === "TypeError")) {
+        throw new Error(`Unable to connect to backend server at ${API_ORIGIN}. Please check if the backend server is running (run 'node server.js' inside the losub-backend directory).`);
+      }
+      throw err;
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Something went wrong.");
     return data;
@@ -202,29 +210,38 @@ document.addEventListener("DOMContentLoaded", () => {
   setupPasswordToggles();
 
   function initGoogle() {
-  if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
-    console.warn("Google Sign-In not configured yet");
-    return;
-  }
-
-  google.accounts.id.initialize({
-    client_id: GOOGLE_CLIENT_ID,
-    callback: handleGoogleCredential,
-  });
-
-  google.accounts.id.renderButton(
-    document.getElementById("hiddenGoogleButton"),
-    {
-      type: "standard",
+    if (!window.google || !GOOGLE_CLIENT_ID || GOOGLE_CLIENT_ID.startsWith("YOUR_")) {
+      console.warn("Google Sign-In not configured yet");
+      return;
     }
-  );
 
-  document.querySelectorAll("[data-google-trigger]").forEach(btn => {
-  btn.addEventListener("click", () => {
-    google.accounts.id.prompt();
-  });
-});
-}
+    if (window.location.protocol === "file:") {
+      console.warn("Google Sign-In requires an http:// or https:// origin and cannot work directly via file://. Please serve the frontend over HTTP (e.g. VS Code Live Server at http://127.0.0.1:5500).");
+    }
+
+    google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: handleGoogleCredential,
+    });
+
+    google.accounts.id.renderButton(
+      document.getElementById("hiddenGoogleButton"),
+      {
+        type: "standard",
+      }
+    );
+
+    document.querySelectorAll("[data-google-trigger]").forEach(btn => {
+      btn.addEventListener("click", () => {
+        if (window.location.protocol === "file:") {
+          const activeForm = document.querySelector(".auth-form.is-active");
+          if (activeForm) showMessage(activeForm, "Google Sign-In requires running through a local web server (e.g., Live Server at http://127.0.0.1:5500), not direct file:// access.");
+          return;
+        }
+        google.accounts.id.prompt();
+      });
+    });
+  }
 
   async function handleGoogleCredential(response) {
     const activeForm = document.querySelector(".auth-form.is-active");
