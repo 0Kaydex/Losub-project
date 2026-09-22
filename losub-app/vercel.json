@@ -1,5 +1,28 @@
 {
   "redirects": [
-    { "source": "/", "destination": "/html/index.html", "permanent": false }
+    { "source": "/", "destination": "/html/index.html", "permanent": false },
+    { "source": "/home", "destination": "/html/index.html", "permanent": false },
+    { "source": "/dashboard", "destination": "/html/dashboard.html", "permanent": false },
+    { "source": "/browse", "destination": "/html/browse.html", "permanent": false },
+    { "source": "/wallet", "destination": "/html/wallet.html", "permanent": false },
+    { "source": "/airtime", "destination": "/html/airtime.html", "permanent": false },
+    { "source": "/messages", "destination": "/html/messages.html", "permanent": false },
+    { "source": "/notifications", "destination": "/html/notifications.html", "permanent": false },
+    { "source": "/account", "destination": "/html/account.html", "permanent": false },
+    { "source": "/groups", "destination": "/html/group.html", "permanent": false },
+    { "source": "/manage-group", "destination": "/html/manage-group.html", "permanent": false },
+    { "source": "/login", "destination": "/html/auth.html?tab=signin", "permanent": false },
+    { "source": "/signup", "destination": "/html/auth.html?tab=signup", "permanent": false },
+    { "source": "/admin", "destination": "/html/admin-dashboard.html", "permanent": false },
+    { "source": "/admin-dashboard", "destination": "/html/admin-dashboard.html", "permanent": false },
+    { "source": "/admin-users", "destination": "/html/admin-users.html", "permanent": false },
+    { "source": "/admin-groups", "destination": "/html/admin-groups.html", "permanent": false },
+    { "source": "/admin-wallet", "destination": "/html/admin-wallet.html", "permanent": false },
+    { "source": "/admin-messaging", "destination": "/html/admin-messaging.html", "permanent": false },
+    { "source": "/admin-verification", "destination": "/html/admin-verification.html", "permanent": false },
+    { "source": "/admin-audit", "destination": "/html/admin-audit.html", "permanent": false },
+    { "source": "/admin-reassignment", "destination": "/html/admin-reassignment.html", "permanent": false },
+    { "source": "/owner-settings", "destination": "/html/owner-settings.html", "permanent": false },
+    { "source": "/owner-users", "destination": "/html/owner-users.html", "permanent": false }
   ]
 }
