@@ -69,9 +69,9 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function redirectByRole(user) {
     if (user.role === "owner" || user.role === "admin") {
-      window.location.href = "admin-dashboard.html";
+      window.location.href = "/admin-dashboard";
     } else {
-      window.location.href = "dashboard.html";
+      window.location.href = "/dashboard";
     }
   }
 
@@ -182,7 +182,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const data = await apiPost("/auth/reset-password", { token: resetToken, newPassword });
       showMessage(resetForm, `${data.message} Redirecting to log in…`, "success");
-      setTimeout(() => { window.location.href = "auth.html?tab=signin"; }, 1800);
+      setTimeout(() => { window.location.href = "/login"; }, 1800);
     } catch (err) {
       showMessage(resetForm, err.message);
     } finally {

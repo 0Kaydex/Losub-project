@@ -1,6 +1,7 @@
 {
+  "cleanUrls": true,
   "redirects": [
-    { "source": "/", "destination": "/html/index.html", "permanent": false },
+    { "source": "/", "destination": "/home", "permanent": false },
     { "source": "/home", "destination": "/html/index.html", "permanent": false },
     { "source": "/dashboard", "destination": "/html/dashboard.html", "permanent": false },
     { "source": "/browse", "destination": "/html/browse.html", "permanent": false },
@@ -23,6 +24,33 @@
     { "source": "/admin-audit", "destination": "/html/admin-audit.html", "permanent": false },
     { "source": "/admin-reassignment", "destination": "/html/admin-reassignment.html", "permanent": false },
     { "source": "/owner-settings", "destination": "/html/owner-settings.html", "permanent": false },
-    { "source": "/owner-users", "destination": "/html/owner-users.html", "permanent": false }
+    { "source": "/owner-users", "destination": "/html/owner-users.html", "permanent": false },
+    { "source": "/html/index.html", "destination": "/home", "permanent": false },
+    { "source": "/html/auth.html", "destination": "/login", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/home", "destination": "/html/index.html" },
+    { "source": "/login", "destination": "/html/auth.html?tab=signin" },
+    { "source": "/signup", "destination": "/html/auth.html?tab=signup" },
+    { "source": "/dashboard", "destination": "/html/dashboard.html" },
+    { "source": "/browse", "destination": "/html/browse.html" },
+    { "source": "/wallet", "destination": "/html/wallet.html" },
+    { "source": "/airtime", "destination": "/html/airtime.html" },
+    { "source": "/messages", "destination": "/html/messages.html" },
+    { "source": "/notifications", "destination": "/html/notifications.html" },
+    { "source": "/account", "destination": "/html/account.html" },
+    { "source": "/groups", "destination": "/html/group.html" },
+    { "source": "/manage-group", "destination": "/html/manage-group.html" },
+    { "source": "/admin", "destination": "/html/admin-dashboard.html" },
+    { "source": "/admin-dashboard", "destination": "/html/admin-dashboard.html" },
+    { "source": "/admin-users", "destination": "/html/admin-users.html" },
+    { "source": "/admin-groups", "destination": "/html/admin-groups.html" },
+    { "source": "/admin-wallet", "destination": "/html/admin-wallet.html" },
+    { "source": "/admin-messaging", "destination": "/html/admin-messaging.html" },
+    { "source": "/admin-verification", "destination": "/html/admin-verification.html" },
+    { "source": "/admin-audit", "destination": "/html/admin-audit.html" },
+    { "source": "/admin-reassignment", "destination": "/html/admin-reassignment.html" },
+    { "source": "/owner-settings", "destination": "/html/owner-settings.html" },
+    { "source": "/owner-users", "destination": "/html/owner-users.html" }
   ]
 }

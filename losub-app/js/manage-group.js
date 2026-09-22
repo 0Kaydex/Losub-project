@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const groupId = params.get("id");
 
   if (!groupId) {
-    window.location.href = "dashboard.html";
+    window.location.href = "/dashboard";
     return;
   }
 
@@ -188,7 +188,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   if (inviteForm) inviteForm.hidden = true;
 
   document.getElementById("copyInviteLink").addEventListener("click", () => {
-    const link = `${window.location.origin}/html/browse.html`;
+    const link = `${window.location.origin}/browse`;
     navigator.clipboard?.writeText(link).then(() => {
       closeInviteModal();
       showToast("Invite link copied — share it so they can join and pay their own seat.");
@@ -262,12 +262,12 @@ document.addEventListener("DOMContentLoaded", async () => {
       ]);
 
       if (groupRes.status === 401 || membersRes.status === 401) {
-        window.location.href = "auth.html";
+        window.location.href = "/login";
         return;
       }
       if (groupRes.status === 403 || membersRes.status === 403) {
         showToast("You don't manage this group.");
-        setTimeout(() => window.location.href = "dashboard.html", 1500);
+        setTimeout(() => window.location.href = "/dashboard", 1500);
         return;
       }
 

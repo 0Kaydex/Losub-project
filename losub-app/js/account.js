@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const user = JSON.parse(localStorage.getItem("losub_user") || "null");
 
   if (!user || !token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -58,7 +58,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       const res = await fetch(`${API_ORIGIN}/api/groups/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
 
       const data = await res.json();
       const groups = data.groups || [];
@@ -101,7 +101,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ fullname, email }),
       });
 
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
 
       const data = await res.json();
 
@@ -164,7 +164,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         body: JSON.stringify({ currentPassword, newPassword }),
       });
 
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
 
       const data = await res.json();
 
@@ -207,6 +207,6 @@ document.addEventListener("DOMContentLoaded", async () => {
     localStorage.removeItem("losub_user");
     localStorage.removeItem("losub_token");
     localStorage.removeItem("losub_my_groups");
-    window.location.href = "index.html";
+    window.location.href = "/home";
   });
 });
