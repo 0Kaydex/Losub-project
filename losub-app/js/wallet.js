@@ -435,15 +435,6 @@ document.addEventListener("DOMContentLoaded", () => {
       "fundMessage"
     ).hidden = true;
 
-    // FIX: Safely check if paystackFallbackBtn exists before accessing it
-    const fallbackBtn =
-      document.getElementById(
-        "paystackFallbackBtn"
-      );
-    if (fallbackBtn) {
-      fallbackBtn.hidden = true;
-    }
-
     const btn =
       document.getElementById(
         "confirmFundBtn"
@@ -576,157 +567,17 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 
   // -------------------------------------------------------
-  // Flutterwave PRIMARY
+  // Paystack payment
   // -------------------------------------------------------
 
-  async function startFlutterwavePayment() {
-
-    const messageBox =
-      document.getElementById(
-        "fundMessage"
-      );
-
-    const btn =
-      document.getElementById(
-        "confirmFundBtn"
-      );
-
-    const fallbackBtn =
-      document.getElementById(
-        "paystackFallbackBtn"
-      );
-
-    if (
-      !selectedFundAmount ||
-      selectedFundAmount <= FUNDING_FEE
-    ) {
-
-      showError(
-        `Enter a valid amount above ₦${FUNDING_FEE}.`
-      );
-
-      return;
-    }
-
-    btn.disabled = true;
-    btn.textContent =
-      "Opening Flutterwave…";
-
-    // FIX: Safely check if fallbackBtn exists before setting hidden to prevent uncaught TypeError
-    if (fallbackBtn) {
-      fallbackBtn.hidden = true;
-    }
-    messageBox.hidden = true;
-
-    try {
-
-      const res =
-        await fetch(
-          `${API_ORIGIN}/api/wallet/fund/flutterwave`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body: JSON.stringify({
-              amount:
-                selectedFundAmount,
-            }),
-          }
-        );
-
-      const data =
-        await res.json();
-
-      if (
-        !res.ok ||
-        !data.checkout_url
-      ) {
-
-        throw new Error(
-          data.error ||
-          "Flutterwave could not start the payment."
-        );
-      }
-
-      /*
-       * Save the amount locally so that if Flutterwave
-       * redirects back to wallet.html, the UI can still
-       * show a useful state.
-       */
-      sessionStorage.setItem(
-        "losub_payment_gateway",
-        "flutterwave"
-      );
-
-      window.location.href =
-        data.checkout_url;
-
-    } catch (err) {
-
-      console.error(
-        "Flutterwave payment error:",
-        err
-      );
-
-      btn.disabled = false;
-      btn.textContent =
-        "Continue to payment";
-
-      showError(
-        err.message ||
-        "Flutterwave is currently unavailable."
-      );
-
-      // ---------------------------------------------------
-      // Offer Paystack as backup.
-      // ---------------------------------------------------
-
-      // FIX: Safely show fallbackBtn only if present in DOM
-      if (fallbackBtn) {
-        fallbackBtn.hidden = false;
-      }
-    }
-  }
-
-  // FIX: Support the paymentMethod radio selection (Flutterwave vs Paystack)
   document
     .getElementById("confirmFundBtn")
     .addEventListener(
       "click",
       () => {
-        const selectedMethod =
-          document.querySelector('input[name="paymentMethod"]:checked')?.value ||
-          "flutterwave";
-
-        if (selectedMethod === "paystack") {
-          startPaystackFallback();
-        } else {
-          startFlutterwavePayment();
-        }
+        startPaystackFallback();
       }
     );
-
-  // -------------------------------------------------------
-  // Paystack BACKUP (if fallback button exists in DOM)
-  // -------------------------------------------------------
-
-  // FIX: Check if paystackFallbackBtn exists before adding event listener
-  const fallbackEl =
-    document.getElementById("paystackFallbackBtn");
-
-  if (fallbackEl) {
-    fallbackEl.addEventListener(
-      "click",
-      startPaystackFallback
-    );
-  }
 
   function startPaystackFallback() {
 
@@ -759,16 +610,7 @@ document.addEventListener("DOMContentLoaded", () => {
         "confirmFundBtn"
       );
 
-    const fallbackBtn =
-      document.getElementById(
-        "paystackFallbackBtn"
-      );
-
     btn.disabled = true;
-    // FIX: Safely check fallbackBtn before disabling
-    if (fallbackBtn) {
-      fallbackBtn.disabled = true;
-    }
 
     btn.textContent =
       "Opening Paystack…";
@@ -822,10 +664,6 @@ document.addEventListener("DOMContentLoaded", () => {
               .then(data => {
 
                 btn.disabled = false;
-                // FIX: Safely check fallbackBtn
-                if (fallbackBtn) {
-                  fallbackBtn.disabled = false;
-                }
 
                 btn.textContent =
                   "Continue to payment";
@@ -855,10 +693,6 @@ document.addEventListener("DOMContentLoaded", () => {
               .catch(() => {
 
                 btn.disabled = false;
-                // FIX: Safely check fallbackBtn
-                if (fallbackBtn) {
-                  fallbackBtn.disabled = false;
-                }
 
                 btn.textContent =
                   "Continue to payment";
@@ -874,10 +708,6 @@ document.addEventListener("DOMContentLoaded", () => {
           function() {
 
             btn.disabled = false;
-            // FIX: Safely check fallbackBtn
-            if (fallbackBtn) {
-              fallbackBtn.disabled = false;
-            }
 
             btn.textContent =
               "Continue to payment";
@@ -885,155 +715,6 @@ document.addEventListener("DOMContentLoaded", () => {
       });
 
     handler.openIframe();
-  }
-
-  // -------------------------------------------------------
-  // Handle Flutterwave redirect
-  // -------------------------------------------------------
-
-  async function handleFlutterwaveRedirect() {
-
-    const params =
-      new URLSearchParams(
-        window.location.search
-      );
-
-    const status =
-      (params.get("status") || "").toLowerCase();
-
-    const txRef =
-      params.get("tx_ref");
-
-    // FIX: Accept both transaction_id and id query parameters from Flutterwave
-    const transactionId =
-      params.get("transaction_id") || params.get("id");
-
-    if (
-      !txRef ||
-      !transactionId
-    ) {
-      return;
-    }
-
-    // Remove payment parameters from the address bar.
-    window.history.replaceState(
-      {},
-      document.title,
-      window.location.pathname
-    );
-
-    // FIX: Open modal so user sees confirmation status and any messages
-    const modalOverlay =
-      document.getElementById(
-        "fundModalOverlay"
-      );
-    if (modalOverlay) {
-      modalOverlay.hidden = false;
-    }
-
-    const messageBox =
-      document.getElementById(
-        "fundMessage"
-      );
-
-    const btn =
-      document.getElementById(
-        "confirmFundBtn"
-      );
-
-    btn.disabled = true;
-    btn.textContent =
-      "Verifying payment…";
-
-    messageBox.hidden = false;
-    messageBox.className =
-      "airtime-message";
-    messageBox.textContent =
-      "Confirming your Flutterwave payment…";
-
-    if (
-      status &&
-      status !== "successful" &&
-      status !== "completed"
-    ) {
-
-      btn.disabled = false;
-      btn.textContent =
-        "Continue to payment";
-
-      showError(
-        "The Flutterwave payment was not successful."
-      );
-
-      return;
-    }
-
-    try {
-
-      const res =
-        await fetch(
-          `${API_ORIGIN}/api/wallet/fund/verify`,
-          {
-            method: "POST",
-
-            headers: {
-              "Content-Type":
-                "application/json",
-
-              Authorization:
-                `Bearer ${token}`,
-            },
-
-            body: JSON.stringify({
-              transaction_id:
-                transactionId,
-
-              tx_ref:
-                txRef,
-            }),
-          }
-        );
-
-      const data =
-        await res.json();
-
-      if (
-        !res.ok ||
-        data.balance ===
-          undefined
-      ) {
-
-        throw new Error(
-          data.error ||
-          "Payment could not be verified."
-        );
-      }
-
-      currentBalance =
-        data.balance;
-
-      renderBalance();
-
-      closeFundModal();
-
-      await loadWallet();
-
-    } catch (err) {
-
-      console.error(
-        "Flutterwave redirect verification error:",
-        err
-      );
-
-      btn.disabled = false;
-      btn.textContent =
-        "Continue to payment";
-
-      showError(
-        err.message ||
-        `Payment verification failed. Keep your reference ${txRef} and contact support if money was deducted.`
-      );
-    }
   }
 
   // -------------------------------------------------------
@@ -1167,9 +848,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // Initial load
   // -------------------------------------------------------
 
-  // FIX: Await redirect verification before loading wallet balance to avoid race conditions
   (async function init() {
-    await handleFlutterwaveRedirect();
     await loadWallet();
   })();
 });

@@ -77,9 +77,6 @@ app.use(
 //
 // Paystack requires the raw request body for its
 // HMAC-SHA512 signature verification.
-//
-// Flutterwave uses its webhook hash header and can
-// use the parsed JSON body.
 // ---------------------------------------------------------
 
 app.use(
@@ -87,12 +84,6 @@ app.use(
   express.raw({
     type: "application/json",
   })
-);
-
-// Flutterwave webhook uses normal JSON.
-app.use(
-  "/api/webhooks/flutterwave",
-  express.json()
 );
 
 // ---------------------------------------------------------
