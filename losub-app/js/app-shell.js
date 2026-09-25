@@ -30,7 +30,10 @@ function initAppShell() {
   backdrop?.addEventListener("click", closeMobileSidebar);
 
   // ---------- Highlight active nav link based on current page ----------
-  const currentPage = window.location.pathname.split("/").pop().replace(".html", "") || "dashboard";
+ const currentPath = window.location.pathname;
+const currentPage = currentPath === "/admin"
+  ? "admin-dashboard"
+  : currentPath.split("/").pop() || "dashboard";
   document.querySelectorAll(".sidebar__link, .sidebar__user").forEach(link => {
     if (link.dataset.page === currentPage) link.classList.add("is-active");
   });

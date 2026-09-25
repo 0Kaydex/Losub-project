@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -74,7 +74,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       const res = await apiFetch(`/api/groups/mine`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       const groups = data.groups || [];
 
@@ -99,7 +99,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
       list.querySelectorAll(".msg-group-card").forEach(card => {
         card.addEventListener("click", () => {
-          window.location.href = `messages.html?group=${card.dataset.id}`;
+          window.location.href = `/messages?group=${card.dataset.id}`;
         });
       });
     } catch {
@@ -122,10 +122,10 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     try {
       const res = await apiFetch(`/api/groups/${groupId}`, { headers: { Authorization: `Bearer ${token}` } });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (res.status === 403 || res.status === 404) {
         showToast("You don't have access to that group's inbox.");
-        setTimeout(() => window.location.href = "messages.html", 1200);
+        setTimeout(() => window.location.href = "/messages", 1200);
         return;
       }
       const group = await res.json();
@@ -169,7 +169,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         `/api/groups/${groupId}/messages?thread=${activeThread}`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) throw new Error("failed");
 
       const data = await res.json();
@@ -248,7 +248,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   document.getElementById("msgBackBtn").addEventListener("click", () => {
     if (pollTimer) clearInterval(pollTimer);
-    window.location.href = "messages.html";
+    window.location.href = "/messages";
   });
 
   // ---------- Boot ----------

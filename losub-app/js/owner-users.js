@@ -10,11 +10,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   // Owner-only page — anyone else gets bounced immediately.
   if (!user || !token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
   if (user.role !== "owner") {
-    window.location.href = "index.html";
+    window.location.href = "/home";
     return;
   }
 
@@ -123,7 +123,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       });
 
       if (res.status === 401) {
-        window.location.href = "auth.html";
+        window.location.href = "/login";
         return;
       }
 
@@ -146,7 +146,7 @@ document.addEventListener("DOMContentLoaded", async () => {
         localStorage.removeItem("losub_user");
         localStorage.removeItem("losub_token");
         localStorage.removeItem("losub_my_groups");
-        window.location.href = "auth.html";
+        window.location.href = "/login";
       }
     } catch (err) {
       showError("Network error — couldn't reach the server. Try again.");
@@ -174,11 +174,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     });
 
     if (res.status === 401) {
-      window.location.href = "auth.html";
+      window.location.href = "/login";
       return;
     }
     if (res.status === 403) {
-      window.location.href = "index.html";
+      window.location.href = "/home";
       return;
     }
     if (!res.ok) {

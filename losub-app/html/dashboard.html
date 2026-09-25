@@ -30,7 +30,7 @@ le>
         <!-- <div class="topbar__search">
           <input type="search" placeholder="Search plans, groups…" />
         </div> -->
-        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='notifications.html'">
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='/notifications'">
           <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
         </button>
       </header>
@@ -82,23 +82,23 @@ le>
     <span class="wallet-mini__value" id="dashWalletBalance">—</span>
   </div>
   <div class="wallet-mini__actions">
-    <a href="wallet.html" class="wallet-mini__fund-btn">+ Fund wallet</a>
-    <a href="wallet.html" class="wallet-mini__link">View wallet →</a>
+    <a href="/wallet" class="wallet-mini__fund-btn">+ Fund wallet</a>
+    <a href="/wallet" class="wallet-mini__link">View wallet →</a>
   </div>
 </section>
 
                     
         <!-- ============ QUICK ACTIONS ============ -->
         <section class="quick-actions">
-          <a href="browse.html" class="quick-action">
+          <a href="/browse" class="quick-action">
             <span class="quick-action__icon quick-action__icon--blue"><img src="../images/icons/search icon.png" alt="" class="sidebar__icon" /></span>
             <span>Browse plans</span>
           </a>
-          <a href="airtime.html" class="quick-action">
+          <a href="/airtime" class="quick-action">
             <span class="quick-action__icon quick-action__icon--mint"><img src="../images/icons/airtime and data.png" alt="" class="sidebar__icon" /></span>
             <span>Buy airtime & data</span>
           </a>
-          <a href="wallet.html" class="quick-action">
+          <a href="/wallet" class="quick-action">
             <span class="quick-action__icon quick-action__icon--sand"><img src="../images/icons/wallet.png" alt="" class="sidebar__icon" /></span>
             <span>View wallet </span>
           </a>
@@ -109,12 +109,12 @@ le>
           <section class="dash__groups">
             <div class="dash__section-header">
               <h2>My groups</h2>
-              <!-- <a href="browse.html" class="dash__link">Browse plans →</a> -->
+              <!-- <a href="/browse" class="dash__link">Browse plans →</a> -->
             </div>
             <div class="group-grid" id="groupGrid"></div>
             <div class="dash__empty" id="groupsEmpty" hidden>
               <p>You haven't joined any plans yet.</p>
-              <a href="browse.html" class="hero__cta">
+              <a href="/browse" class="hero__cta">
                 <span class="hero__cta-text hero__cta-text--default">Browse plans</span>
                 <span class="hero__cta-text hero__cta-text--hover">Find a plan to join</span>
               </a>
@@ -128,7 +128,7 @@ le>
                 <button type="button" class="dash__link" id="markAllRead">Mark all read</button>
               </div>
               <ul class="notif-list" id="notifList"></ul>
-              <a href="notifications.html" class="dash__see-all">See all notifications →</a>
+              <a href="/notifications" class="dash__see-all">See all notifications →</a>
             </section>
 
             <section class="panel" id="waitlist">

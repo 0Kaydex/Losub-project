@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -124,7 +124,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await apiFetch(`${API_ORIGIN}/api/admin/messages/threads`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       threads = data.threads || [];
       renderThreadList();
@@ -141,7 +141,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await apiFetch(`${API_ORIGIN}/api/admin/messages/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       if (!res.ok) {
         document.getElementById("threadPanel").innerHTML = `<p class="empty-state">Couldn't load that conversation.</p>`;
         return;
