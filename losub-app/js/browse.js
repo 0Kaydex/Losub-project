@@ -6,7 +6,7 @@
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -186,7 +186,7 @@
         return;
       }
 
-      window.location.href = "dashboard.html";
+      window.location.href = "/dashboard";
     } catch (err) {
       alert("Couldn't reach Losub — check your connection and try again.");
       btn.disabled = false;
@@ -254,7 +254,7 @@
         return;
       }
 
-      window.location.href = "dashboard.html";
+      window.location.href = "/dashboard";
     } catch (err) {
       alert("Couldn't reach Losub — check your connection and try again.");
       btn.disabled = false;
@@ -265,7 +265,7 @@
   document.getElementById("declineManagerOffer").addEventListener("click", () => {
     closeManagerModal();
     // Waitlist has no backend table yet — this is a no-op for now.
-    window.location.href = "dashboard.html";
+    window.location.href = "/dashboard";
   });
 
   // ---------- FAQ accordion ----------
@@ -293,7 +293,7 @@
       ]);
 
       if (plansRes.status === 401 || groupsRes.status === 401) {
-        window.location.href = "auth.html";
+        window.location.href = "/login";
         return;
       }
 

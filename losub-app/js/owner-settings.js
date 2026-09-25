@@ -9,11 +9,11 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("losub_token");
 
   if (!user || !token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
   if (user.role !== "owner") {
-    window.location.href = "index.html";
+    window.location.href = "/home";
     return;
   }
 

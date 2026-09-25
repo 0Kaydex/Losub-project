@@ -69,22 +69,27 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function redirectByRole(user) {
     if (user.role === "owner" || user.role === "admin") {
-      window.location.href = "admin-dashboard.html";
+      window.location.href = "/admin";
     } else {
-      window.location.href = "dashboard.html";
+      window.location.href = "/dashboard";
     }
   }
 
   // ---------- Determine which tab to show on load ----------
   const params = new URLSearchParams(window.location.search);
-  const requestedTab = params.get("tab");
-  const resetToken = params.get("token");
+const requestedTab = params.get("tab");
+const currentPath = window.location.pathname;
+const resetToken = params.get("token");
 
   if (requestedTab === "reset" && resetToken) {
-    showForm("reset");
-  } else if (["signup", "signin", "forgot"].includes(requestedTab)) {
-    showForm(requestedTab);
-  }
+  showForm("reset");
+} else if (currentPath === "/signup") {
+  showForm("signup");
+} else if (currentPath === "/login") {
+  showForm("signin");
+} else if (["signup", "signin", "forgot"].includes(requestedTab)) {
+  showForm(requestedTab);
+}
 
   if (params.get("verified") === "1") {
     showForm("signin");
@@ -182,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
     try {
       const data = await apiPost("/auth/reset-password", { token: resetToken, newPassword });
       showMessage(resetForm, `${data.message} Redirecting to log in…`, "success");
-      setTimeout(() => { window.location.href = "auth.html?tab=signin"; }, 1800);
+      setTimeout(() => { window.location.href = "/login"; }, 1800);
     } catch (err) {
       showMessage(resetForm, err.message);
     } finally {

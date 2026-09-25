@@ -12,12 +12,12 @@ document.addEventListener("DOMContentLoaded", async () => {
     const user = JSON.parse(localStorage.getItem("losub_user"));
 
     if (!user) {
-        window.location.href = "auth.html";
+        window.location.href = "/login";
         return;
     }
 
     if (user.role !== "admin" && user.role !== "owner") {
-        window.location.href = "index.html";
+        window.location.href = "/home";
         return;
     }
 
@@ -34,7 +34,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             localStorage.removeItem("losub_user");
             localStorage.removeItem("losub_token");
             localStorage.removeItem("losub_my_groups");
-            window.location.href = "auth.html";
+            window.location.href = "/login";
         });
     }
     // ---- End role check ----

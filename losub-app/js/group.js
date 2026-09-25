@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -14,7 +14,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   const groupId = params.get("id");
 
   if (!groupId) {
-    window.location.href = "dashboard.html";
+    window.location.href = "/dashboard";
     return;
   }
 
@@ -59,7 +59,7 @@ document.addEventListener("DOMContentLoaded", async () => {
       headers: { Authorization: `Bearer ${token}` },
     });
 
-    if (res.status === 401) { window.location.href = "auth.html"; return; }
+    if (res.status === 401) { window.location.href = "/login"; return; }
     if (!res.ok) {
       document.getElementById("planName").textContent = "Group not found";
       return;
@@ -84,7 +84,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
     document.getElementById("managerName").textContent = g.manager;
     document.getElementById("managerInitial").textContent = g.manager.charAt(0);
-    document.getElementById("messageGroupLink").href = `messages.html?group=${groupId}`;
+    document.getElementById("messageGroupLink").href = `/messages?group=${groupId}`;
 
     if (g.accessLink) {
       document.getElementById("accessPanel").hidden = false;
@@ -118,7 +118,7 @@ document.addEventListener("DOMContentLoaded", async () => {
             return;
           }
 
-          window.location.href = "dashboard.html";
+          window.location.href = "/dashboard";
         } catch {
           alert("Couldn't reach Losub — check your connection and try again.");
           leaveBtn.disabled = false;

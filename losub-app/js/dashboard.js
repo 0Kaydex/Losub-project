@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -103,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
             <span class="status-pill status-pill--${g.paymentStatus}">${statusLabel[g.paymentStatus] || "—"}</span>
           </div>
 
-          <a href="${g.role === 'manager' ? 'manage-group.html' : 'group.html'}?id=${g.id}" class="group-card__cta">
+          <a href="${g.role === 'manager' ? '/manage-group' : '/groups'}?id=${g.id}" class="group-card__cta">
             ${g.role === 'manager' ? 'Manage group' : 'View group'}
           </a>
         </article>
@@ -175,7 +175,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`${API_ORIGIN}/api/groups/mine`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       groups = data.groups || [];
     } catch {
@@ -203,7 +203,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`${API_ORIGIN}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       notifications = (data.notifications || []).map(n => ({ ...n, read: !!n.read }));
     } catch {

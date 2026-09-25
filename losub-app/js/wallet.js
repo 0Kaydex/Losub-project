@@ -9,7 +9,7 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
   if (!user || !token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 

@@ -6,7 +6,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const token = localStorage.getItem("losub_token");
 
   if (!token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`${API_ORIGIN}/api/notifications`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
       notifications = (data.notifications || []).map(n => ({ ...n, read: !!n.read }));
     } catch {

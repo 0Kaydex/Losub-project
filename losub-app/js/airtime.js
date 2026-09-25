@@ -7,7 +7,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const user = JSON.parse(localStorage.getItem("losub_user") || "null");
 
   if (!user || !token) {
-    window.location.href = "auth.html";
+    window.location.href = "/login";
     return;
   }
 
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const res = await fetch(`${API_ORIGIN}/api/vtpass/data-plans/${network}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
 
       if (!res.ok) {
@@ -187,7 +187,7 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(body),
       });
 
-      if (res.status === 401) { window.location.href = "auth.html"; return; }
+      if (res.status === 401) { window.location.href = "/login"; return; }
       const data = await res.json();
 
       if (!res.ok) {
