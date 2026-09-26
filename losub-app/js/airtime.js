@@ -15,7 +15,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let currentNetwork = "mtn";
   let selectedAmount = null;
   let selectedDataPlan = null; // { variationCode, name, price }
-  let dataPlansCache = {}; // network -> plans[]
+  const dataPlansCache = {}; // network -> plans[]
 
   const fmt = n => `₦${n.toLocaleString()}`;
   const messageBox = document.getElementById("airtimeMessage");
@@ -79,7 +79,6 @@ document.addEventListener("DOMContentLoaded", () => {
     updateSummary();
   });
 
-  // ---------- Data plan list (live from VTPass, via our backend) ----------
   async function loadDataPlans(network) {
     const list = document.getElementById("dataPlanList");
 
@@ -88,13 +87,20 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    list.innerHTML = `<p class="airtime-loading">Loading ${network.toUpperCase()} plans…</p>`;
+    list.innerHTML = '<p class="airtime-loading">Loading plans…</p>';
 
     try {
-      const res = await fetch(`${API_ORIGIN}/api/vtpass/data-plans/${network}`, {
-        headers: { Authorization: `Bearer ${token}` },
+      const res = await fetch(`${API_ORIGIN}/api/gsubz/data-plans/${encodeURIComponent(network)}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
       });
-      if (res.status === 401) { window.location.href = "/login"; return; }
+
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -102,38 +108,51 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
+      if (!Array.isArray(data.plans)) {
+        list.innerHTML = '<p class="airtime-loading">No plans available for this network right now.</p>';
+        return;
+      }
+
       dataPlansCache[network] = data.plans;
       renderDataPlans(data.plans);
     } catch (err) {
-      list.innerHTML = `<p class="airtime-loading">Couldn't reach the server. Check your connection and try again.</p>`;
+      console.error("Load data plans error:", err);
+      list.innerHTML = '<p class="airtime-loading">Couldn\'t reach the server. Check your connection and try again.</p>';
     }
   }
 
   function renderDataPlans(plans) {
     const list = document.getElementById("dataPlanList");
 
-    if (!plans.length) {
-      list.innerHTML = `<p class="airtime-loading">No plans available for this network right now.</p>`;
+    if (!plans || !plans.length) {
+      list.innerHTML = '<p class="airtime-loading">No plans available for this network right now.</p>';
+      selectedDataPlan = null;
+      updateSummary();
       return;
     }
 
-    list.innerHTML = plans.map(p => `
-      <div class="data-plan-item" data-code="${p.code}">
+    list.innerHTML = plans.map((p, index) => `
+      <div class="data-plan-item" data-code="${String(p.code ?? "").replace(/"/g, "&quot;")}" data-service="${String(p.serviceID ?? "").replace(/"/g, "&quot;")}" data-index="${index}">
         <div>
-          <span class="data-plan-item__name">${p.name}</span>
+          <span class="data-plan-item__name">${String(p.name ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</span>
         </div>
-        <span class="data-plan-item__price">${fmt(p.price)}</span>
+        <span class="data-plan-item__price">₦${Number(p.price || 0).toLocaleString()}</span>
       </div>
     `).join("");
 
-    list.querySelectorAll(".data-plan-item").forEach(item => {
+    list.querySelectorAll(".data-plan-item").forEach((item) => {
       item.addEventListener("click", () => {
         list.querySelectorAll(".data-plan-item").forEach(i => i.classList.remove("is-active"));
         item.classList.add("is-active");
-        selectedDataPlan = plans.find(p => p.code === item.dataset.code);
+
+        const index = Number(item.dataset.index);
+        selectedDataPlan = plans[index] || null;
         updateSummary();
       });
     });
+
+    selectedDataPlan = null;
+    updateSummary();
   }
 
   // ---------- Phone number ----------
@@ -169,16 +188,25 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
+    if (currentType === "data" && !selectedDataPlan.serviceID) {
+      showMessage("This data plan is missing its provider service. Reload the plans and try again.");
+      return;
+    }
+
     buyBtn.disabled = true;
     buyBtn.textContent = "Processing…";
 
-    try {
-      const endpoint = currentType === "airtime" ? "/api/vtpass/airtime" : "/api/vtpass/data";
-      const body = currentType === "airtime"
-  ? { network: currentNetwork, phone, amount: selectedAmount }
-  : { network: currentNetwork, phone, variation_code: selectedDataPlan.code };
+    const body = currentType === "airtime"
+      ? { network: currentNetwork, phone, amount: selectedAmount }
+      : {
+          network: currentNetwork,
+          phone,
+          serviceID: selectedDataPlan.serviceID,
+          variation_code: selectedDataPlan.code,
+        };
 
-      const res = await fetch(`${API_ORIGIN}${endpoint}`, {
+    try {
+      const res = await fetch(`${API_ORIGIN}${currentType === "airtime" ? "/api/gsubz/airtime" : "/api/gsubz/data"}`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -187,7 +215,11 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify(body),
       });
 
-      if (res.status === 401) { window.location.href = "/login"; return; }
+      if (res.status === 401) {
+        window.location.href = "/login";
+        return;
+      }
+
       const data = await res.json();
 
       if (!res.ok) {
@@ -196,18 +228,23 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       showMessage(data.message || "Purchase successful.", "success");
-
-      // Reset selection after a successful purchase.
       selectedAmount = null;
       selectedDataPlan = null;
       document.getElementById("airtimeAmount").value = "";
       document.querySelectorAll(".amount-chip, .data-plan-item").forEach(c => c.classList.remove("is-active"));
       updateSummary();
     } catch (err) {
+      console.error("Purchase error:", err);
       showMessage("Couldn't reach the server. Check your connection and try again.");
     } finally {
       buyBtn.disabled = false;
       buyBtn.textContent = "Buy now";
     }
   });
+
+  if (currentType === "data") {
+    loadDataPlans(currentNetwork);
+  }
+
+  updateSummary();
 });
