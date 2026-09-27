@@ -8,9 +8,9 @@ const authRoutes = require("./routes/auth");
 const adminRoutes = require("./routes/admin");
 const ownerRoutes = require("./routes/owner");
 const walletRoutes = require("./routes/wallet");
+const gsubzRoutes = require("./routes/gsubz");
 const plansRoutes = require("./routes/plans");
 const groupsRoutes = require("./routes/groups");
-const vtpassRoutes = require("./routes/vtpass");
 const notificationsRoutes = require("./routes/notifications");
 const webhooksRoutes = require("./routes/webhooks");
 
@@ -25,6 +25,9 @@ const PORT = process.env.PORT || 3000;
 const PRODUCTION_ORIGINS = [
   "https://losubapp.com",
   "https://www.losubapp.com",
+   "https://losub-app-git-feature-remove-flutterwave-we-dev3.vercel.app",
+    "http://127.0.0.1:5500",
+    "http://localhost:5500",
 ];
 
 const LOCAL_ORIGIN_PATTERN =
@@ -110,16 +113,47 @@ app.use(
 // Health
 // ---------------------------------------------------------
 
-app.get("/", (req, res) => {
+// ---------------------------------------------------------
+// Frontend pages
+// ---------------------------------------------------------
+
+// Frontend pages
+app.get("/home", (req, res) => {
   res.redirect("/html/index.html");
 });
 
-app.get("/api/health", (req, res) => {
-  res.json({
-    ok: true,
-    message: "Losub backend is running.",
-  });
+app.get("/airtime", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "../losub-app/html/airtime.html")
+  );
 });
+app.get("/login", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "../losub-app/html/auth.html")
+  );
+});
+
+app.get("/dashboard", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "../losub-app/html/dashboard.html")
+  );
+});
+
+app.get("/wallet", (req, res) => {
+  res.sendFile(
+    path.join(__dirname, "../losub-app/html/wallet.html")
+  );
+});
+app.get("/account", (req, res) => {
+  res.redirect("/html/account.html");
+});
+
+// app.get("/api/health", (req, res) => {
+//   res.json({
+//     ok: true,
+//     message: "Losub backend is running.",
+//   });
+// });
 
 // ---------------------------------------------------------
 // API routes
@@ -146,6 +180,11 @@ app.use(
 );
 
 app.use(
+  "/api/gsubz",
+  gsubzRoutes
+);
+
+app.use(
   "/api/plans",
   plansRoutes
 );
@@ -153,11 +192,6 @@ app.use(
 app.use(
   "/api/groups",
   groupsRoutes
-);
-
-app.use(
-  "/api/vtpass",
-  vtpassRoutes
 );
 
 app.use(
