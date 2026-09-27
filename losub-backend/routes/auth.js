@@ -8,7 +8,7 @@ const { sendEmail, verificationEmail, resetPasswordEmail } = require("../utils/m
 
 const router = express.Router();
 
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://127.0.0.1:5501/html";
+const FRONTEND_URL = (process.env.FRONTEND_URL || "https://www.losubapp.com").replace(/\/$/, "");
 const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:3000";
 const JWT_SECRET = process.env.JWT_SECRET;
 
@@ -198,7 +198,7 @@ router.post("/forgot-password", async (req, res) => {
         "INSERT INTO email_tokens (user_id, token_hash, type, expires_at) VALUES (?, ?, 'reset', ?)"
       ).run(user.id, tokenHash, expiresAt);
 
-      const resetLink = `${FRONTEND_URL}/auth.html?tab=reset&token=${rawToken}`;
+      const resetLink = `${FRONTEND_URL}/login?tab=reset&token=${encodeURIComponent(rawToken)}`;
       const { subject, html } = resetPasswordEmail(user.fullname, resetLink);
       await sendEmail({ to: user.email, subject, html });
     }
