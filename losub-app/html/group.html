@@ -4,6 +4,13 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>My Group — Losub</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
   <link rel="stylesheet" href="../css/base.css" />
   <link rel="stylesheet" href="../css/app-shell.css" />
   <link rel="stylesheet" href="../css/shared.css" />
@@ -13,20 +20,28 @@
 <body class="app-shell-page">
 
   <div class="app-shell">
-    
+
     <div id="userSidebar"></div>
 
     <div class="app-shell__main">
+      <header class="topbar">
+        <button class="topbar__menu-btn" id="topbarMenuBtn" aria-label="Open menu">☰</button>
+        <h1 class="topbar__title">My group</h1>
+        <button class="topbar__bell" aria-label="Notifications" onclick="window.location.href='/notifications'">
+          <img src="../images/icons/bell icon.png" alt="" class="sidebar__icon" /><span class="topbar__bell-dot" id="bellDot" hidden></span>
+        </button>
+      </header>
 
-      <section class="page__header" style="margin-top:16px;">
-        <div class="group-head">
-          <span class="group-head__dot" id="planDot"></span>
-          <h1 id="planName">Loading…</h1>
-        </div>
-        <p id="planSeats"></p>
-      </section>
+      <main class="page-content">
+        <section class="page__header">
+          <div class="group-head">
+            <span class="group-head__dot" id="planDot"></span>
+            <h1 id="planName">Loading…</h1>
+          </div>
+          <p id="planSeats"></p>
+        </section>
 
-      <div class="group-layout">
+        <div class="group-layout">
 
         <!-- Main column -->
         <div>
@@ -65,7 +80,7 @@
           <section class="panel" id="accessPanel" hidden>
             <div class="section-header"><h2>Plan access</h2></div>
             <p class="manager-note">Your manager shared the link to access this plan.</p>
-            <a href="#" id="accessLinkOut" target="_blank" rel="noopener" class="auth-submit" style="display:inline-block; text-decoration:none; text-align:center;">Open access link</a>
+            <a href="#" id="accessLinkOut" target="_blank" rel="noopener" class="auth-submit">Open access link</a>
           </section>
 
           <section class="panel">
@@ -87,7 +102,7 @@
               </div>
             </div>
             <p class="manager-note">Payments and billing are handled directly by Losub — your manager only manages seats.</p>
-            <a href="#" id="messageGroupLink" class="auth-submit" style="display:inline-block; text-decoration:none; text-align:center; margin-top:12px;">💬 Message the group</a>
+            <a href="#" id="messageGroupLink" class="auth-submit message-group-link">💬 Message the group</a>
           </section>
 
           <section class="panel">
@@ -96,6 +111,7 @@
           </section>
         </aside>
       </div>
+      </main>
     </div>
   </div>
 

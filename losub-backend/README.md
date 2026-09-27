@@ -37,7 +37,6 @@ Then fill in `.env` (see `.env.example` for the full list — this project uses 
 - `BACKEND_URL` — wherever this server runs (default `http://localhost:3000`)
 - `GOOGLE_CLIENT_ID` — see step 5 below
 - `PAYSTACK_SECRET_KEY` — from your Paystack dashboard, live key for production
-- `VTPASS_API_KEY` / `VTPASS_SECRET_KEY` / `VTPASS_PUBLIC_KEY` / `VTPASS_BASE_URL` — from your VTPass account
 
 On Fly.io, set these with `fly secrets set KEY=value` — the `.env` file is gitignored and is **not** deployed by the Dockerfile.
 

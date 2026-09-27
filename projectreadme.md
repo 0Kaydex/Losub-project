@@ -108,7 +108,6 @@ Losub-project/
     │   ├── notifications.js
     │   ├── owner.js
     │   ├── plans.js
-    │   ├── vtpass.js
     │   ├── wallet.js
     │   └── webhooks.js
     ├── scripts/
