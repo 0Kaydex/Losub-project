@@ -110,20 +110,312 @@
 .amount-quick-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-bottom: 16px;
+  gap: 10px;
+  margin: 22px 0 20px;
 }
 
 .amount-chip {
-  padding: 10px;
+  min-height: 44px;
+  padding: 9px 8px;
   border: 1px solid var(--line);
-  border-radius: var(--r-md);
-  background: var(--paper);
-  font-size: 13px;
+  border-radius: 14px;
+  background: #fff;
+  font-size: 14px;
   font-weight: 700;
   color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
-.amount-chip.is-active { border-color: var(--ink); background: var(--pastel-sky); }
+
+.amount-chip:hover {
+  border-color: #aeb8c0;
+  background: #f8fafb;
+}
+
+.amount-chip:active {
+  transform: translateY(1px);
+}
+
+.amount-chip.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #fff;
+  box-shadow: 0 0 0 2px rgba(20, 23, 26, 0.1);
+}
+
+.wallet-fund-modal {
+  max-width: 440px;
+  padding: 30px 28px 26px;
+  border: 1px solid rgba(20, 23, 26, 0.06);
+  box-shadow: 0 24px 72px rgba(13, 17, 21, 0.24);
+}
+
+.wallet-fund-modal h2 {
+  padding-right: 36px;
+  font-size: 23px;
+}
+
+.wallet-fund-modal .modal__sub {
+  margin-top: 5px;
+}
+
+.wallet-fund-modal__close {
+  top: 18px;
+  right: 18px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 23px;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.wallet-fund-modal__close:hover {
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.amount-chip:focus-visible,
+.wallet-fund-modal__close:focus-visible,
+.wallet-fund-submit:focus-visible {
+  outline: 3px solid rgba(30, 144, 255, 0.55);
+  outline-offset: 2px;
+}
+
+.wallet-fund-field {
+  display: block;
+  margin-bottom: 16px;
+}
+
+.wallet-fund-field__label,
+.wallet-fund-payment__label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.wallet-fund-amount-control {
+  display: flex;
+  align-items: center;
+  min-height: 58px;
+  padding: 0 16px;
+  border: 1px solid #d7dce0;
+  border-radius: 14px;
+  background: #fff;
+  transition: border-color 160ms ease, box-shadow 160ms ease;
+}
+
+.wallet-fund-amount-control:focus-within {
+  border-color: var(--ink);
+  box-shadow: 0 0 0 3px rgba(20, 23, 26, 0.09);
+}
+
+.wallet-fund-amount-control__currency {
+  margin-right: 9px;
+  color: var(--ink-soft);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+}
+
+.wallet-fund-amount-control input {
+  width: 100%;
+  min-width: 0;
+  height: 54px;
+  padding: 0;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.wallet-fund-amount-control input::-webkit-inner-spin-button,
+.wallet-fund-amount-control input::-webkit-outer-spin-button {
+  margin: 0;
+  -webkit-appearance: none;
+}
+
+.wallet-fund-amount-control input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+.wallet-fund-summary {
+  display: grid;
+  gap: 11px;
+  margin: 18px 0;
+  padding: 15px 16px;
+  border: 1px solid #e5e9ec;
+  border-radius: 14px;
+  background: #f7f9fa;
+}
+
+.wallet-fund-summary__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--ink-soft);
+  font-size: 14px;
+}
+
+.wallet-fund-summary__row strong {
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+.wallet-fund-summary__row--receive {
+  padding-top: 10px;
+  border-top: 1px solid #e1e6e9;
+  color: var(--ink);
+  font-weight: 700;
+}
+
+.wallet-fund-summary__row--receive strong {
+  font-family: var(--font-display);
+  font-size: 21px;
+  font-weight: 700;
+}
+
+.wallet-fund-payment {
+  margin-bottom: 16px;
+}
+
+.wallet-fund-payment__option {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 52px;
+  padding: 0 15px;
+  border: 1px solid #d7dce0;
+  border-radius: 13px;
+  background: #fff;
+}
+
+.wallet-fund-payment__provider {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.wallet-fund-payment__selected {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #286245;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wallet-fund-payment__selected span {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--pastel-mint);
+  font-size: 12px;
+}
+
+.wallet-fund-error {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid #efd3d1;
+  border-radius: 11px;
+  background: #fff8f7;
+  color: #8c3935;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.wallet-fund-error[hidden] {
+  display: none;
+}
+
+.wallet-fund-error__icon {
+  display: inline-grid;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
+  place-items: center;
+  border-radius: 50%;
+  background: #f3dfdc;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.wallet-fund-submit {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 50px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 13px;
+  background: var(--ink);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  transition: background-color 160ms ease, box-shadow 160ms ease, transform 160ms ease, opacity 160ms ease;
+}
+
+.wallet-fund-submit:hover:not(:disabled) {
+  background: #292e33;
+  box-shadow: 0 7px 16px rgba(20, 23, 26, 0.16);
+}
+
+.wallet-fund-submit:active:not(:disabled) {
+  transform: translateY(1px);
+}
+
+.wallet-fund-submit:disabled {
+  cursor: wait;
+  opacity: 0.74;
+}
+
+.wallet-fund-submit.is-loading::before {
+  width: 15px;
+  height: 15px;
+  margin-right: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.42);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: wallet-fund-spin 700ms linear infinite;
+  content: "";
+}
+
+@keyframes wallet-fund-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (max-width: 520px) {
+  .modal-overlay { padding: 12px; }
+
+  .wallet-fund-modal {
+    max-height: min(92vh, 720px);
+    padding: 26px 20px 20px;
+    border-radius: 20px;
+  }
+
+  .amount-quick-grid { gap: 8px; }
+  .amount-chip { min-height: 44px; font-size: 13px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .amount-chip,
+  .wallet-fund-modal__close,
+  .wallet-fund-amount-control,
+  .wallet-fund-submit { transition: none; }
+  .wallet-fund-submit.is-loading::before { animation-duration: 1.5s; }
+}
 
 .airtime-message {
   padding: 10px 14px;
