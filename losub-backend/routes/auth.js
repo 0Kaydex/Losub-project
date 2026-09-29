@@ -126,7 +126,7 @@ router.get("/verify-email", (req, res) => {
     db.prepare("UPDATE users SET email_verified = 1 WHERE id = ?").run(row.user_id);
     db.prepare("UPDATE email_tokens SET used = 1 WHERE id = ?").run(row.id);
 
-    res.redirect(`${FRONTEND_URL}/auth.html?tab=signin&verified=1`);
+    res.redirect(`${FRONTEND_URL}/login?tab=signin&verified=1`);
   } catch (err) {
     console.error(err);
     res.status(500).send("Something went wrong verifying your email.");
