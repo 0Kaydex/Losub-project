@@ -88,12 +88,12 @@
 
   <!-- ============ FUND WALLET MODAL ============ -->
   <div class="modal-overlay" id="fundModalOverlay" hidden>
-    <div class="modal">
-      <button type="button" class="modal__close" id="fundModalClose" aria-label="Close">&times;</button>
-      <h2>Fund wallet</h2>
-      <p class="modal__sub">Add money to your Losub wallet.</p>
+    <section class="modal wallet-fund-modal" role="dialog" aria-modal="true" aria-labelledby="fundModalTitle" aria-describedby="fundModalDescription">
+      <button type="button" class="modal__close wallet-fund-modal__close" id="fundModalClose" aria-label="Close">&times;</button>
+      <h2 id="fundModalTitle">Fund wallet</h2>
+      <p class="modal__sub" id="fundModalDescription">Add money to your Losub wallet.</p>
 
-      <div class="amount-quick-grid">
+      <div class="amount-quick-grid wallet-fund-presets" role="group" aria-label="Preset funding amounts">
         <button type="button" class="amount-chip" data-amount="1000">₦1,000</button>
         <button type="button" class="amount-chip" data-amount="2000">₦2,000</button>
         <button type="button" class="amount-chip" data-amount="5000">₦5,000</button>
@@ -102,24 +102,42 @@
         <button type="button" class="amount-chip" data-amount="50000">₦50,000</button>
       </div>
 
-      <label class="auth-field">
-        <span>Or enter an amount</span>
-        <input type="number" id="fundAmountInput" placeholder="Enter amount" min="101" />
+      <label class="wallet-fund-field" for="fundAmountInput">
+        <span class="wallet-fund-field__label">Custom amount</span>
+        <span class="wallet-fund-amount-control">
+          <span class="wallet-fund-amount-control__currency" aria-hidden="true">₦</span>
+          <input type="number" id="fundAmountInput" placeholder="Enter amount" min="100" step="1" inputmode="numeric" aria-label="Custom funding amount" />
+        </span>
       </label>
 
-      <p class="modal__sub" id="fundFeePreview" style="font-size:13px;">A ₦100 funding fee applies to every top-up.</p>
-      <div class="payment-method">
-        <span class="payment-method__label">Payment method</span>
-        <div class="payment-method__option" aria-current="true">
-          <span>Paystack</span>
+      <div class="wallet-fund-summary" aria-live="polite">
+        <div class="wallet-fund-summary__row">
+          <span>Funding fee</span>
+          <strong id="fundFeeAmount">₦50</strong>
+        </div>
+        <div class="wallet-fund-summary__row wallet-fund-summary__row--receive">
+          <span>You'll receive</span>
+          <strong id="fundReceiveAmount">—</strong>
         </div>
       </div>
 
-      <div class="airtime-message" id="fundMessage" hidden></div>
+      <div class="wallet-fund-error" id="fundMessage" role="alert" hidden>
+        <span class="wallet-fund-error__icon" aria-hidden="true">!</span>
+        <span id="fundMessageText"></span>
+      </div>
 
-      <button type="button" class="auth-submit" id="confirmFundBtn">
-          Continue to payment
+      <div class="wallet-fund-payment">
+        <span class="wallet-fund-payment__label">Payment method</span>
+        <div class="wallet-fund-payment__option" aria-label="Paystack selected">
+          <span class="wallet-fund-payment__provider">Paystack</span>
+          <span class="wallet-fund-payment__selected"><span aria-hidden="true">&#10003;</span> Selected</span>
+        </div>
+      </div>
+
+      <button type="button" class="wallet-fund-submit" id="confirmFundBtn">
+        Continue to payment
       </button>
+    </section>
   </div>
 
   <script src="../js/app-shell.js"></script>

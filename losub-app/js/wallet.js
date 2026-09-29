@@ -24,7 +24,8 @@ document.addEventListener("DOMContentLoaded", () => {
     data: "📶"
   };
 
-  const FUNDING_FEE = 100;
+  const FUNDING_FEE = 50;
+  const MIN_FUNDING_AMOUNT = 100;
 
   let allTransactions = [];
   let visibleCount = 5;
@@ -431,18 +432,8 @@ document.addEventListener("DOMContentLoaded", () => {
         )
       );
 
-    document.getElementById(
-      "fundMessage"
-    ).hidden = true;
-
-    const btn =
-      document.getElementById(
-        "confirmFundBtn"
-      );
-
-    btn.disabled = false;
-    btn.textContent =
-      "Continue to payment";
+    clearFundError();
+    resetFundButton();
 
     updateFeePreview();
   }
@@ -453,21 +444,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function updateFeePreview() {
 
-    const el =
-      document.getElementById(
-        "fundFeePreview"
-      );
+    const feeEl = document.getElementById("fundFeeAmount");
+    const receiveEl = document.getElementById("fundReceiveAmount");
 
-    if (!el) return;
+    if (!feeEl || !receiveEl) return;
 
-    if (
-      !selectedFundAmount ||
-      selectedFundAmount <= FUNDING_FEE
-    ) {
+    feeEl.textContent = `₦${FUNDING_FEE.toLocaleString()}`;
 
-      el.textContent =
-        `A ₦${FUNDING_FEE} funding fee applies to every top-up.`;
-
+    if (!selectedFundAmount || selectedFundAmount < MIN_FUNDING_AMOUNT) {
+      receiveEl.textContent = "—";
       return;
     }
 
@@ -475,8 +460,7 @@ document.addEventListener("DOMContentLoaded", () => {
       selectedFundAmount -
       FUNDING_FEE;
 
-    el.textContent =
-      `₦${FUNDING_FEE} funding fee applies — you'll receive ₦${net.toLocaleString()} in your wallet.`;
+    receiveEl.textContent = `₦${net.toLocaleString()}`;
   }
 
   // -------------------------------------------------------
@@ -512,6 +496,8 @@ document.addEventListener("DOMContentLoaded", () => {
               chip.dataset.amount
             );
 
+          clearFundError();
+
           document.getElementById(
             "fundAmountInput"
           ).value =
@@ -531,6 +517,8 @@ document.addEventListener("DOMContentLoaded", () => {
         selectedFundAmount =
           Number(e.target.value) ||
           null;
+
+        clearFundError();
 
         document
           .querySelectorAll(
@@ -557,13 +545,36 @@ document.addEventListener("DOMContentLoaded", () => {
         "fundMessage"
       );
 
-    messageBox.textContent =
-      message;
-
-    messageBox.className =
-      "airtime-message airtime-message--error";
+    document.getElementById(
+      "fundMessageText"
+    ).textContent = message;
 
     messageBox.hidden = false;
+  }
+
+  function clearFundError() {
+    const messageBox = document.getElementById("fundMessage");
+
+    messageBox.hidden = true;
+    document.getElementById("fundMessageText").textContent = "";
+  }
+
+  function setFundButtonLoading(label) {
+    const btn = document.getElementById("confirmFundBtn");
+
+    btn.disabled = true;
+    btn.classList.add("is-loading");
+    btn.setAttribute("aria-busy", "true");
+    btn.textContent = label;
+  }
+
+  function resetFundButton() {
+    const btn = document.getElementById("confirmFundBtn");
+
+    btn.disabled = false;
+    btn.classList.remove("is-loading");
+    btn.removeAttribute("aria-busy");
+    btn.textContent = "Continue to payment";
   }
 
   // -------------------------------------------------------
@@ -581,13 +592,15 @@ document.addEventListener("DOMContentLoaded", () => {
 
   function startPaystackFallback() {
 
+    clearFundError();
+
     if (
       !selectedFundAmount ||
-      selectedFundAmount <= FUNDING_FEE
+      selectedFundAmount < MIN_FUNDING_AMOUNT
     ) {
 
       showError(
-        `Enter a valid amount above ₦${FUNDING_FEE}.`
+        `Enter a valid amount of at least ₦${MIN_FUNDING_AMOUNT}.`
       );
 
       return;
@@ -610,13 +623,11 @@ document.addEventListener("DOMContentLoaded", () => {
         "confirmFundBtn"
       );
 
-    btn.disabled = true;
+    setFundButtonLoading("Opening Paystack…");
 
-    btn.textContent =
-      "Opening Paystack…";
-
-    const handler =
-      PaystackPop.setup({
+    try {
+      const handler =
+        PaystackPop.setup({
 
         key:
           PAYSTACK_PUBLIC_KEY,
@@ -636,8 +647,7 @@ document.addEventListener("DOMContentLoaded", () => {
         callback:
           function(response) {
 
-            btn.textContent =
-              "Confirming Paystack…";
+            setFundButtonLoading("Confirming payment…");
 
             fetch(
               `${API_ORIGIN}/api/wallet/fund/paystack/verify`,
@@ -663,10 +673,7 @@ document.addEventListener("DOMContentLoaded", () => {
               )
               .then(data => {
 
-                btn.disabled = false;
-
-                btn.textContent =
-                  "Continue to payment";
+                resetFundButton();
 
                 if (
                   data.balance ===
@@ -692,10 +699,7 @@ document.addEventListener("DOMContentLoaded", () => {
               })
               .catch(() => {
 
-                btn.disabled = false;
-
-                btn.textContent =
-                  "Continue to payment";
+                resetFundButton();
 
                 showError(
                   "Payment succeeded but confirmation failed. Contact support with your Paystack reference: " +
@@ -707,14 +711,16 @@ document.addEventListener("DOMContentLoaded", () => {
         onClose:
           function() {
 
-            btn.disabled = false;
-
-            btn.textContent =
-              "Continue to payment";
+            resetFundButton();
           },
-      });
+        });
 
-    handler.openIframe();
+      handler.openIframe();
+    } catch (err) {
+      resetFundButton();
+      showError("Couldn't open Paystack. Please try again.");
+      console.error("Paystack initialization error:", err);
+    }
   }
 
   // -------------------------------------------------------

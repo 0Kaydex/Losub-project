@@ -7,8 +7,9 @@ const router = express.Router();
 
 router.use(requireAuth);
 
-// Flat fee charged every time a user funds their wallet, in kobo (₦100).
-const FUNDING_FEE_KOBO = 10000;
+// Flat fee charged every time a user funds their wallet, in kobo (₦50).
+const FUNDING_FEE_KOBO = 5000;
+const MIN_FUNDING_AMOUNT_KOBO = 10000;
 
 // ---------------------------------------------------------
 // GET /api/wallet
@@ -145,7 +146,7 @@ function creditWallet({
   reference,
   gateway,
 }) {
-  if (amountKobo <= FUNDING_FEE_KOBO) {
+  if (amountKobo < MIN_FUNDING_AMOUNT_KOBO) {
     console.error(
       `Funding amount too small: gateway=${gateway}, ref=${reference}, amount=${amountKobo}`
     );
@@ -153,7 +154,7 @@ function creditWallet({
     return res.status(400).json({
       error:
         `The minimum funding amount is ₦${
-          FUNDING_FEE_KOBO / 100 + 1
+          MIN_FUNDING_AMOUNT_KOBO / 100
         }.`,
     });
   }
@@ -244,7 +245,9 @@ function creditWallet({
       user.id,
       `Your wallet was funded with ₦${(
         amountKobo / 100
-      ).toLocaleString()} (₦100 funding fee applied — ₦${(
+      ).toLocaleString()} (₦${(
+        FUNDING_FEE_KOBO / 100
+      ).toLocaleString()} funding fee applied — ₦${(
         netKobo / 100
       ).toLocaleString()} credited).`,
       "wallet"

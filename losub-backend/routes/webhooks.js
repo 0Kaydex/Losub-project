@@ -5,7 +5,8 @@ const { notify } = require("../utils/notify");
 
 const router = express.Router();
 
-const FUNDING_FEE_KOBO = 10000;
+const FUNDING_FEE_KOBO = 5000;
+const MIN_FUNDING_AMOUNT_KOBO = 10000;
 
 // ---------------------------------------------------------
 // PAYSTACK WEBHOOK
@@ -98,7 +99,7 @@ router.post("/paystack", (req, res) => {
       return;
     }
 
-    if (amountKobo <= FUNDING_FEE_KOBO) {
+    if (amountKobo < MIN_FUNDING_AMOUNT_KOBO) {
       return;
     }
 
@@ -186,7 +187,9 @@ router.post("/paystack", (req, res) => {
         user.id,
         `Your wallet was funded with ₦${(
           amountKobo / 100
-        ).toLocaleString()} (₦100 funding fee applied — ₦${(
+        ).toLocaleString()} (₦${(
+          FUNDING_FEE_KOBO / 100
+        ).toLocaleString()} funding fee applied — ₦${(
           netKobo / 100
         ).toLocaleString()} credited).`,
         "wallet"
