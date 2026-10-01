@@ -91,6 +91,7 @@ db.exec(`
     logo TEXT,
     color TEXT,
     solo_price INTEGER NOT NULL,
+    owner_id INTEGER,
     created_at TEXT NOT NULL DEFAULT (datetime('now'))
   );
 
@@ -149,6 +150,7 @@ ensureColumns("plans", [
   { name: "price_per_seat", def: "INTEGER" },
   { name: "family_price", def: "INTEGER" },
   { name: "default_seats", def: "INTEGER NOT NULL DEFAULT 4" },
+  { name: "owner_id", def: "INTEGER" },
 ]);
 
 db.exec(`

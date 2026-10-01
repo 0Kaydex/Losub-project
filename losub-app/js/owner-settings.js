@@ -53,6 +53,54 @@ document.addEventListener("DOMContentLoaded", async () => {
   const addPlanForm = document.getElementById("addPlanForm");
   const addPlanMessage = document.getElementById("addPlanMessage");
   const addPlanSubmit = document.getElementById("addPlanSubmit");
+  const planFormTitle = document.getElementById("planFormTitle");
+  const planFormHint = document.getElementById("planFormHint");
+  const cancelEditPlanBtn = document.getElementById("cancelEditPlanBtn");
+
+  let editingPlanId = null;
+  let cachedPlans = [];
+
+  function resetPlanForm() {
+    editingPlanId = null;
+    addPlanForm.reset();
+    document.getElementById("planDefaultSeats").value = 4;
+    document.getElementById("planMarginPreview").textContent = "";
+    if (planFormTitle) planFormTitle.textContent = "Add a plan";
+    if (planFormHint) planFormHint.textContent = "Add a subscription plan to the catalog. Once added, anyone can start a group for it from Browse plans.";
+    addPlanSubmit.textContent = "Add plan";
+    addPlanSubmit.disabled = false;
+    if (cancelEditPlanBtn) cancelEditPlanBtn.hidden = true;
+  }
+
+  if (cancelEditPlanBtn) {
+    cancelEditPlanBtn.addEventListener("click", () => {
+      resetPlanForm();
+      addPlanMessage.hidden = true;
+    });
+  }
+
+  function startEditPlan(id) {
+    const p = cachedPlans.find(plan => String(plan.id) === String(id));
+    if (!p) return;
+
+    editingPlanId = p.id;
+    document.getElementById("planName").value = p.name;
+    document.getElementById("planSoloPrice").value = p.solo_price;
+    document.getElementById("planPricePerSeat").value = p.price_per_seat ?? "";
+    document.getElementById("planFamilyPrice").value = p.family_price ?? "";
+    document.getElementById("planDefaultSeats").value = p.default_seats ?? 4;
+    document.getElementById("planLogo").value = p.logo || "";
+    document.getElementById("planColor").value = p.color || "";
+
+    if (planFormTitle) planFormTitle.textContent = `Edit plan: ${p.name}`;
+    if (planFormHint) planFormHint.textContent = "Updating price per seat will propagate to all groups using this plan.";
+    addPlanSubmit.textContent = "Save changes";
+    if (cancelEditPlanBtn) cancelEditPlanBtn.hidden = false;
+    addPlanMessage.hidden = true;
+
+    updateMarginPreview();
+    addPlanForm.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
 
   async function loadPlans() {
     try {
@@ -60,31 +108,50 @@ document.addEventListener("DOMContentLoaded", async () => {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await res.json();
-      const plans = data.plans || [];
+      cachedPlans = data.plans || [];
 
-      if (!plans.length) {
+      if (!cachedPlans.length) {
         existingPlansList.innerHTML = "";
         existingPlansEmpty.hidden = false;
         return;
       }
       existingPlansEmpty.hidden = true;
-      existingPlansList.innerHTML = plans.map(p => {
+      existingPlansList.innerHTML = cachedPlans.map(p => {
         const seatLine = p.price_per_seat != null
           ? `₦${p.price_per_seat.toLocaleString()}/seat × ${p.default_seats} seats`
           : "Seat price not set";
         const marginLine = p.margin != null
           ? ` · <strong>₦${p.margin.toLocaleString()}/mo margin</strong>`
           : "";
+        const canEdit = user.role === "admin" || (p.owner_id != null && p.owner_id === user.id);
+        const ownerTag = p.owner_id == null
+          ? ` · <span style="font-size:11px;color:var(--ink-soft);">(Legacy plan)</span>`
+          : (p.owner_id === user.id
+            ? ` · <span style="font-size:11px;color:#1E8A46;font-weight:600;">(Your plan)</span>`
+            : "");
+
         return `
           <li>
             <div>
               <div class="admin-list__name">${p.name}</div>
-              <div class="admin-list__meta">₦${p.solo_price.toLocaleString()}/mo solo · ${seatLine}${marginLine}</div>
+              <div class="admin-list__meta">₦${p.solo_price.toLocaleString()}/mo solo · ${seatLine}${marginLine}${ownerTag}</div>
             </div>
-            <button type="button" class="admin-action-btn admin-action-btn--danger owner-delete-plan-btn" data-id="${p.id}" data-name="${p.name}">Delete</button>
+            <div style="display: flex; gap: 8px;">
+              ${canEdit ? `
+                <button type="button" class="admin-action-btn owner-edit-plan-btn" data-id="${p.id}">Edit</button>
+                <button type="button" class="admin-action-btn admin-action-btn--danger owner-delete-plan-btn" data-id="${p.id}" data-name="${p.name}">Delete</button>
+              ` : `
+                <button type="button" class="admin-action-btn" disabled title="Only the plan creator or an admin can edit this plan" style="opacity:0.5;cursor:not-allowed;">Edit</button>
+                <button type="button" class="admin-action-btn admin-action-btn--danger" disabled title="Only the plan creator or an admin can delete this plan" style="opacity:0.5;cursor:not-allowed;">Delete</button>
+              `}
+            </div>
           </li>
         `;
       }).join("");
+
+      existingPlansList.querySelectorAll(".owner-edit-plan-btn").forEach(btn => {
+        btn.addEventListener("click", () => startEditPlan(btn.dataset.id));
+      });
 
       existingPlansList.querySelectorAll(".owner-delete-plan-btn").forEach(btn => {
         btn.addEventListener("click", () => confirmDeletePlan(btn.dataset.id, btn.dataset.name));
@@ -139,11 +206,14 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     addPlanSubmit.disabled = true;
-    addPlanSubmit.textContent = "Adding…";
+    addPlanSubmit.textContent = editingPlanId ? "Saving…" : "Adding…";
 
     try {
-      const res = await fetch(`${API_BASE}/plans`, {
-        method: "POST",
+      const endpoint = editingPlanId ? `${API_BASE}/plans/${editingPlanId}` : `${API_BASE}/plans`;
+      const method = editingPlanId ? "PATCH" : "POST";
+
+      const res = await fetch(endpoint, {
+        method,
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
@@ -153,16 +223,14 @@ document.addEventListener("DOMContentLoaded", async () => {
       const data = await res.json();
 
       if (!res.ok) {
-        addPlanMessage.textContent = data.error || "Couldn't add that plan.";
+        addPlanMessage.textContent = data.error || (editingPlanId ? "Couldn't update that plan." : "Couldn't add that plan.");
         addPlanMessage.className = "auth-message auth-message--error";
         addPlanMessage.hidden = false;
       } else {
-        addPlanMessage.textContent = data.message || "Plan added.";
+        addPlanMessage.textContent = data.message || (editingPlanId ? "Plan updated." : "Plan added.");
         addPlanMessage.className = "auth-message auth-message--success";
         addPlanMessage.hidden = false;
-        addPlanForm.reset();
-        document.getElementById("planDefaultSeats").value = 4;
-        document.getElementById("planMarginPreview").textContent = "";
+        resetPlanForm();
         loadPlans();
       }
     } catch {
@@ -172,7 +240,11 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 
     addPlanSubmit.disabled = false;
-    addPlanSubmit.textContent = "Add plan";
+    if (editingPlanId) {
+      addPlanSubmit.textContent = "Save changes";
+    } else {
+      addPlanSubmit.textContent = "Add plan";
+    }
   });
 
   async function confirmDeletePlan(id, name) {
@@ -192,6 +264,9 @@ document.addEventListener("DOMContentLoaded", async () => {
         return;
       }
 
+      if (editingPlanId && String(editingPlanId) === String(id)) {
+        resetPlanForm();
+      }
       loadPlans();
     } catch {
       addPlanMessage.textContent = "Couldn't reach Losub — check your connection and try again.";
