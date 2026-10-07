@@ -92,7 +92,6 @@ Losub-project/
 └── losub-backend/
     ├── db.js
     ├── Dockerfile
-    ├── fly.toml
     ├── package.json
     ├── README.md
     ├── server.js

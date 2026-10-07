@@ -38,7 +38,7 @@ Then fill in `.env` (see `.env.example` for the full list — this project uses 
 - `GOOGLE_CLIENT_ID` — see step 5 below
 - `PAYSTACK_SECRET_KEY` — from your Paystack dashboard, live key for production
 
-On Fly.io, set these with `fly secrets set KEY=value` — the `.env` file is gitignored and is **not** deployed by the Dockerfile.
+On Railway, set these variables in the Railway service dashboard. The `.env` file is gitignored and is not used for the production deployment image.
 
 ## 4. Run it
 ```bash
@@ -49,6 +49,16 @@ You should see:
 Losub backend running at http://localhost:3000
 ```
 Test it's alive: open `http://localhost:3000/api/health` in a browser — should show `{"ok":true,...}`.
+
+## Railway deployment
+
+1. Create a Railway project and add a service rooted at `losub-backend`.
+2. Configure the service to use the `Dockerfile` and Node.js 22.
+3. Set the service's root directory to `losub-backend` if Railway is deploying from the repository root.
+4. Set the build commands and start command according to the Railway Docker deployment configuration.
+5. Add the required environment variables in Railway, including `PORT`, `DB_PATH`, `JWT_SECRET`, `RESEND_API_KEY`, `FROM_EMAIL`, `FRONTEND_URL`, `GOOGLE_CLIENT_ID`, `PAYSTACK_SECRET_KEY`, and `PAYSTACK_PUBLIC_KEY` when required.
+6. Add a persistent volume mounted at `/data` and configure `DB_PATH=/data/losub.db`.
+7. Add the custom domain `api.losubapp.com` and confirm it points to the Railway service.
 
 ## Legacy plan ownership migration
 
