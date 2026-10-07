@@ -50,6 +50,19 @@ Losub backend running at http://localhost:3000
 ```
 Test it's alive: open `http://localhost:3000/api/health` in a browser — should show `{"ok":true,...}`.
 
+## Legacy plan ownership migration
+
+The one-time migration in `scripts/assign-legacy-plan-owners.js` associates Spotify plan ID `10` and YouTube plan ID `12` with owner user ID `1`. It is an explicit manual command and is **not** run by application startup:
+
+```bash
+cd losub-backend
+node scripts/assign-legacy-plan-owners.js
+```
+
+Before changing anything, the script requires user ID `1` to exist with role `owner`, both plan IDs to exist with those exact names, and each plan's current `owner_id` to be either `NULL` or `1`. If any precondition fails, the transaction is rolled back. Existing assignments to owner `1` are accepted, making a successful run idempotent.
+
+The script uses `DB_PATH` when set; otherwise it targets `losub-backend/losub.db`. Confirm that this resolves to the intended database before running the command. The migration updates only `plans.owner_id`; it does not edit plan details, groups, group prices, transactions, or notifications. Keep an appropriate database backup and obtain approval before running it against any production database.
+
 ## 5. Set up Google Sign-In
 1. Go to [Google Cloud Console](https://console.cloud.google.com/) → create a project (or use an existing one).
 2. **APIs & Services → Credentials → Create Credentials → OAuth client ID**.
